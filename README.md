@@ -9,7 +9,10 @@
 
 ### TLA+ case studies
 
-- []
+- [Elasticsearch](https://github.com/elastic/elasticsearch-formal-models)
+- [MongoDB](https://github.com/visualzhou/mongo-repl-tla)
+
+### Learning exercises
 
 - Model a lift controller: the lift has n doors, and you will have to model
 both the behavior and safety conditions, for example that once at the top, the

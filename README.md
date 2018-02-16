@@ -12,6 +12,7 @@
 - [Elasticsearch](https://github.com/elastic/elasticsearch-formal-models)
 - [MongoDB](https://github.com/visualzhou/mongo-repl-tla)
 - https://github.com/tlaplus/Examples
+- [Debugging Designs](http://www.hpts.ws/papers/2011/sessions_2011/Debugging.pdf)
 
 ### Learning exercises
 

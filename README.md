@@ -1,20 +1,21 @@
 ## Model-checking
 
-### Spin case studies:
+### SPIN case studies:
 
 - [PostgreSQL pgpool](http://d.hatena.ne.jp/interdb/touch/20100815/1281809853)
 - [Linux kernel RCU](https://lwn.net/Articles/279077/)
 - Formal analysis of a space-craft controller using SPIN
 - [Network protocol for real-time sharing between graphical applications](https://github.com/verse/verse/tree/master/misc/promela)
+- [Modeling and Formal Verification of DHCP Using SPIN](https://pdfs.semanticscholar.org/6ddd/d0951f9596526f138faa68304485a6a052e2.pdf)
 
-### TLA+ case studies
+### TLA+ case studies:
 
 - [Elasticsearch](https://github.com/elastic/elasticsearch-formal-models)
 - [MongoDB](https://github.com/visualzhou/mongo-repl-tla)
 - https://github.com/tlaplus/Examples
 - [Debugging Designs](http://www.hpts.ws/papers/2011/sessions_2011/Debugging.pdf)
 
-### Learning exercises
+### Learning exercises:
 
 - Model a lift controller: the lift has n doors, and you will have to model
 both the behavior and safety conditions, for example that once at the top, the

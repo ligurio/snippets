@@ -6,6 +6,14 @@
 - [Linux kernel RCU](https://lwn.net/Articles/279077/)
 - Formal analysis of a space-craft controller using SPIN
 - [Network protocol for real-time sharing between graphical applications](https://github.com/verse/verse/tree/master/misc/promela)
+- "Formal verification of requirements using SPIN: a case study on Web services"
+- "Model checking embedded systems with PROMELA"
+- "Using SPIN to model cryptographic protocols"
+- "Using SPIN model checking for flight software verification"
+- "Analysis and Verification of Two-Phase Commit & Three-Phase Commit Protocols"
+- "A Formal Model of Crash Recovery in a Distributed System"
+- http://spinroot.com/spin/success.html
+- http://www.imm.dtu.dk/~albl/promela.html
 
 ### TLA+ case studies
 
@@ -13,6 +21,12 @@
 - [MongoDB](https://github.com/visualzhou/mongo-repl-tla)
 - https://github.com/tlaplus/Examples
 - [Debugging Designs](http://www.hpts.ws/papers/2011/sessions_2011/Debugging.pdf)
+- https://www.hillelwayne.com/post/list-of-tla-examples/
+
+### BLAST case studies
+
+- [The Software Model Checker BLAST: Applications to Software Engineering](http://pub.ist.ac.at/~tah/Publications/the_software_model_checker_blast.pdf)
+- "Applicability of the BLAST Model Checker: An Industrial Case Study"
 
 ### Learning exercises
 

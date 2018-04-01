@@ -1,6 +1,6 @@
 ## Model-checking
 
-### Spin case studies:
+### SPIN case studies:
 
 - [PostgreSQL pgpool](http://d.hatena.ne.jp/interdb/touch/20100815/1281809853)
 - [Linux kernel RCU](https://lwn.net/Articles/279077/)
@@ -14,8 +14,9 @@
 - "A Formal Model of Crash Recovery in a Distributed System"
 - http://spinroot.com/spin/success.html
 - http://www.imm.dtu.dk/~albl/promela.html
+- [Modeling and Formal Verification of DHCP Using SPIN](https://pdfs.semanticscholar.org/6ddd/d0951f9596526f138faa68304485a6a052e2.pdf)
 
-### TLA+ case studies
+### TLA+ case studies:
 
 - [Elasticsearch](https://github.com/elastic/elasticsearch-formal-models)
 - [MongoDB](https://github.com/visualzhou/mongo-repl-tla)
@@ -28,7 +29,7 @@
 - [The Software Model Checker BLAST: Applications to Software Engineering](http://pub.ist.ac.at/~tah/Publications/the_software_model_checker_blast.pdf)
 - "Applicability of the BLAST Model Checker: An Industrial Case Study"
 
-### Learning exercises
+### Learning exercises:
 
 - Model a lift controller: the lift has n doors, and you will have to model
 both the behavior and safety conditions, for example that once at the top, the

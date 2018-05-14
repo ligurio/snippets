@@ -16,7 +16,7 @@
 - http://www.imm.dtu.dk/~albl/promela.html
 - [Modeling and Formal Verification of DHCP Using SPIN](https://pdfs.semanticscholar.org/6ddd/d0951f9596526f138faa68304485a6a052e2.pdf)
 
-- [Applications for the Checker – A Survey(]www.tucs.fi/publications/attachment.php?fname=TR782.pdf) - Ville R. Koskinen | Juha Plosila
+- [Applications for the Checker – A Survey](www.tucs.fi/publications/attachment.php?fname=TR782.pdf) - Ville R. Koskinen | Juha Plosila
 - [Comparisons of Alloy and Spin](http://www.pamelazave.com/compare.html)
 - [Specifying and Verifying Concurrent C Programs with TLA+](https://cedric.cnam.fr/fichiers/art_3439.pdf)
 

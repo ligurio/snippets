@@ -19,6 +19,7 @@
 - [Applications for the Checker – A Survey](http://www.tucs.fi/publications/attachment.php?fname=TR782.pdf) - Ville R. Koskinen | Juha Plosila
 - [Comparisons of Alloy and Spin](http://www.pamelazave.com/compare.html)
 - [Specifying and Verifying Concurrent C Programs with TLA+](https://cedric.cnam.fr/fichiers/art_3439.pdf)
+- [Model Checking Paxos in Spin](https://arxiv.org/abs/1408.5962)
 
 
 ### TLA+ case studies:

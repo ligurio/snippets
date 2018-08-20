@@ -1,2 +1,2 @@
 
-void parse_junit(char *path);
+void parse_junit(FILE *f);

@@ -1,6 +1,6 @@
 CFLAGS		= -O3
-SRCS		= testres.c parse_junit.c
-BIN			= testres.cgi
+SRCS		= testres.c parse_junit.c parse_testanything.c
+BIN		= testres.cgi
 
 CGIDIR		= /var/www/cgi-bin
 

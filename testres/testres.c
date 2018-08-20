@@ -7,6 +7,7 @@
 #include <err.h>
 
 #include "parse_junit.h"
+#include "parse_testanything.h"
 
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');
@@ -20,66 +21,38 @@ void print_headers() {
 }
 
 void usage() {
-  printf("testres\n\n");
-  printf("Usage: testres -d DIR");
+  printf("testres\n");
+  printf("\tUsage: testres -d DIR\n");
 }
 
 int main(int argc, char *argv[]) {
 
-  const char *REPORTS = "/htdocs/junit/";
+  char *storage_dir = "/";
+  int opt = 0;
 
-/*
-  int bflag, ch, fd;
-  bflag = 0;
-  while ((ch = getopt(argc, argv, "bd:")) != -1) {
-   	   switch (ch) {
-   	   case 'd':
-			   printf("%s\n", optarg);
-   			   break;
-   	   default:
-   			   usage();
-   	   }
+  while ((opt = getopt(argc, argv, "hd:")) != -1) {
+      switch (opt) {
+      case 'h':
+          fprintf(stderr, "Usage: %s [-d directory] [-h]\n", argv[0]);
+          return(1);
+      case 'd':
+          printf("%s\n", optarg);
+          storage_dir = optarg;
+          break;
+      default: /* '?' */
+          fprintf(stderr, "Usage: %s [-d directory] [-h]\n", argv[0]);
+          return 1;
+      }
   }
-  argc -= optind;
-  argv += optind;
 
+  /*
+  if (optind >= argc) {
+      fprintf(stderr, "Expected argument after options\n");
+      return 1;
+  }
+  */
 
-int
-main(int argc, char *argv[])
-{
-	struct ast_test *tests;
-	int a, b;
-	int fold;
-
-	fold = 0;
-
-	{
-		int c;
-
-		while (c = getopt(argc, argv, "dh"), c != -1) {
-			switch (c) {
-			case 'd': fold = 1; break;
-
-			case 'h':
-				usage();
-				return 0;
-
-			default:
-				usage();
-				return 1;
-			}
-		}
-
-		argc -= optind;
-		argv += optind;
-	}
-
-	if (argc != 0) {
-		usage();
-		return 1;
-	}
-}
-*/
+  printf("storage directory %s", storage_dir);
 
   DIR *d;
   struct dirent *dir;
@@ -87,24 +60,44 @@ main(int argc, char *argv[])
 
   print_headers();
 
-  d = opendir(REPORTS);
-  if (d) {
-    while ((dir = readdir(d)) != NULL) {
-      d_name = dir->d_name;
-      if ((strcmp("..", d_name) == 0) || (strcmp(".", d_name) == 0)) {
-         continue;
-      }
-      file_ext = get_filename_ext(d_name);
-      if (strcmp("xml", file_ext)) {
-         continue;
-      }
-      printf("%s\n", d_name);
-	  char path[1024];
-	  snprintf(path, sizeof(path), "%s/%s", REPORTS, d_name);
-	  printf("%s", path);
-      parse_junit(path);
-    }
-    closedir(d);
+  d = opendir(storage_dir);
+  if (!(d)) {
+    printf("failed to open dir %s", storage_dir);
+    return 1;
   }
+
+  while ((dir = readdir(d)) != NULL) {
+    d_name = dir->d_name;
+    if ((strcmp("..", d_name) == 0) || (strcmp(".", d_name) == 0)) {
+       continue;
+    }
+
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/%s", storage_dir, d_name);
+    printf("%s\n", path);
+
+    FILE *file;
+    file = fopen(path, "r");
+    if (!(file)) {
+       printf("failed to open file %s", path);
+       return 1;
+    }
+    file_ext = get_filename_ext(d_name);
+    printf("extension %s\n", file_ext);
+    if (strcasecmp("xml", file_ext) == 0) {
+       printf("JUnit %s\n", d_name);
+       parse_junit(file);
+       continue;
+    }
+    if (strcasecmp("tap", file_ext) == 0) {
+       printf("TestAnythingProtocol %s\n", d_name);
+       struct ast_test *tests;
+       tests = parse_testanything(file);
+       print(stdout, tests);
+       continue;
+    }
+    fclose(file);
+  }
+  closedir(d);
   return(0);
 }

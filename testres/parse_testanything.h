@@ -61,9 +61,6 @@ ast_test(struct ast_test **head, enum ast_status status, const char *name);
 static void
 rtrim(char *s);
 
-void
-print(FILE *f, const struct ast_test *tests);
-
 static void
 plan(const char *line, int *a, int *b);
 
@@ -76,5 +73,8 @@ gap(struct ast_test **head, int *a, int b);
 static void
 starttest(struct ast_test **head, const char *line, int *a, int b);
 
-int
-parse_testanything(char *filename);
+void
+print(FILE *f, const struct ast_test *tests);
+
+struct ast_test*
+parse_testanything(FILE *f);

@@ -32,18 +32,17 @@ typedef struct {
 } testcase;
 
 typedef struct testsuite {
-	char* name;
+    char* name;
     char* hostname;
-	char* timestamp;
+    char* timestamp;
     double time;
-	int num_tests;
     int failures;
     int errors;
 } testsuite_t;
 
 typedef struct suite {
     testsuite_t *next;
-	testsuite_t suite;
+    testsuite_t suite;
 } suite_t;
 
 static void XMLCALL
@@ -54,7 +53,7 @@ start(void *data, const XML_Char *elem, const XML_Char **attr)
 
   testsuite_t suite;
   if (strcmp(elem, "testsuite") == 0) {
-     printf("testsuite: %\n" XML_FMT_STR, elem);
+     //printf("testsuite: %\n", XML_FMT_STR, elem);
      for (i = 0; attr[i]; i += 2) {
         //printf(" %" XML_FMT_STR "='%" XML_FMT_STR "'", attr[i], attr[i + 1]);
         //char attr_name = attr[i];
@@ -94,51 +93,23 @@ end(void *data, const XML_Char *el)
   Depth--;
 }
 
-//int
-//main(int argc, char *argv[])
-void parse_junit(char *path) {
+void parse_junit(FILE *f) {
   XML_Parser p = XML_ParserCreate(NULL);
-  //(void)argc;
-  //(void)argv;
-  int fd;
-
-  printf("Hello, parse_junit() %s\n", path);
-
   if (! p) {
     fprintf(stderr, "Couldn't allocate memory for parser\n");
     exit(-1);
   }
-
   XML_SetElementHandler(p, start, end);
 
+  printf("parse_junit()\n");
   for (;;) {
-    int done;
-    int len;
-
-    //char buf[CHUNK];
-    FILE *file;
-    //size_t nread;
-
-    file = fopen(path, "r");
-    if (file) {
-        len = fread(Buff, 1, BUFFSIZE, file);
-        if (ferror(file)) {
-           /* deal with error */
-           fprintf(stderr, "Read error %s\n", path);
-           exit(-1);
-        }
-        fclose(file);
+    int len, done;
+    len = fread(Buff, 1, BUFFSIZE, f);
+    if (ferror(f)) {
+       fprintf(stderr, "Read error\n");
+       exit(-1);
     }
-
-	/*
-    len = (int)fread(Buff, 1, BUFFSIZE, stdin);
-    if (ferror(stdin)) {
-      fprintf(stderr, "Read error\n");
-      exit(-1);
-    }
-    done = feof(stdin);
-	*/
-    done = feof(file);
+    done = feof(f);
 
     if (XML_Parse(p, Buff, len, done) == XML_STATUS_ERROR) {
       fprintf(stderr,
@@ -148,9 +119,9 @@ void parse_junit(char *path) {
       exit(-1);
     }
 
-    if (done)
-      break;
+    if (done) {
+       break;
+    }
   }
   XML_ParserFree(p);
-  //return 0;
 }

@@ -44,7 +44,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include <parse_testanything.h>
+#include "parse_testanything.h"
 
 const char *
 ast_status(enum ast_status status)
@@ -137,46 +137,6 @@ rtrim(char *s)
 
 	while (p >= s && isspace((unsigned char) *p)) {
 		*p-- = '\0';
-	}
-}
-
-void
-print(FILE *f, const struct ast_test *tests)
-{
-	const struct ast_test *test;
-	const struct ast_line *line;
-	unsigned int n;
-
-	assert(f != NULL);
-	assert(tests != NULL);
-
-	for (test = tests, n = 1; test != NULL; test = test->next, n++) {
-		fprintf(f, "\t<test status='%s'",
-			ast_status(test->status));
-
-		fprintf(f, " n='%u'", n);
-
-		if (test->rep > 1) {
-			fprintf(f, " rep='%u'", test->rep);
-		}
-
-		if (test->name != NULL) {
-			fprintf(f, " name='");
-			fprintf(f, test->name);
-			fprintf(f, "'");
-		}
-
-		fprintf(f, "%s>\n", test->line != NULL ? "" : "/");
-
-		if (test->line == NULL) {
-			continue;
-		}
-
-		for (line = test->line; line != NULL; line = line->next) {
-			fprintf(f, "%s%s",
-				line->text,
-				line->next != NULL ? "\n" : "");
-		}
 	}
 }
 
@@ -280,8 +240,48 @@ starttest(struct ast_test **head, const char *line, int *a, int b)
 	*a += 1;
 }
 
-int
-parse_testanything(char *filename)
+void
+print(FILE *f, const struct ast_test *tests)
+{
+	const struct ast_test *test;
+	const struct ast_line *line;
+	unsigned int n;
+
+	assert(f != NULL);
+	assert(tests != NULL);
+
+	for (test = tests, n = 1; test != NULL; test = test->next, n++) {
+		fprintf(f, "\t<test status='%s'",
+			ast_status(test->status));
+
+		fprintf(f, " n='%u'", n);
+
+		if (test->rep > 1) {
+			fprintf(f, " rep='%u'", test->rep);
+		}
+
+		if (test->name != NULL) {
+			fprintf(f, " name='");
+			fprintf(f, "%s", test->name);
+			fprintf(f, "'");
+		}
+
+		fprintf(f, "%s>\n", test->line != NULL ? "" : "/");
+
+		if (test->line == NULL) {
+			continue;
+		}
+
+		for (line = test->line; line != NULL; line = line->next) {
+			fprintf(f, "%s%s",
+				line->text,
+				line->next != NULL ? "\n" : "");
+		}
+	}
+}
+
+struct ast_test *
+parse_testanything(FILE *f)
 {
 	struct ast_test *tests;
 	int a, b;
@@ -299,7 +299,7 @@ parse_testanything(char *filename)
 		b = -1; /* no plan */
 		n = 0;
 
-		while (-1 != getline(&line, &n, stdin)) {
+		while (-1 != getline(&line, &n, f)) {
 			line[strcspn(line, "\n")] = '\0';
 
 			comment = strchr(line, '#');
@@ -387,7 +387,19 @@ parse_testanything(char *filename)
 	}
 
 	/* TODO: warn about duplicate test names */
-	print(stdout, tests);
-
-	return 0;
+	return tests;
 }
+
+/*
+int main() {
+  char *filename = "./testresults.tap";
+  FILE *f;
+
+  f = fopen(filename, "r");
+  struct ast_test *tests;
+  tests = parse_testanything(f);
+  fclose(f);
+
+  print(stdout, tests);
+}
+*/

@@ -26,16 +26,28 @@
  *
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <zlib.h>
 
 #define HI(x)  ((x) >> 8)
 #define LO(x)  ((x) & 0xFF)
 
-//  PACKET := SIGNATURE FLAGS PACKET_LENGTH
-//            TIMESTAMP? TESTID? TAGS? MIME?
-//            FILECONTENT? ROUTING_CODE? CRC32
+#define SIGNATURE 		0xB3
+#define VERSION 		0x02
+#define LENGTH_THRESHOLD 	4194303
+#define FLAG_TEST_ID		0x0800
+#define FLAG_ROUTE_CODE		0x0400
+#define FLAG_TIMESTAMP		0x0200
+#define FLAG_RUNNABLE		0x0100
+#define FLAG_TAGS		0x0080
+#define FLAG_MIME_TYPE		0x0020
+#define FLAG_EOF		0x0010
+#define FLAG_FILE_CONTENT	0x0040
+
+// https://github.com/testing-cabal/subunit/blob/master/python/subunit/v2.py#L405
 
 typedef struct {
     uint8_t  signature;
@@ -86,16 +98,6 @@ Length:
 	less than 4MiB - 4194303 bytes.
 */
 
-/*
-VERSION must be  0x2 - version 2
-
-If the version is not 0x2 then the packet cannot be read.  It is recommended to
-signal an error at this point (e.g. by emitting a synthetic error packet and
-returning to the top level loop to look for new packets, or exiting with an
-error). If recovery is desired, treat the packet signature as an opaque byte
-and scan for a new synchronisation point.
-*/
-
 // Feature bits:
 //
 //    Bit 11 	mask 0x0800 	Test id present.
@@ -108,14 +110,13 @@ and scan for a new synchronisation point.
 //    Bit 4 	mask 0x0010 	EOF marker.
 //    Bit 3 	mask 0x0008 	Must be zero in version 2.
 //
-// FIXME: typedef enum {value1, value2, value3, (...) } VALUE;
-enum Feature { TestID,
-	       RoutingCode,
-	       Timestamp,
-               Tags,
-	       FileContent,
-	       MIMEType,
-	       EOFMarker };
+enum PacketFeature { TestID,
+	       	     RoutingCode,
+	             Timestamp,
+                     Tags,
+	             FileContent,
+	             MIMEType,
+	             EOFMarker };
 
 // Test status gets three bits: Bit 2 | Bit 1 | Bit 0 - mask 0x0007.
 // A test status enum lookup:
@@ -138,7 +139,8 @@ enum TestStatus { Undefined,
 		  Failed,
 		  ExpectedFailure };
 
-int is_set(uint8_t feature_bits, int flag) {
+/*
+int is_flag_set(uint8_t feature_bits, int flag) {
 
     char bits[8];
     bits[0] = feature_bits;
@@ -156,6 +158,7 @@ int is_set(uint8_t feature_bits, int flag) {
 
     return 1;
 }
+*/
 
 int main()
 {  
@@ -165,42 +168,55 @@ int main()
     // signature / flags / length / testid / crc32:
     // b3 2901 0c 03666f6f 08555f1b
 
-    subunit_header packet = { .signature = 0xb3, .flags = 0x2901, .length = 0x0c };
-    unsigned sample_testid = 0x03666f6f;
-    unsigned sample_crc32 = 0x08555f1b;
+    subunit_header sample_header = { .signature = 0xb3, .flags = 0x2901, .length = 0x0c };
+    uint32_t sample_testid = 0x03666f6f;
+    uint32_t sample_crc32 = 0x08555f1b;
 
-    printf("Signature: %02X\n", packet.signature);
-    printf("Flags: %02X\n", packet.flags);
-    printf("Length: %02X\n", packet.length);
-
+    assert(sample_header.signature == SIGNATURE);
+    assert(sample_header.length < LENGTH_THRESHOLD);
+    printf("Signature: %02X\n", sample_header.signature);
+    printf("Flags: %02X\n", sample_header.flags);
+    printf("Length: %d\n", sample_header.length);
     printf("TestId: %02X\n", sample_testid);
-    printf("CRC32: %02X\n", sample_crc32);
+    printf("CRC32: %d\n", sample_crc32);
 
-    uint8_t version, feature_bits;
+    uint16_t feature_bits;
+    uint8_t version;
 
-    version = HI(packet.flags);
-    feature_bits = LO(packet.flags);
-    printf("High byte (version): %02X\n", version);
-    printf("Low byte (feature bits): %02X\n", feature_bits);
+    version = HI(sample_header.flags) >> 4;
+    feature_bits = sample_header.flags;
+    assert(version == VERSION);
 
-    char bits[8];
-    bits[0] = feature_bits;
-    bits[1] = feature_bits >> 8;
-    bits[2] = feature_bits >> 7;
-    bits[3] = feature_bits >> 6;
-    bits[4] = feature_bits >> 5;
-    bits[5] = feature_bits >> 4;
-    bits[6] = feature_bits >> 3;
-    bits[7] = feature_bits >> 2;
+/*
+    feature_bits &= ~(1UL << 15);
+    feature_bits &= ~(1UL << 14);
+    feature_bits &= ~(1UL << 13);
+    feature_bits &= ~(1UL << 12);
+*/
 
-    int i;
-    for (i = 0; i < 8; i += 1)  {
-        printf("%02X\n", bits[i]);
-    }
+    if (feature_bits & FLAG_TEST_ID)
+       printf("\tFLAG_TEST_ID\n");
+    if (feature_bits & FLAG_ROUTE_CODE)
+       printf("\tFLAG_ROUTE_CODE\n");
+    if (feature_bits & FLAG_TIMESTAMP)
+       printf("\tFLAG_TIMESTAMP\n");
+    if (feature_bits & FLAG_RUNNABLE)
+       printf("\tFLAG_RUNNABLE\n");
+    if (feature_bits & FLAG_TAGS)
+       printf("\tFLAG_TAGS\n");
+    if (feature_bits & FLAG_MIME_TYPE)
+       printf("\tFLAG_MIME_TYPE\n");
+    if (feature_bits & FLAG_EOF)
+       printf("\tFLAG_EOF\n");
+    if (feature_bits & FLAG_FILE_CONTENT)
+       printf("\tFLAG_FILE_CONTENT\n");
 
-    if (bits[TestID]) {
-       printf("TestID is present\n");
-    }
+    printf("Status: %02X\n", feature_bits & 0x0007);
+    printf("Version: %02X\n", version);
+
+    // FIXME: length calculation
+    // FIXME: crc32 calculation
+    // FIXME: testid decoding
 
     // ===========================================
 
@@ -214,30 +230,31 @@ int main()
     	return 1;
     }
     
+    /*
     while (!feof(file)) {
         fread(&header, sizeof(subunit_header), 1, file);
-        printf ("signature = %02X flags = %02X  length = %02X\n", header.signature, header.flags, header.length);
-	/*
+        printf ("signature = %02X flags = %02X  length = %d\n", header.signature, header.flags, header.length);
         version = HI(header.flags);
         feature_bits = LO(header.flags);
-        printf("feature bits %d\n", feature_bits);
-        printf("version %d\n", version);
-        if (is_set(feature_bits, TestID) == 0)
-           printf("TestID\n");
+        printf("\tfeature bits %d\n", feature_bits);
+        printf("\tversion %d\n", version);
+        if (is_flag_set(feature_bits, TestID) == 0)
+           printf("\tTestID\n");
            fread(&header, sizeof(subunit_header), 1, file);
-        if (is_set(feature_bits, RoutingCode) == 0)
-           printf("RoutingCode\n");
-        if (is_set(feature_bits, Timestamp) == 0)
-           printf("Timestamp\n");
-        if (is_set(feature_bits, Tags) == 0)
-           printf("Tags\n");
-        if (is_set(feature_bits, FileContent) == 0)
-           printf("FileContent\n");
-	*/
+        if (is_flag_set(feature_bits, RoutingCode) == 0)
+           printf("\tRoutingCode\n");
+        if (is_flag_set(feature_bits, Timestamp) == 0)
+           printf("\tTimestamp\n");
+        if (is_flag_set(feature_bits, Tags) == 0)
+           printf("\tTags\n");
+        if (is_flag_set(feature_bits, FileContent) == 0)
+           printf("\tFileContent\n");
 	char *content = malloc(header.length);
         fread(content, header.length, 1, file);
 	free(content);
     }
+    */
+    fclose(file);
 
     return 0;
 }

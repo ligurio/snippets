@@ -2,7 +2,7 @@
 
 A hyperfast web frontend for software testing results written in C.
 
-### CGI
+### Примеры CGI приложений
 
 https://git.zx2c4.com/cgit/
 https://github.com/kristapsdz/sblg
@@ -21,3 +21,9 @@ https://git.zx2c4.com/cgit/tree/filters
 - фильтр для заведения бага
 - фильтр для построения графиков
 - скрипты для БД: flaky?, похожие проблемы в отчётах
+
+### Графики
+
+http://pages.cs.wisc.edu/~remzi/Zplot/Tcl/
+https://github.com/reddec/svg?files=1
+https://wiki.tcl.tk/21144

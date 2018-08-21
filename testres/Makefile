@@ -7,7 +7,7 @@ CGIDIR		= /var/www/cgi-bin
 all: testres.cgi
 
 testres.cgi: $(SRCS)
-	$(CC) -static -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat
+	$(CC) -static -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat -lz
 
 install: all
 	mkdir -p $(CGIDIR)

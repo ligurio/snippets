@@ -1,0 +1,1992 @@
+diff --git a/api/server/router/image/backend.go b/api/server/router/image/backend.go
+index 8bcea4835..08101736e 100644
+--- a/api/server/router/image/backend.go
++++ b/api/server/router/image/backend.go
+@@ -27,8 +27,6 @@ type imageBackend interface {
+ 	ImageHistory(imageName string) ([]*types.ImageHistory, error)
+ 	Images(filterArgs string, filter string, all bool) ([]*types.Image, error)
+ 	LookupImage(name string) (*types.ImageInspect, error)
+-	AttachImage(repository []string, remoteaddr string, outstream io.Writer) error
+-	// FIXME: DetachImage(repository []string, remoteaddr string, outstream io.Writer) error
+ 	TagImage(imageName, repository, tag string) error
+ }
+ 
+diff --git a/api/server/router/image/image.go b/api/server/router/image/image.go
+index d41a92d07..71c95e1e3 100644
+--- a/api/server/router/image/image.go
++++ b/api/server/router/image/image.go
+@@ -34,7 +34,6 @@ func (r *imageRouter) initRoutes() {
+ 		router.NewGetRoute("/images/json", r.getImagesJSON),
+ 		router.NewGetRoute("/images/search", r.getImagesSearch),
+ 		router.NewGetRoute("/images/get", r.getImagesGet),
+-		router.NewGetRoute("/images/{name:.*}/attach", r.getImagesAttach),
+ 		router.NewGetRoute("/images/{name:.*}/get", r.getImagesGet),
+ 		router.NewGetRoute("/images/{name:.*}/history", r.getImagesHistory),
+ 		router.NewGetRoute("/images/{name:.*}/json", r.getImagesByName),
+diff --git a/api/server/router/image/image_routes.go b/api/server/router/image/image_routes.go
+index fbf3832aa..18a36fda6 100644
+--- a/api/server/router/image/image_routes.go
++++ b/api/server/router/image/image_routes.go
+@@ -14,12 +14,9 @@ import (
+ 	"github.com/docker/docker/pkg/ioutils"
+ 	"github.com/docker/docker/pkg/streamformatter"
+ 	"github.com/docker/docker/registry"
+-	_ "github.com/docker/docker/daemon"
+-	_ "github.com/docker/docker/api"
+ 	"github.com/docker/engine-api/types"
+ 	"github.com/docker/engine-api/types/container"
+ 	"github.com/docker/engine-api/types/versions"
+-	_"github.com/docker/engine-api/client"
+ 	"golang.org/x/net/context"
+ )
+ 
+@@ -90,40 +87,13 @@ func (s *imageRouter) postImagesCreate(ctx context.Context, w http.ResponseWrite
+ 	w.Header().Set("Content-Type", "application/json")
+ 
+ 	if image != "" { //pull
+-/*
+-	   // FIXME: proxy := flags.commonFlags["CommonConfig"].Proxy
+-	   //proxy := "tcp://10.0.2.15"
+-	   proxy := s.backend.configStore.CommonConfig.Proxy
+-	   if  proxy != "" {
+-		version := api.DefaultVersion
+-		cli, err := client.NewClient(proxy, version, nil, vars)
+-		if err != nil {
+-		   return err
+-		}
+-
+-		registryAuth := r.Header.Get("X-Registry-Auth")
+-		options := types.ImagePullOptions{All: true, RegistryAuth: registryAuth, PrivilegeFunc: nil}
+-
+-		// NAME[:TAG|@DIGEST]
+-		var reference string
+-		if tag != "" {
+-		   reference = image + ":" + tag
+-		} else {
+-		   reference = image
+-		}
+-		_, err = cli.ImagePull(ctx, reference, options)
+-		if err != nil {
+-		   return err 
+-		}
+-	   } else {
+-*/
+ 		metaHeaders := map[string][]string{}
+ 		for k, v := range r.Header {
+ 			if strings.HasPrefix(k, "X-Meta-") {
+ 				metaHeaders[k] = v
+ 			}
+ 		}
+-		
++
+ 		authEncoded := r.Header.Get("X-Registry-Auth")
+ 		authConfig := &types.AuthConfig{}
+ 		if authEncoded != "" {
+@@ -199,57 +169,6 @@ func (s *imageRouter) postImagesPush(ctx context.Context, w http.ResponseWriter,
+ 	return nil
+ }
+ 
+-func (s *imageRouter) getImagesAttach(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+-	if err := httputils.ParseForm(r); err != nil {
+-		return err
+-	}
+-
+-	output := ioutils.NewWriteFlusher(w)
+-	defer output.Close()
+-
+-	var names []string
+-	if name, ok := vars["name"]; ok {
+-		names = []string{name}
+-	} else {
+-		names = r.Form["names"]
+-	}
+-
+-	if err := s.backend.AttachImage(names, r.RemoteAddr, output); err != nil {
+-		if !output.Flushed() {
+-			return err
+-		}
+-		sf := streamformatter.NewJSONStreamFormatter()
+-		output.Write(sf.FormatError(err))
+-	}
+-	return nil
+-}
+-
+-// FIXME: function is not implemented
+-func (s *imageRouter) getImagesDetach(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+-	if err := httputils.ParseForm(r); err != nil {
+-		return err
+-	}
+-
+-	output := ioutils.NewWriteFlusher(w)
+-	defer output.Close()
+-
+-	var names []string
+-	if name, ok := vars["name"]; ok {
+-		names = []string{name}
+-	} else {
+-		names = r.Form["names"]
+-	}
+-
+-	if err := s.backend.DetachImage(names, r.RemoteAddr, output); err != nil {
+-		if !output.Flushed() {
+-			return err
+-		}
+-		sf := streamformatter.NewJSONStreamFormatter()
+-		output.Write(sf.FormatError(err))
+-	}
+-	return nil
+-}
+-
+ func (s *imageRouter) getImagesGet(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+ 	if err := httputils.ParseForm(r); err != nil {
+ 		return err
+diff --git a/cli/flags/common.go b/cli/flags/common.go
+index 188ba2d49..4726b04f2 100644
+--- a/cli/flags/common.go
++++ b/cli/flags/common.go
+@@ -34,7 +34,6 @@ var (
+ type CommonFlags struct {
+ 	FlagSet   *flag.FlagSet
+ 	PostParse func()
+-	//Proxy     []string
+ 
+ 	Debug      bool
+ 	Hosts      []string
+@@ -71,7 +70,6 @@ func InitCommonFlags() *CommonFlags {
+ 	cmd.StringVar(&tlsOptions.KeyFile, []string{"-tlskey"}, filepath.Join(dockerCertPath, DefaultKeyFile), "Path to TLS key file")
+ 
+ 	cmd.Var(opts.NewNamedListOptsRef("hosts", &commonFlags.Hosts, opts.ValidateHost), []string{"H", "-host"}, "Daemon socket(s) to connect to")
+-	//cmd.Var(opts.NewNamedListOptsRef("proxy", &commonFlags.Proxy , opts.ValidateHost), []string{"P", "-proxy"}, "Daemon socket to connect to")
+ 	return commonFlags
+ }
+ 
+diff --git a/daemon/config.go b/daemon/config.go
+index 3d8989cde..a00f338e4 100644
+--- a/daemon/config.go
++++ b/daemon/config.go
+@@ -121,7 +121,6 @@ type CommonConfig struct {
+ 	// may take place at a time for each push.
+ 	MaxConcurrentUploads *int `json:"max-concurrent-uploads,omitempty"`
+ 
+-	Proxy	  string   `json:"proxy,omitempty"`
+ 	Debug     bool     `json:"debug,omitempty"`
+ 	Hosts     []string `json:"hosts,omitempty"`
+ 	LogLevel  string   `json:"log-level,omitempty"`
+@@ -180,7 +179,6 @@ func (config *Config) InstallCommonFlags(cmd *flag.FlagSet, usageFn func(string)
+ 
+ 	cmd.StringVar(&config.SwarmDefaultAdvertiseAddr, []string{"-swarm-default-advertise-addr"}, "", usageFn("Set default address or interface for swarm advertised address"))
+ 
+-	cmd.StringVar(&config.Proxy, []string{"-proxy"}, "", usageFn("Daemon socket to connect to"))
+ 	config.MaxConcurrentDownloads = &maxConcurrentDownloads
+ 	config.MaxConcurrentUploads = &maxConcurrentUploads
+ }
+diff --git a/daemon/graphdriver/blklayer/blkdevice.go b/daemon/graphdriver/blklayer/blkdevice.go
+deleted file mode 100644
+index 0345c5465..000000000
+--- a/daemon/graphdriver/blklayer/blkdevice.go
++++ /dev/null
+@@ -1,88 +0,0 @@
+-// +build linux
+-
+-package blklayer
+-
+-import (
+-	"os/exec"
+-	"os"
+-	"path"
+-	"syscall"
+-
+-	"github.com/Sirupsen/logrus"
+-	_ "github.com/docker/docker/daemon/graphdriver/devmapper"
+-	"github.com/docker/docker/pkg/loopback"
+-)
+-
+-func MountDevice(dir string) (*os.File, error) {
+-	device, _ := Attach(dir)
+-	f, _ := device.Stat()
+-	devname := f.Name()
+-
+-	logrus.Debugf("blklayer: mount %s", path.Join(dir, "mountpoint"))
+-	return device, syscall.Mount(path.Join("/dev/", devname), path.Join(dir, "mountpoint"), "ext4", 0, "")
+-}
+-
+-func UnmountDevice(dir string) error {
+-	logrus.Debugf("blklayer: Unmount %s", path.Join(dir, "mountpoint"))
+-	if err := syscall.Unmount(path.Join(dir, "mountpoint"), syscall.MNT_DETACH|syscall.MNT_FORCE); err != nil {
+-		return err
+-	}
+-
+-	return nil
+-}
+-
+-func Makefs(dir string) (error) {
+-
+-	logrus.Debugf("blklayer: Makefs")
+-	err := exec.Command("mkfs.ext4", append([]string{"-E", "nodiscard"}, path.Join(dir, "loop"))...).Run()
+-	if err != nil {
+-		logrus.Debugf("blklayer: mkfs.ext4 failed %s", err)
+-		return err
+-	}
+-
+-	err = exec.Command("tune2fs", append([]string{"-c", "-1", "-i", "0"}, path.Join(dir, "loop"))...).Run()
+-	if err != nil {
+-		logrus.Debugf("blklayer: tune2fs failed %s", err)
+-		return err
+-	}
+-
+-	return nil
+-}
+-
+-// Attach loop image file to a block device
+-func Attach(dir string) (*os.File, error) {
+-
+-	device, err := loopback.AttachLoopDevice(path.Join(dir, "loop"))
+-	if err != nil {
+-		logrus.Debugf("blklayer: attach loopback device ", err)
+-		return nil, err
+-	}
+-
+-	f, _ := device.Stat()
+-	logrus.Debugf("blklayer: image file %s attached to %s ", path.Join(dir, "loop"), f.Name())
+-
+-	out, err := exec.Command("losetup", append([]string{"-l"})...).Output()
+-	logrus.Debugf("blklayer: losetup -l %s\n", out)
+-
+-	return device, nil
+-}
+-
+-// Detach loop image file from block device
+-func Detach(device *os.File) error {
+-	
+-	f, _ := device.Stat()
+-	err := exec.Command("losetup", append([]string{"-d"}, path.Join("/dev/", f.Name()))...).Run()
+-	logrus.Debugf("umount %s", path.Join("/dev/", f.Name()))
+-	if err != nil {
+-		logrus.Debugf("blklayer: failed to detach blk device %s", err)
+-		return err
+-	}
+-	logrus.Debugf("blklayer: losetup -d success %s", path.Join("/dev/", f.Name()))
+-	err = device.Close()
+-	if err != nil {
+-		logrus.Debugf("blklayer: failed to detach loopback device %s", err)
+-		return err
+-	}
+-
+-	return nil
+-}
+diff --git a/daemon/graphdriver/blklayer/blklayer.go b/daemon/graphdriver/blklayer/blklayer.go
+deleted file mode 100644
+index cbad5bd4b..000000000
+--- a/daemon/graphdriver/blklayer/blklayer.go
++++ /dev/null
+@@ -1,579 +0,0 @@
+-// +build linux
+-
+-package blklayer
+-
+-import (
+-	"bufio"
+-	"errors"
+-	"fmt"
+-	"io/ioutil"
+-	"os"
+-	"os/exec"
+-	"path"
+-	"strconv"
+-	"strings"
+-	"syscall"
+-
+-	"github.com/Sirupsen/logrus"
+-
+-	"github.com/docker/docker/daemon/graphdriver"
+-	"github.com/docker/docker/pkg/archive"
+-	"github.com/docker/docker/pkg/chrootarchive"
+-	"github.com/docker/docker/pkg/directory"
+-	"github.com/docker/docker/pkg/idtools"
+-	"github.com/docker/docker/pkg/loopback"
+-	"github.com/docker/docker/pkg/mount"
+-	"github.com/docker/docker/pkg/parsers"
+-	"github.com/docker/docker/pkg/parsers/kernel"
+-
+-	"github.com/opencontainers/runc/libcontainer/label"
+-)
+-
+-var (
+-	// untar defines the untar method
+-	untar = chrootarchive.UntarUncompressed
+-	defaultLoopbackSize int64  = 100 * 1024 * 1024 * 1024
+-)
+-
+-// This backend uses the overlay union filesystem for containers
+-// with diff directories for each layer.
+-
+-// This version of the overlay driver requires at least kernel
+-// 4.0.0 in order to support mounting multiple diff directories.
+-
+-// Each container/image has at least a "diff" directory and "link" file.
+-// If there is also a "lower" file when there are diff layers
+-// below  as well as "merged" and "work" directories. The "diff" directory
+-// has the upper layer of the overlay and is used to capture any
+-// changes to the layer. The "lower" file contains all the lower layer
+-// mounts separated by ":" and ordered from uppermost to lowermost
+-// layers. The overlay itself is mounted in the "merged" directory,
+-// and the "work" dir is needed for overlay to work.
+-
+-// The "link" file for each layer contains a unique string for the layer.
+-// Under the "l" directory at the root there will be a symbolic link
+-// with that unique string pointing the "diff" directory for the layer.
+-// The symbolic links are used to reference lower layers in the "lower"
+-// file and on mount. The links are used to shorten the total length
+-// of a layer reference without requiring changes to the layer identifier
+-// or root directory. Mounts are always done relative to root and
+-// referencing the symbolic links in order to ensure the number of
+-// lower directories can fit in a single page for making the mount
+-// syscall. A hard upper limit of 128 lower layers is enforced to ensure
+-// that mounts do not fail due to length.
+-
+-const (
+-	driverName = "blklayer"
+-	linkDir    = "l"
+-	lowerFile  = "lower"
+-	maxDepth   = 128
+-
+-	// idLength represents the number of random characters
+-	// which can be used to create the unique link identifer
+-	// for every layer. If this value is too long then the
+-	// page size limit for the mount command may be exceeded.
+-	// The idLength should be selected such that following equation
+-	// is true (512 is a buffer for label metadata).
+-	// ((idLength + len(linkDir) + 1) * maxDepth) <= (pageSize - 512)
+-	idLength = 26
+-)
+-
+-// Driver contains information about the home directory and the list of active mounts that are created using this driver.
+-type Driver struct {
+-	home    string
+-	uidMaps []idtools.IDMap
+-	gidMaps []idtools.IDMap
+-	ctr     *graphdriver.RefCounter
+-}
+-
+-var backingFs = "<unknown>"
+-
+-func init() {
+-	graphdriver.Register(driverName, Init)
+-}
+-
+-// Init returns the a native diff driver for overlay filesystem.
+-// If overlay filesystem is not supported on the host, graphdriver.ErrNotSupported is returned as error.
+-// If a overlay filesystem is not supported over a existing filesystem then error graphdriver.ErrIncompatibleFS is returned.
+-func Init(home string, options []string, uidMaps, gidMaps []idtools.IDMap) (graphdriver.Driver, error) {
+-	logrus.Debugf("blklayer: Init")
+-	opts, err := parseOptions(options)
+-	if err != nil {
+-		return nil, err
+-	}
+-
+-	if err := supportsOverlay(); err != nil {
+-		return nil, graphdriver.ErrNotSupported
+-	}
+-
+-	// require kernel 4.0.0 to ensure multiple lower dirs are supported
+-	v, err := kernel.GetKernelVersion()
+-	if err != nil {
+-		return nil, err
+-	}
+-	if kernel.CompareKernelVersion(*v, kernel.VersionInfo{Kernel: 4, Major: 0, Minor: 0}) < 0 {
+-		if !opts.overrideKernelCheck {
+-			return nil, graphdriver.ErrNotSupported
+-		}
+-		logrus.Warnf("Using pre-4.0.0 kernel for blklayer, mount failures may require kernel update")
+-	}
+-
+-	fsMagic, err := graphdriver.GetFSMagic(home)
+-	if err != nil {
+-		return nil, err
+-	}
+-	if fsName, ok := graphdriver.FsNames[fsMagic]; ok {
+-		backingFs = fsName
+-	}
+-
+-	// check if they are running over btrfs, aufs, zfs, overlay, or ecryptfs
+-	switch fsMagic {
+-	case graphdriver.FsMagicBtrfs, graphdriver.FsMagicAufs, graphdriver.FsMagicZfs, graphdriver.FsMagicOverlay, graphdriver.FsMagicEcryptfs:
+-		logrus.Errorf("'blklayer' is not supported over %s", backingFs)
+-		return nil, graphdriver.ErrIncompatibleFS
+-	}
+-
+-	rootUID, rootGID, err := idtools.GetRootUIDGID(uidMaps, gidMaps)
+-	if err != nil {
+-		return nil, err
+-	}
+-
+-	// Create the driver home dir
+-	if err := idtools.MkdirAllAs(path.Join(home, linkDir), 0700, rootUID, rootGID); err != nil && !os.IsExist(err) {
+-		return nil, err
+-	}
+-
+-	if err := mount.MakePrivate(home); err != nil {
+-		return nil, err
+-	}
+-
+-	d := &Driver{
+-		home:    home,
+-		uidMaps: uidMaps,
+-		gidMaps: gidMaps,
+-		ctr:     graphdriver.NewRefCounter(graphdriver.NewFsChecker(graphdriver.FsMagicOverlay)),
+-	}
+-
+-	return d, nil
+-}
+-
+-type overlayOptions struct {
+-	overrideKernelCheck bool
+-}
+-
+-func parseOptions(options []string) (*overlayOptions, error) {
+-	o := &overlayOptions{}
+-	for _, option := range options {
+-		key, val, err := parsers.ParseKeyValueOpt(option)
+-		if err != nil {
+-			return nil, err
+-		}
+-		key = strings.ToLower(key)
+-		switch key {
+-		case "overlay2.override_kernel_check":
+-			o.overrideKernelCheck, err = strconv.ParseBool(val)
+-			if err != nil {
+-				return nil, err
+-			}
+-		default:
+-			return nil, fmt.Errorf("blklayer: Unknown option %s\n", key)
+-		}
+-	}
+-	return o, nil
+-}
+-
+-func supportsOverlay() error {
+-	// We can try to modprobe overlay first before looking at
+-	// proc/filesystems for when overlay is supported
+-	exec.Command("modprobe", "overlay").Run()
+-
+-	f, err := os.Open("/proc/filesystems")
+-	if err != nil {
+-		return err
+-	}
+-	defer f.Close()
+-
+-	s := bufio.NewScanner(f)
+-	for s.Scan() {
+-		if s.Text() == "nodev\toverlay" {
+-			return nil
+-		}
+-	}
+-	logrus.Error("'overlay' not found as a supported filesystem on this host. Please ensure kernel is new enough and has overlay support loaded.")
+-	return graphdriver.ErrNotSupported
+-}
+-
+-func (d *Driver) String() string {
+-	return driverName
+-}
+-
+-// Status returns current driver information in a two dimensional string array.
+-// Output contains "Backing Filesystem" used in this implementation.
+-func (d *Driver) Status() [][2]string {
+-	return [][2]string{
+-		{"Backing Filesystem", backingFs},
+-	}
+-}
+-
+-// GetMetadata returns meta data about the overlay driver such as
+-// LowerDir, UpperDir, WorkDir and MergeDir used to store data.
+-func (d *Driver) GetMetadata(id string) (map[string]string, error) {
+-	logrus.Debugf("blklayer: GetMetadata")
+-	dir := d.dir(id)
+-	if _, err := os.Stat(dir); err != nil {
+-		return nil, err
+-	}
+-
+-	metadata := map[string]string{
+-		"WorkDir":   path.Join(dir, "mountpoint", "work"),
+-		"MergedDir": path.Join(dir, "mountpoint", "merged"),
+-		"UpperDir":  path.Join(dir, "mountpoint", "diff"),
+-	}
+-
+-	lowerDirs, err := d.getLowerDirs(id)
+-	if err != nil {
+-		return nil, err
+-	}
+-	if len(lowerDirs) > 0 {
+-		metadata["LowerDir"] = strings.Join(lowerDirs, ":")
+-	}
+-
+-	return metadata, nil
+-}
+-
+-// Cleanup any state created by blklayer which should be cleaned when daemon
+-// is being shutdown. For now, we just have to unmount the bind mounted
+-// we had created.
+-func (d *Driver) Cleanup() error {
+-	logrus.Debugf("blklayer: Cleanup")
+-	// FIXME: unmount all layers and detach all devices
+-	return mount.Unmount(d.home)
+-}
+-
+-// CreateReadWrite creates a layer that is writable for use as a container
+-// file system.
+-func (d *Driver) CreateReadWrite(id, parent, mountLabel string, storageOpt map[string]string) error {
+-	return d.Create(id, parent, mountLabel, storageOpt)
+-}
+-
+-// Create is used to create the upper, lower, and merge directories required for overlay fs for a given id.
+-// The parent filesystem is used to configure these directories for the overlay.
+-func (d *Driver) Create(id, parent, mountLabel string, storageOpt map[string]string) (retErr error) {
+-
+-	logrus.Debugf("blklayer: Create")
+-
+-	if len(storageOpt) != 0 {
+-		return fmt.Errorf("--storage-opt is not supported for blklayer")
+-	}
+-
+-	dir := d.dir(id)
+-
+-	rootUID, rootGID, err := idtools.GetRootUIDGID(d.uidMaps, d.gidMaps)
+-	if err != nil {
+-		return err
+-	}
+-	if err := idtools.MkdirAllAs(path.Dir(dir), 0700, rootUID, rootGID); err != nil {
+-		return err
+-	}
+-	if err := idtools.MkdirAs(dir, 0700, rootUID, rootGID); err != nil {
+-		return err
+-	}
+-
+-	defer func() {
+-		// Clean up on failure
+-		if retErr != nil {
+-			os.RemoveAll(dir)
+-		}
+-	}()
+-	
+-	if err := idtools.MkdirAs(path.Join(dir, "mountpoint"), 0755, rootUID, rootGID); err != nil {
+-		return err
+-	}
+-
+-	// blklayer: create a sparse file in the layer directory
+-	imageFile, err := os.Create(path.Join(dir, "loop"))
+-	if err != nil {
+-		logrus.Debugf("blklayer: create sparse file - ", err)
+-	}
+-	imageFile.Truncate(defaultLoopbackSize)
+-	imageFile.Close()
+-	logrus.Warnf("blklayer: loop file %s has been created", path.Join(dir, "loop"))
+-
+-	// blklayer: create filesystem inside a sparse file
+-	err = Makefs(dir)
+-	if err != nil {
+-		logrus.Debugf("blklayer: make fs - ", err)
+-	}
+-
+-        device, err := MountDevice(dir)
+-        if err != nil {
+-                logrus.Debugf("blklayer: mount fs - ", err)
+-		Detach(device)
+-		return err
+-        }
+-
+-	if err := idtools.MkdirAs(path.Join(dir, "mountpoint", "diff"), 0755, rootUID, rootGID); err != nil {
+-		return err
+-	}
+-
+-	lid := generateID(idLength)
+-	if err := os.Symlink(path.Join("..", id, "mountpoint", "diff"), path.Join(d.home, linkDir, lid)); err != nil {
+-		return err
+-	}
+-
+-	// Write link id to link file
+-	if err := ioutil.WriteFile(path.Join(dir, "mountpoint", "link"), []byte(lid), 0644); err != nil {
+-		return err
+-	}
+-
+-	// if no parent directory, done
+-	if parent == "" {
+-		return nil
+-	}
+-
+-	if err := idtools.MkdirAs(path.Join(dir, "mountpoint", "work"), 0700, rootUID, rootGID); err != nil {
+-		return err
+-	}
+-	if err := idtools.MkdirAs(path.Join(dir, "mountpoint", "merged"), 0700, rootUID, rootGID); err != nil {
+-		return err
+-	}
+-
+-	lower, err := d.getLower(parent)
+-	if err != nil {
+-		return err
+-	}
+-	if lower != "" {
+-		if err := ioutil.WriteFile(path.Join(dir, "mountpoint", lowerFile), []byte(lower), 0666); err != nil {
+-			return err
+-		}
+-	}
+-
+-	return nil
+-}
+-
+-func (d *Driver) getLower(parent string) (string, error) {
+-	logrus.Debugf("blklayer: getLower")
+-	parentDir := d.dir(parent)
+-
+-	// Ensure parent exists
+-	if _, err := os.Lstat(parentDir); err != nil {
+-		return "", err
+-	}
+-
+-	// Read Parent link fileA
+-	parentLink, err := ioutil.ReadFile(path.Join(parentDir, "mountpoint", "link"))
+-	if err != nil {
+-		return "", err
+-	}
+-	lowers := []string{path.Join(linkDir, string(parentLink))}
+-
+-	parentLower, err := ioutil.ReadFile(path.Join(parentDir, "mountpoint", lowerFile))
+-	if err == nil {
+-		parentLowers := strings.Split(string(parentLower), ":")
+-		lowers = append(lowers, parentLowers...)
+-	}
+-	if len(lowers) > maxDepth {
+-		return "", errors.New("max depth exceeded")
+-	}
+-	return strings.Join(lowers, ":"), nil
+-}
+-
+-func (d *Driver) dir(id string) string {
+-	logrus.Debugf("blklayer: dir")
+-	return path.Join(d.home, id)
+-}
+-
+-func (d *Driver) getLowerDirs(id string) ([]string, error) {
+-	logrus.Debugf("blklayer: GetLowerDirs")
+-	var lowersArray []string
+-	lowers, err := ioutil.ReadFile(path.Join(d.dir(id), "mountpoint", lowerFile))
+-	if err == nil {
+-		for _, s := range strings.Split(string(lowers), ":") {
+-			lp, err := os.Readlink(path.Join(d.home, s))
+-			if err != nil {
+-				return nil, err
+-			}
+-			lowersArray = append(lowersArray, path.Clean(path.Join(d.home, "link", lp)))
+-		}
+-	} else if !os.IsNotExist(err) {
+-		return nil, err
+-	}
+-	return lowersArray, nil
+-}
+-
+-// Remove cleans the directories that are created for this id.
+-func (d *Driver) Remove(id string) error {
+-	logrus.Debugf("blklayer: Remove")
+-	dir := d.dir(id)
+-
+-	logrus.Debugf("id = %s", id)
+-	_, err := ioutil.ReadDir(path.Join(dir, "mountpoint"))
+-	if err == nil {
+-	    if err = UnmountDevice(dir); err == nil {
+-	    	logrus.Debugf("detaching block device")
+-		f, err := os.Open(path.Join(dir, "loop"))
+-		if err != nil {
+-			return err
+-		}
+-		defer f.Close()
+-		l := loopback.FindLoopDeviceFor(f)
+-		if err = Detach(l); err != nil {
+-	    		logrus.Debugf("can't detach block device", err)
+-			return err
+-		}
+-	    } else {
+-	    	logrus.Debugf("can't unmount ", err)
+-		return err
+-	    }
+-	}
+-
+-	lid, err := ioutil.ReadFile(path.Join(dir, "mountpoint", "link"))
+-	if err == nil {
+-		if err := os.RemoveAll(path.Join(d.home, linkDir, string(lid))); err != nil {
+-			logrus.Debugf("Failed to remove link: %v", err)
+-		}
+-	}
+-
+-	if err := os.RemoveAll(dir); err != nil && !os.IsNotExist(err) {
+-		return err
+-	}
+-	return nil
+-}
+-
+-// Get creates and mounts the required file system for the given id and returns the mount path.
+-func (d *Driver) Get(id string, mountLabel string) (s string, err error) {
+-	logrus.Debugf("blklayer: Get")
+-	dir := d.dir(id)
+-	if _, err := os.Stat(dir); err != nil {
+-		return "", err
+-	}
+-
+-	diffDir := path.Join(dir, "mountpoint", "diff")
+-	lowers, err := ioutil.ReadFile(path.Join(dir, "mountpoint", lowerFile))
+-	if err != nil {
+-		// If no lower, just return diff directory
+-		if os.IsNotExist(err) {
+-			return diffDir, nil
+-		}
+-		return "", err
+-	}
+-
+-	mergedDir := path.Join(dir, "mountpoint", "merged")
+-	if count := d.ctr.Increment(mergedDir); count > 1 {
+-		return mergedDir, nil
+-	}
+-	defer func() {
+-		if err != nil {
+-			if c := d.ctr.Decrement(mergedDir); c <= 0 {
+-				syscall.Unmount(mergedDir, 0)
+-			}
+-		}
+-	}()
+-
+-	workDir := path.Join(dir, "mountpoint")
+-	opts := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", string(lowers), path.Join(id, "mountpoint", "diff"), path.Join(id, "mountpoint", "work"))
+-	mountLabel = label.FormatMountLabel(opts, mountLabel)
+-	if len(mountLabel) > syscall.Getpagesize() {
+-		return "", fmt.Errorf("cannot mount layer, mount label too large %d", len(mountLabel))
+-	}
+-
+-	if err := mountFrom(d.home, "overlay", path.Join(id, "mountpoint", "merged"), "overlay", mountLabel); err != nil {
+-		return "", fmt.Errorf("error creating overlay mount to %s: %v", mergedDir, err)
+-	}
+-
+-	// chown "workdir/work" to the remapped root UID/GID. Overlay fs inside a
+-	// user namespace requires this to move a directory from lower to upper.
+-	rootUID, rootGID, err := idtools.GetRootUIDGID(d.uidMaps, d.gidMaps)
+-	if err != nil {
+-		return "", err
+-	}
+-
+-	if err := os.Chown(path.Join(workDir, "work"), rootUID, rootGID); err != nil {
+-		return "", err
+-	}
+-
+-	return mergedDir, nil
+-}
+-
+-// Put unmounts the mount path created for the give id.
+-func (d *Driver) Put(id string) error {
+-	logrus.Debugf("blklayer: Put")
+-	mountpoint := path.Join(d.dir(id), "mountpoint", "merged")
+-	if count := d.ctr.Decrement(mountpoint); count > 0 {
+-		return nil
+-	}
+-	if err := syscall.Unmount(mountpoint, 0); err != nil {
+-		logrus.Debugf("Failed to unmount %s overlay: %v", id, err)
+-	}
+-	return nil
+-}
+-
+-// Exists checks to see if the id is already mounted.
+-func (d *Driver) Exists(id string) bool {
+-	logrus.Debugf("blklayer: Exists")
+-	_, err := os.Stat(d.dir(id))
+-	return err == nil
+-}
+-
+-// ApplyDiff applies the new layer into a root
+-func (d *Driver) ApplyDiff(id string, parent string, diff archive.Reader) (size int64, err error) {
+-	logrus.Debugf("blklayer: ApplyDiff")
+-	applyDir := d.getDiffPath(id)
+-
+-	logrus.Debugf("Applying tar in %s", applyDir)
+-	// Overlay doesn't need the parent id to apply the diff
+-	if err := untar(diff, applyDir, &archive.TarOptions{
+-		UIDMaps:        d.uidMaps,
+-		GIDMaps:        d.gidMaps,
+-		WhiteoutFormat: archive.OverlayWhiteoutFormat,
+-	}); err != nil {
+-		return 0, err
+-	}
+-
+-	return d.DiffSize(id, parent)
+-}
+-
+-func (d *Driver) getDiffPath(id string) string {
+-	logrus.Debugf("blklayer: getDiffPath")
+-	dir := d.dir(id)
+-
+-	return path.Join(dir, "mountpoint", "diff")
+-}
+-
+-// DiffSize calculates the changes between the specified id
+-// and its parent and returns the size in bytes of the changes
+-// relative to its base filesystem directory.
+-func (d *Driver) DiffSize(id, parent string) (size int64, err error) {
+-	logrus.Debugf("blklayer: DiffSize")
+-	return directory.Size(d.getDiffPath(id))
+-}
+-
+-// Diff produces an archive of the changes between the specified
+-// layer and its parent layer which may be "".
+-func (d *Driver) Diff(id, parent string) (archive.Archive, error) {
+-	logrus.Debugf("blklayer: Diff")
+-	diffPath := d.getDiffPath(id)
+-	logrus.Debugf("blklayer: id %s parent %s diffPath %s", id, parent, diffPath)
+-	logrus.Debugf("Tar with options on %s", diffPath)
+-	return archive.TarWithOptions(diffPath, &archive.TarOptions{
+-		Compression:    archive.Uncompressed,
+-		UIDMaps:        d.uidMaps,
+-		GIDMaps:        d.gidMaps,
+-		WhiteoutFormat: archive.OverlayWhiteoutFormat,
+-	})
+-}
+-
+-// Changes produces a list of changes between the specified layer
+-// and its parent layer. If parent is "", then all changes will be ADD changes.
+-func (d *Driver) Changes(id, parent string) ([]archive.Change, error) {
+-	logrus.Debugf("blklayer: Changes")
+-	// Overlay doesn't have snapshots, so we need to get changes from all parent
+-	// layers.
+-	diffPath := d.getDiffPath(id)
+-	layers, err := d.getLowerDirs(id)
+-	if err != nil {
+-		return nil, err
+-	}
+-
+-	return archive.OverlayChanges(layers, diffPath)
+-}
+diff --git a/daemon/graphdriver/blklayer/blklayer_test.go b/daemon/graphdriver/blklayer/blklayer_test.go
+deleted file mode 100644
+index a22d56158..000000000
+--- a/daemon/graphdriver/blklayer/blklayer_test.go
++++ /dev/null
+@@ -1,106 +0,0 @@
+-// +build linux
+-
+-package blklayer
+-
+-import (
+-	"os"
+-	"syscall"
+-	"testing"
+-
+-	"github.com/docker/docker/daemon/graphdriver"
+-	"github.com/docker/docker/daemon/graphdriver/graphtest"
+-	"github.com/docker/docker/pkg/archive"
+-	"github.com/docker/docker/pkg/reexec"
+-)
+-
+-func init() {
+-	// Do not sure chroot to speed run time and allow archive
+-	// errors or hangs to be debugged directly from the test process.
+-	untar = archive.UntarUncompressed
+-	graphdriver.ApplyUncompressedLayer = archive.ApplyUncompressedLayer
+-
+-	reexec.Init()
+-}
+-
+-func cdMountFrom(dir, device, target, mType, label string) error {
+-	wd, err := os.Getwd()
+-	if err != nil {
+-		return err
+-	}
+-	os.Chdir(dir)
+-	defer os.Chdir(wd)
+-
+-	return syscall.Mount(device, target, mType, 0, label)
+-}
+-
+-// This avoids creating a new driver for each test if all tests are run
+-// Make sure to put new tests between TestBlklayerSetup and TestBlklayerTeardown
+-func TestBLklayerSetup(t *testing.T) {
+-	graphtest.GetDriver(t, driverName)
+-}
+-
+-func TestBlklayerCreateEmpty(t *testing.T) {
+-	graphtest.DriverTestCreateEmpty(t, driverName)
+-}
+-
+-func TestBlklayerCreateBase(t *testing.T) {
+-	graphtest.DriverTestCreateBase(t, driverName)
+-}
+-
+-func TestBlklayerCreateSnap(t *testing.T) {
+-	graphtest.DriverTestCreateSnap(t, driverName)
+-}
+-
+-func TestBlklayer128LayerRead(t *testing.T) {
+-	graphtest.DriverTestDeepLayerRead(t, 128, driverName)
+-}
+-
+-func TestBlklayerDiffApply10Files(t *testing.T) {
+-	graphtest.DriverTestDiffApply(t, 10, driverName)
+-}
+-
+-func TestBlklayerChanges(t *testing.T) {
+-	graphtest.DriverTestChanges(t, driverName)
+-}
+-
+-func TestBlklayerTeardown(t *testing.T) {
+-	graphtest.PutDriver(t)
+-}
+-
+-// Benchmarks should always setup new driver
+-
+-func BenchmarkExists(b *testing.B) {
+-	graphtest.DriverBenchExists(b, driverName)
+-}
+-
+-func BenchmarkGetEmpty(b *testing.B) {
+-	graphtest.DriverBenchGetEmpty(b, driverName)
+-}
+-
+-func BenchmarkDiffBase(b *testing.B) {
+-	graphtest.DriverBenchDiffBase(b, driverName)
+-}
+-
+-func BenchmarkDiffSmallUpper(b *testing.B) {
+-	graphtest.DriverBenchDiffN(b, 10, 10, driverName)
+-}
+-
+-func BenchmarkDiff10KFileUpper(b *testing.B) {
+-	graphtest.DriverBenchDiffN(b, 10, 10000, driverName)
+-}
+-
+-func BenchmarkDiff10KFilesBottom(b *testing.B) {
+-	graphtest.DriverBenchDiffN(b, 10000, 10, driverName)
+-}
+-
+-func BenchmarkDiffApply100(b *testing.B) {
+-	graphtest.DriverBenchDiffApplyN(b, 100, driverName)
+-}
+-
+-func BenchmarkDiff20Layers(b *testing.B) {
+-	graphtest.DriverBenchDeepLayerDiff(b, 20, driverName)
+-}
+-
+-func BenchmarkRead20Layers(b *testing.B) {
+-	graphtest.DriverBenchDeepLayerRead(b, 20, driverName)
+-}
+diff --git a/daemon/graphdriver/blklayer/blklayer_unsupported.go b/daemon/graphdriver/blklayer/blklayer_unsupported.go
+deleted file mode 100644
+index 51d912277..000000000
+--- a/daemon/graphdriver/blklayer/blklayer_unsupported.go
++++ /dev/null
+@@ -1,3 +0,0 @@
+-// +build !linux
+-
+-package blklayer
+diff --git a/daemon/graphdriver/blklayer/mount.go b/daemon/graphdriver/blklayer/mount.go
+deleted file mode 100644
+index 45b8cb8db..000000000
+--- a/daemon/graphdriver/blklayer/mount.go
++++ /dev/null
+@@ -1,88 +0,0 @@
+-// +build linux
+-
+-package blklayer
+-
+-import (
+-	"bytes"
+-	"encoding/json"
+-	"flag"
+-	"fmt"
+-	"os"
+-	"runtime"
+-	"syscall"
+-
+-	"github.com/docker/docker/pkg/reexec"
+-)
+-
+-func init() {
+-	reexec.Register("docker-mountfrom-blklayer", mountFromMain)
+-}
+-
+-func fatal(err error) {
+-	fmt.Fprint(os.Stderr, err)
+-	os.Exit(1)
+-}
+-
+-type mountOptions struct {
+-	Device string
+-	Target string
+-	Type   string
+-	Label  string
+-	Flag   uint32
+-}
+-
+-func mountFrom(dir, device, target, mType, label string) error {
+-	options := &mountOptions{
+-		Device: device,
+-		Target: target,
+-		Type:   mType,
+-		Flag:   0,
+-		Label:  label,
+-	}
+-
+-	cmd := reexec.Command("docker-mountfrom", dir)
+-	w, err := cmd.StdinPipe()
+-	if err != nil {
+-		return fmt.Errorf("mountfrom error on pipe creation: %v", err)
+-	}
+-
+-	output := bytes.NewBuffer(nil)
+-	cmd.Stdout = output
+-	cmd.Stderr = output
+-
+-	if err := cmd.Start(); err != nil {
+-		return fmt.Errorf("mountfrom error on re-exec cmd: %v", err)
+-	}
+-	//write the options to the pipe for the untar exec to read
+-	if err := json.NewEncoder(w).Encode(options); err != nil {
+-		return fmt.Errorf("mountfrom json encode to pipe failed: %v", err)
+-	}
+-	w.Close()
+-
+-	if err := cmd.Wait(); err != nil {
+-		return fmt.Errorf("mountfrom re-exec error: %v: output: %s", err, output)
+-	}
+-	return nil
+-}
+-
+-// mountfromMain is the entry-point for docker-mountfrom on re-exec.
+-func mountFromMain() {
+-	runtime.LockOSThread()
+-	flag.Parse()
+-
+-	var options *mountOptions
+-
+-	if err := json.NewDecoder(os.Stdin).Decode(&options); err != nil {
+-		fatal(err)
+-	}
+-
+-	if err := os.Chdir(flag.Arg(0)); err != nil {
+-		fatal(err)
+-	}
+-
+-	if err := syscall.Mount(options.Device, options.Target, options.Type, uintptr(options.Flag), options.Label); err != nil {
+-		fatal(err)
+-	}
+-
+-	os.Exit(0)
+-}
+diff --git a/daemon/graphdriver/blklayer/randomid.go b/daemon/graphdriver/blklayer/randomid.go
+deleted file mode 100644
+index 759debf76..000000000
+--- a/daemon/graphdriver/blklayer/randomid.go
++++ /dev/null
+@@ -1,80 +0,0 @@
+-// +build linux
+-
+-package blklayer
+-
+-import (
+-	"crypto/rand"
+-	"encoding/base32"
+-	"fmt"
+-	"io"
+-	"os"
+-	"syscall"
+-	"time"
+-
+-	"github.com/Sirupsen/logrus"
+-)
+-
+-// generateID creates a new random string identifier with the given length
+-func generateID(l int) string {
+-	const (
+-		// ensures we backoff for less than 450ms total. Use the following to
+-		// select new value, in units of 10ms:
+-		// 	n*(n+1)/2 = d -> n^2 + n - 2d -> n = (sqrt(8d + 1) - 1)/2
+-		maxretries = 9
+-		backoff    = time.Millisecond * 10
+-	)
+-
+-	var (
+-		totalBackoff time.Duration
+-		count        int
+-		retries      int
+-		size         = (l*5 + 7) / 8
+-		u            = make([]byte, size)
+-	)
+-	// TODO: Include time component, counter component, random component
+-
+-	for {
+-		// This should never block but the read may fail. Because of this,
+-		// we just try to read the random number generator until we get
+-		// something. This is a very rare condition but may happen.
+-		b := time.Duration(retries) * backoff
+-		time.Sleep(b)
+-		totalBackoff += b
+-
+-		n, err := io.ReadFull(rand.Reader, u[count:])
+-		if err != nil {
+-			if retryOnError(err) && retries < maxretries {
+-				count += n
+-				retries++
+-				logrus.Errorf("error generating version 4 uuid, retrying: %v", err)
+-				continue
+-			}
+-
+-			// Any other errors represent a system problem. What did someone
+-			// do to /dev/urandom?
+-			panic(fmt.Errorf("error reading random number generator, retried for %v: %v", totalBackoff.String(), err))
+-		}
+-
+-		break
+-	}
+-
+-	s := base32.StdEncoding.EncodeToString(u)
+-
+-	return s[:l]
+-}
+-
+-// retryOnError tries to detect whether or not retrying would be fruitful.
+-func retryOnError(err error) bool {
+-	switch err := err.(type) {
+-	case *os.PathError:
+-		return retryOnError(err.Err) // unpack the target error
+-	case syscall.Errno:
+-		if err == syscall.EPERM {
+-			// EPERM represents an entropy pool exhaustion, a condition under
+-			// which we backoff and retry.
+-			return true
+-		}
+-	}
+-
+-	return false
+-}
+diff --git a/daemon/graphdriver/register/register_blklayer.go b/daemon/graphdriver/register/register_blklayer.go
+deleted file mode 100644
+index b1104b474..000000000
+--- a/daemon/graphdriver/register/register_blklayer.go
++++ /dev/null
+@@ -1,10 +0,0 @@
+-// +build !exclude_graphdriver_overlay,linux
+-
+-package register
+-
+-import (
+-	// register the blklayer graphdriver
+-	_ "github.com/docker/docker/daemon/graphdriver/overlay"
+-	_ "github.com/docker/docker/daemon/graphdriver/overlay2"
+-	_ "github.com/docker/docker/daemon/graphdriver/blklayer"
+-)
+diff --git a/daemon/image_attach.go b/daemon/image_attach.go
+deleted file mode 100644
+index 489048571..000000000
+--- a/daemon/image_attach.go
++++ /dev/null
+@@ -1,220 +0,0 @@
+-package daemon
+-
+-import (
+-	"io"
+-	"encoding/json"	
+-	"errors"
+-	"strings"
+-	"os/exec"
+-	"fmt"
+-
+-        "log"
+-        "encoding/xml"
+-    	libvirt "github.com/rgbkrk/libvirt-go"
+-	_"golang.org/x/net/context"
+-)
+-
+-const (
+-	driver = "blklayer"
+-)
+-
+-// AttachImage initiates an attach operation.
+-//
+-// Steps:
+-//
+-// - check an existance of requested image
+-// - check consistency of files for this image
+-// - make a list with loop image files	
+-// - figure out which virtual machine made a request to attach
+-// - attach loop image files to the virtual machine
+-//
+-
+-func (daemon *Daemon) AttachImage(images []string, remoteaddr string, outStream io.Writer) error {
+-
+-
+-	for _, i := range images {
+-		name, err := LookupVMbyIP (i)
+-		if err != nil {
+-			return err
+-		}
+-		layers, err := GetLayersByName (i)
+-		if err != nil {
+-			return err
+-		}
+-		
+-		if err = attach (layers, i); err != nil {
+-			return err
+-		}
+-	}
+-
+-	return nil
+-}
+-
+-/*
+-	nvdimm: hotplug support
+-	a new nvdimm device can be plugged to a virtual machine as follows:
+-	object_add memory-backend-file,id=mem3,size=10G,mem-path=/home/eric/nvdimm3
+-	device_add nvdimm,id=nvdimm3,memdev=mem3
+-
+-	https://lists.gnu.org/archive/html/qemu-devel/2016-07/msg02248.html
+-	https://github.com/xiaogr/qemu/blob/nvdimm-v7/docs/memory-hotplug.txt
+-
+-*/
+-func attach (layers []string, name string) error
+-
+-	/*
+-	<memory model='dimm'>
+-		<target>
+-		<size unit='KiB'>2097152</size>
+-		<node>0</node>
+-		</target>
+-	</memory>
+-
+-	*/
+-
+-	type MemoryNodeXML struct {
+-		XMLName   xml.Name `xml:"memory"`
+-		Model     string `xml:"model,attr"`
+-		Size    MemSize  `xml:"target>size"`
+-		Node      int `xml:"target>node"`
+-	}
+-
+-	type MemSize struct {
+-		Unit    string   `xml:"unit,attr"`
+-		Size    uint      `xml:",chardata"`
+-
+-	}
+-
+-	/*
+-		FIXME:
+-		It seems memory size for each memory slot has a limited value.
+-		So we should calculate disk space of each layer
+-		and set appropriate memory size for each mem slot.
+-		Rigth now memory value has fixed size.
+-	*/
+-        memory := &MemoryNodeXML{Model: "dimm", Size: MemSize{Unit: "KiB", Size: 2097152}, Node: 0}
+-        memxml, err := xml.MarshalIndent(memory, "  ", "    ")
+-        if err != nil {
+-                return err
+-        }
+-
+-
+-    uri := "qemu:///system"
+-    conn, err := libvirt.NewVirConnection(uri)
+-    if err != nil {
+-       return err
+-    }
+-    defer conn.CloseConnection()
+-
+-    domain, err := conn.LookupDomainByName(*name)
+-        if err != nil {
+-       		return err
+-        }
+-	
+-	/*
+-		NOTE:
+-		Memory hotplug itself requires presence of MaxMemory field and
+-		at least one NUMA node in XML config. For example:
+-		<maxMemory slots='32' unit='KiB'>33554432</maxMemory>
+-		<cpu mode='custom' match='exact'>
+-		    <model fallback='allow'>core2duo</model>
+-		    <numa>
+-		      <cell id='0' cpus='0-1' memory='1048576' unit='KiB'/>
+-		      <cell id='1' cpus='9-10' memory='2097152' unit='KiB'/>
+-		    </numa>
+-		</cpu>
+-
+-	*/
+-
+-        err = domain.AttachDevice(string(memxml))
+-        if err != nil {
+-       		return err
+-        }
+-
+-	// domain.QemuMonitorCommand(0, command string) (string, error)
+-
+-	/*
+-	for _, l := range layers {
+-		err = domain.AttachDevice("")
+-		if err != nil {
+-			return err
+-		}
+-	}
+-	*/
+-
+-	return nil
+-}
+-
+-func GetLayersByName (name string) ([]string, error)
+-
+-	var ErrWrongDriver = errors.New("Default graph driver is not a blklayer.")
+-
+-	info, err := daemon.LookupImage(images)
+-	if err != nil {
+-		return []string{}, err
+-	}
+-	if info.GraphDriver.Name != driver {
+-		return []string{}, ErrWrongDriver
+-	}
+-
+-	var layerDirs string
+-	var loopImageList []string
+-
+-	if info.GraphDriver.Data["LowerDir"] != "" {
+-	    layerDirs = info.GraphDriver.Data["LowerDir"]
+-	} else {
+-	    layerDirs = info.GraphDriver.Data["MergedDir"]
+-	}
+-
+-	layers := strings.Split(layerDirs, ":")
+-	for _, l := range layers {
+-		// FIXME: way to extract layer id is not reliable
+-		layerID := strings.Split(l, "/")[5]
+-		// FIXME: use path to the Docker storage instead of hardcoded path
+-		loopImageList = append(loopImageList, fmt.Sprintf("/var/lib/docker/%s/%s/loop", driver, layerID))
+-	}
+-
+-	return loopImageList, nil
+-}
+-
+-/*
+-Lookup virtual machine by IP address whose made an HTTP request to attach image.
+-There several ways to make it possible:
+-	- using virsh: virsh domifaddr VE_003b78df
+-	- using prlctl: prlctl list --all --json
+-	- Go bindings to LibVirt API (virDomainInterfaceAddresses)
+-*/
+-func LookupVMbyIP (name string) (string, error) {
+-
+-	type Domain struct {
+-	    UUID string `json:uuid",omitempty"`
+-	    Status string `json:status",omitempty"`
+-	    IpAddr string `json:ip_configured",omitempty"`
+-	    Type string `json:type",omitempty"`
+-	    Name string `json:name",omitempty"`
+-
+-	}
+-
+-	// FIXME: implement it via virDomainInterfaceAddresses()
+-	// See https://github.com/rgbkrk/libvirt-go/issues/50
+-        out, err := exec.Command("/usr/bin/prlctl", append([]string{"list", "--all", "--json"})...).Output()
+-        if err != nil {
+-            return "", err
+-        }
+-
+-        var domains []Domain
+-
+-        err = json.Unmarshal(out, &domains)
+-        if err != nil {
+-            return "", err
+-        }
+-
+-        for _, d := range domains {
+-        if d.Name == name {
+-                fmt.Println(d.Name, d.IpAddr)
+-		return d.IpAddr, nil
+-                }
+-        }
+-
+-	return "", errors.New("Virtual machine is not found.")
+-}
+diff --git a/daemon/image_detach.go b/daemon/image_detach.go
+deleted file mode 100644
+index 18f8954fc..000000000
+--- a/daemon/image_detach.go
++++ /dev/null
+@@ -1,58 +0,0 @@
+-package daemon
+-
+-import (
+-	"io"
+-	"encoding/json"	
+-	"errors"
+-	"strings"
+-	"os/exec"
+-	"fmt"
+-
+-)
+-
+-const (
+-	driver = "blklayer"
+-)
+-
+-// DetachImage initiates an detach operation.
+-//
+-// Steps:
+-//
+-// - make a list with loop image files	
+-// - figure out which virtual machine made a request to attach
+-// - detach loop image files from the virtual machine
+-//
+-// FIXME: function is not implemented
+-func (daemon *Daemon) DetachImage(images []string, remoteaddr string, outStream io.Writer) error {
+-
+-	for _, i := range images {
+-		name, err := LookupVMbyIP (i)
+-		if err != nil {
+-			return err
+-		}
+-		layers, err := GetLayersByName (i)
+-		if err != nil {
+-			return err
+-		}
+-		err := attach (layers, i)
+-		if err != nil {
+-			return err
+-		}
+-	}
+-
+-	return nil
+-}
+-
+-/*
+-	nvdimm: hotplug support
+-	unplug nvdimm device from virtual machine as follows:
+-	device_del nvdimm3
+-	object_del mem3
+-
+-	https://lists.gnu.org/archive/html/qemu-devel/2016-07/msg02248.html
+-
+-*/
+-func detach (layers []string, name) error
+-
+-	return nil
+-}
+diff --git a/daemon/image_pull.go b/daemon/image_pull.go
+index 2ad999528..06ffa06fb 100644
+--- a/daemon/image_pull.go
++++ b/daemon/image_pull.go
+@@ -3,19 +3,14 @@ package daemon
+ import (
+ 	"io"
+ 	"strings"
+-	"encoding/base64"
+-	"encoding/json"	
+-	"errors"
+ 
+ 	"github.com/docker/distribution/digest"
+-	"github.com/docker/docker/api"
+ 	"github.com/docker/docker/builder"
+ 	"github.com/docker/docker/distribution"
+ 	"github.com/docker/docker/pkg/progress"
+ 	"github.com/docker/docker/reference"
+ 	"github.com/docker/docker/registry"
+ 	"github.com/docker/engine-api/types"
+-	"github.com/docker/engine-api/client"
+ 	"golang.org/x/net/context"
+ )
+ 
+@@ -46,44 +41,6 @@ func (daemon *Daemon) PullImage(ctx context.Context, image, tag string, metaHead
+ 		}
+ 	}
+ 
+-	proxy := daemon.configStore.CommonConfig.Proxy
+-	if  proxy != "" {
+-
+-	    var ErrWrongDriver = errors.New("Cannot pull image due to wrong default graph connect on the remote Docker daemon.")
+-
+-	    version := api.DefaultVersion
+-	    headers := map[string]string{"User-Agent": "engine-api-cli-1.0"}
+-	    cli, err := client.NewClient(proxy, version, nil, headers)
+-	    if err != nil {
+-		return err
+-	    }
+-
+-	    info, err := cli.Info(context.Background())
+-	    if err != nil {
+-		return err
+-	    }
+-
+-	    if info.Driver != "blklayer" {
+-		return ErrWrongDriver
+-	    }
+-
+-		buf, err := json.Marshal(&authConfig)
+-		if err != nil {
+-			return err
+-		}
+-		options := types.ImagePullOptions{
+-			RegistryAuth:  base64.URLEncoding.EncodeToString(buf),
+-			PrivilegeFunc: nil,
+-			All:           true,
+-		}
+-
+-	    _, err = cli.ImagePull(context.Background(), image, options)
+-	    if err != nil {
+-	       return err 
+-	    }
+-	    return nil
+-	}
+-
+ 	return daemon.pullImageWithReference(ctx, ref, metaHeaders, authConfig, outStream)
+ }
+ 
+diff --git a/distribution/xfer/download.go b/distribution/xfer/download.go
+index e686cf604..754534221 100644
+--- a/distribution/xfer/download.go
++++ b/distribution/xfer/download.go
+@@ -139,7 +139,6 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
+ 		// Layer is not known to exist - download and register it.
+ 		progress.Update(progressOutput, descriptor.ID(), "Pulling fs layer")
+ 
+-		// FIXME: download metadata _only_ when proxy mode used
+ 		var xferFunc DoFunc
+ 		if topDownload != nil {
+ 			xferFunc = ldm.makeDownloadFunc(descriptor, "", topDownload)
+diff --git a/hack/vendor.sh b/hack/vendor.sh
+index 418796370..4b24d7b91 100755
+--- a/hack/vendor.sh
++++ b/hack/vendor.sh
+@@ -53,7 +53,6 @@ clone git github.com/gorilla/mux e444e69cbd
+ clone git github.com/kr/pty 5cf931ef8f
+ clone git github.com/mattn/go-shellwords v1.0.0
+ clone git github.com/mattn/go-sqlite3 v1.1.0
+-clone git github.com/rgbkrk/libvirt-go 1385610c4877e46350b6d8075e9e7dbb6bd076ff
+ clone git github.com/tchap/go-patricia v2.1.0
+ clone git github.com/vdemeester/shakers 24d7f1d6a71aa5d9cbe7390e4afb66b7eef9e1b3
+ # forked golang.org/x/net package includes a patch for lazy loading trace templates
+diff --git a/install.sh b/install.sh
+deleted file mode 100755
+index e07e6bcae..000000000
+--- a/install.sh
++++ /dev/null
+@@ -1,15 +0,0 @@
+-#!/bin/bash
+-
+-DEST=`dirname $(which docker)`
+-BIN="docker-containerd-ctr \
+-	docker-containerd \
+-	docker-runc \
+-	dockerd \
+-	docker-containerd-shim"
+-
+-for b in $BIN; do
+-	echo bundles/1.12.0-dev/binary-daemon/$b
+-	cp bundles/1.12.0-dev/binary-daemon/$b $DEST
+-done
+-
+-cp bundles/1.12.0-dev/binary-client/docker $DEST
+diff --git a/prlctl b/prlctl
+deleted file mode 100755
+index 3ac4aa9dc..000000000
+--- a/prlctl
++++ /dev/null
+@@ -1,27 +0,0 @@
+-#!/bin/bash
+-
+-cat << EOF
+-[
+-        {
+-                "uuid": "36d2f757-9cf1-4402-99fe-b116780f9486",
+-                "status": "stopped",
+-                "ip_configured": "-",
+-                "type": "VM",
+-                "name": "meme"
+-        },
+-        {
+-                "uuid": "a6d32da2-e249-4690-aa61-3b28bf5e6d3a",
+-                "status": "stopped",
+-                "ip_configured": "-",
+-                "type": "VM",
+-                "name": "meme1"
+-        },
+-        {
+-                "uuid": "c05c05df-b471-48c4-bf86-34d0b1a30739",
+-                "status": "running",
+-                "ip_configured": "-",
+-                "type": "VM",
+-                "name": "win_2k12_srv_dtc_r2_x86_64_EZt7j"
+-        }
+-]
+-EOF
+diff --git a/samples/docker-attach.go b/samples/docker-attach.go
+deleted file mode 100644
+index adb885a6f..000000000
+--- a/samples/docker-attach.go
++++ /dev/null
+@@ -1,73 +0,0 @@
+-package main
+-
+-import (
+-    libvirt "github.com/vtolstov/libvirt-go"
+-	"log"
+-	"fmt"
+-	"flag"
+-	"encoding/xml"
+-)
+-
+-/*
+-
+-<memory model='dimm'>
+-        <target>
+-        <size unit='KiB'>2097152</size>
+-        <node>0</node>
+-        </target>
+-</memory>
+-
+-*/
+-
+-type MemoryNodeXML struct {
+-	XMLName   xml.Name `xml:"memory"`
+-	Model 	  string `xml:"model,attr"`
+-	Size 	MemSize  `xml:"target>size"`
+-	Node	  int `xml:"target>node"`
+-}
+-
+-type MemSize struct {
+-	Unit 	string 	 `xml:"unit,attr"`
+-	Size 	int	 `xml:",chardata"`
+-
+-}	
+-
+-func main() {
+-
+-    flag.Usage = func() {
+-                fmt.Println("\nAttach Docker image.")
+-                fmt.Println("Usage:\n")
+-                flag.PrintDefaults()
+-    }
+-
+-    var name = flag.String("name", "", "vm name")
+-    flag.Parse()
+-	
+-	memory := &MemoryNodeXML{Model: "dimm", Size: MemSize{Unit: "KiB", Size: 2097152}, Node: 0}
+-	memxml, err := xml.MarshalIndent(memory, "  ", "    ")
+-	if err != nil {
+-		log.Println("error ", err)
+-	}
+-
+-
+-    uri := "qemu:///system"
+-    conn, err := libvirt.NewVirConnection(uri)
+-    if err != nil {
+-        log.Println("error ", err)
+-	return
+-    }
+-
+-    domain, err := conn.LookupDomainByName(*name)
+-        if err != nil {
+-                log.Println("error ", err)
+-		return
+-        }
+-
+-	err = domain.AttachDevice(string(memxml))
+-	if err != nil {
+-                log.Println("error ", err)
+-		return
+-	}
+-
+-    defer conn.CloseConnection()
+-}
+diff --git a/samples/docker-loop.go b/samples/docker-loop.go
+deleted file mode 100644
+index 360f6a60f..000000000
+--- a/samples/docker-loop.go
++++ /dev/null
+@@ -1,94 +0,0 @@
+-package main
+-
+-import (
+-	"os/exec"
+-	"os"
+-	"syscall"
+-	"fmt"
+-
+-	"github.com/Sirupsen/logrus"
+-	"github.com/docker/docker/pkg/loopback"
+-)
+-
+-
+-func MountDevice(source string, target string, fstype string, flags uintptr, data string) error {
+-	return syscall.Mount(source, target, fstype, flags, data)
+-}
+-
+-func UnmountDevice(mountPath string) error {
+-	logrus.Debugf("blcklayer: UnmountDevice")
+-	defer logrus.Debugf("blcklayer: UnmountDevice END")
+-
+-	logrus.Debugf("blklayer: Unmount(%s)", mountPath)
+-	if err := syscall.Unmount(mountPath, syscall.MNT_DETACH); err != nil {
+-		return err
+-	}
+-	logrus.Debugf("blcklayer: Unmount done")
+-
+-	return nil
+-}
+-
+-func createFilesystem(devname string) (err error) {
+-
+-	logrus.Println("create fs on the device ", devname)
+-
+-	out, err := exec.Command("mkfs.ext4", append([]string{"-E", "nodiscard"}, devname)...).Output()
+-	if err != nil {
+-		logrus.Println("mkfs.ext4", err)
+-		return err
+-	}
+-	fmt.Printf("%s\n", out)
+-
+-	out, err = exec.Command("tune2fs", append([]string{"-c", "-1", "-i", "0"}, devname)...).Output()
+-	if err != nil {
+-		logrus.Println("tune2fs", err)
+-		return err
+-	}
+-	fmt.Printf("%s\n", out)
+-
+-	return
+-}
+-
+-func main() {
+-
+-	sparsefile := "/home/vagrant/blabla"
+-	loopFile, err := os.Create(sparsefile)
+-	if err != nil {
+-        	panic(err)
+-     	}
+-	loopFile.Truncate(10e7)
+-	loopFile.Close()
+-
+-	loopFile, err = loopback.AttachLoopDevice(sparsefile)
+-	if err != nil {
+-		logrus.Println("attach loopback", err)
+-        	panic(err)
+-	}
+-	defer loopFile.Close()
+-
+-	loopInfo, err := loopFile.Stat()
+-	if err != nil {
+-		logrus.Println("shit happens in stat()")
+-		panic(err)
+-	}
+-
+-	loopDev := loopInfo.Name()
+-	fmt.Println("device name is ", loopDev)
+-
+-	devname := fmt.Sprintf("/dev/%s", loopDev)
+-	err = createFilesystem(devname)
+-	if err != nil {
+-		logrus.Println(err)
+-	}
+-	
+-	err = MountDevice(devname, "/mnt/", "ext4", 0, "")
+-	if err != nil {
+-		logrus.Println("mount fs:", err)
+-	}
+-
+-	err = UnmountDevice("/mnt")
+-	if err != nil {
+-		logrus.Println("unmount fs:", err)
+-	}
+-
+-}
+diff --git a/samples/docker-map.go b/samples/docker-map.go
+deleted file mode 100644
+index a33d4986d..000000000
+--- a/samples/docker-map.go
++++ /dev/null
+@@ -1,49 +0,0 @@
+-package main
+-
+-import (
+-    "flag"
+-    "encoding/json"
+-    "log"
+-    "fmt"
+-    "os/exec"
+-
+-)
+-
+-type Domain struct {
+-    UUID string `json:uuid",omitempty"`
+-    Status string `json:status",omitempty"`
+-    IpAddr string `json:ip_configured",omitempty"`
+-    Type string `json:type",omitempty"`
+-    Name string `json:name",omitempty"`
+-
+-}
+-
+-func main() {
+-
+-    flag.Usage = func() {
+-                fmt.Println("\nRequest Docker image.")
+-                fmt.Println("Usage:\n")
+-                flag.PrintDefaults()
+-    }
+-
+-    var name = flag.String("name", "", "vm name")
+-    flag.Parse()
+-
+-	out, err := exec.Command("/usr/bin/prlctl", append([]string{"list", "--all", "--json"})...).Output()
+-	if err != nil {
+-	    log.Fatal(err)
+-	}
+-
+-	var param []Domain
+-
+-	err = json.Unmarshal(out, &param)
+-	if err != nil {
+-	    fmt.Println("error:", err)
+-	}
+-
+-	for _, d := range param {
+-	if d.Name == *name {
+-		fmt.Println(d.Name, d.IpAddr)
+-		}
+-	}
+-}
+diff --git a/samples/docker-proxy.go b/samples/docker-proxy.go
+deleted file mode 100644
+index bb4a5c70b..000000000
+--- a/samples/docker-proxy.go
++++ /dev/null
+@@ -1,109 +0,0 @@
+-package main
+-
+-import (
+-    "flag"
+-    "fmt"
+-    "strings"
+-
+-    "github.com/docker/engine-api/client"
+-    "github.com/docker/engine-api/types"
+-    "github.com/docker/engine-api/types/filters"
+-
+-    "golang.org/x/net/context"
+-)
+-
+-const (
+-     driverName = "blklayer"
+-)
+-
+-func RequestPrivilege() types.RequestPrivilegeFunc {
+-        return func() (string, error) {
+-		/*
+-                fmt.Fprintf(cli.out, "\nPlease login prior to %s:\n", cmdName)
+-                indexServer := registry.GetAuthConfigKey(index)
+-                authConfig, err := cli.ConfigureAuth("", "", indexServer, false)
+-                if err != nil {
+-                        return "", err
+-                }
+-                return EncodeAuthToBase64(authConfig)
+-		*/
+-		return "", nil
+-        }
+-}
+-
+-func main() {
+-
+-    flag.Usage = func() {
+-                fmt.Println("\nRequest Docker image.")
+-                fmt.Println("Usage:\n")
+-                flag.PrintDefaults()
+-    }
+-
+-    var imageName = flag.String("image", "", "image name")
+-    flag.Parse()
+-
+-    defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
+-    cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, defaultHeaders)
+-    if err != nil {
+-        panic(err)
+-    }
+-
+-    dockerInfo, err := cli.Info(context.Background())
+-    if err != nil {
+-        fmt.Println(err)
+-    }
+-
+-    if dockerInfo.Driver != driverName {
+-	fmt.Println("Please restart Docker daemon with blklayer graph driver.")
+-    }
+-
+-    filters := filters.NewArgs()
+-    options := types.ImageListOptions{MatchName: *imageName, All: true, Filters: filters}
+-    images, err := cli.ImageList(context.Background(), options)
+-    if err != nil {
+-        fmt.Println(err)
+-    }
+-
+-    if len(images) == 0 {
+-	fmt.Printf("Image %s is not found\n", *imageName)
+-        return
+-    }
+-
+-/*
+-    fmt.Println("Image not found and we are going to pull it from a registry")
+-    pullOptions := types.ImagePullOptions(All: true, RegistryAuth: "", PrivilegeFunc: RequestPrivilege)
+-    _, err = cli.ImagePull(context.Background(), ref, pullOptions)
+-    if err != nil {
+-	fmt.Println(err)
+-    }
+-*/
+-
+-    imageInfo, _, err := cli.ImageInspectWithRaw(context.Background(), images[0].ID, false)
+-    if imageInfo.GraphDriver.Name != "blklayer" {
+-	fmt.Println("Please restart Docker daemon with blklayer graph driver.")
+-        //panic(err)
+-    }
+- 
+-    var loopImageList []string
+-    var layerDirs string
+-
+-    if imageInfo.GraphDriver.Data["LowerDir"] != "" {
+-	layerDirs = imageInfo.GraphDriver.Data["LowerDir"]
+-    } else {
+-	layerDirs = imageInfo.GraphDriver.Data["MergedDir"]
+-    }
+-    //fmt.Println(layerDirs)
+-
+-    layers := strings.Split(layerDirs, ":")
+-    fmt.Println("layers - ", layers)
+-    for _, l := range layers {
+-	    // FIXME: it's unreliable
+-	    layerID := strings.Split(l, "/")[5]
+-	    loopImagePath := fmt.Sprintf("%s/%s/%s/loop", dockerInfo.DockerRootDir, driverName, layerID)
+-	    loopImageList = append(loopImageList, loopImagePath)
+-    }
+-    for _, l := range loopImageList {
+-    	fmt.Println(l)
+-    }
+-
+-}
+diff --git a/vendor/src/github.com/docker/engine-api/client/image_attach.go b/vendor/src/github.com/docker/engine-api/client/image_attach.go
+deleted file mode 100644
+index 1732965ad..000000000
+--- a/vendor/src/github.com/docker/engine-api/client/image_attach.go
++++ /dev/null
+@@ -1,22 +0,0 @@
+-package client
+-
+-import (
+-	"net/url"
+-
+-	"golang.org/x/net/context"
+-	_"github.com/docker/engine-api/types/reference"
+-)
+-
+-// ImageAttach requests the docker host to attach requested image to the virtual machine.
+-func (cli *Client) ImageAttach(ctx context.Context, ref string) (*serverResponse, error) {
+-/*
+-	repository, tag, err := reference.Parse(ref)
+-	if err != nil {
+-		return nil, err
+-	}
+-*/
+-
+-	query := url.Values{}
+-	headers := map[string][]string{}
+-	return cli.post(ctx, "/images/attach", query, nil, headers)
+-}

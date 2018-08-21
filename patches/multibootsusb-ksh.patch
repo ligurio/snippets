@@ -1,0 +1,38 @@
+diff --git a/mbusb.d/kos.d/generic.cfg b/mbusb.d/kos.d/generic.cfg
+deleted file mode 100644
+index 1f48b34..0000000
+--- a/mbusb.d/kos.d/generic.cfg
++++ /dev/null
+@@ -1,12 +0,0 @@
+-for isofile in $isopath/vmimg-x86_64-*.img; do
+-  if [ -e "$isofile" ]; then
+-    regexp --set=isoname "$isopath/(.*)" "$isofile"
+-    submenu "$isoname ->" "$isofile" {
+-      iso_path="$2"
+-      menuentry "Kaspersky OS" {
+-	multiboot $iso_path
+-	boot
+-      }
+-    }
+-  fi
+-done
+diff --git a/mbusb.d/windows.d/generic.cfg b/mbusb.d/windows.d/generic.cfg
+deleted file mode 100644
+index b9714b8..0000000
+--- a/mbusb.d/windows.d/generic.cfg
++++ /dev/null
+@@ -1,14 +0,0 @@
+-for isofile in $isopath/Windows.ISO; do
+-  if [ -e "$isofile" ]; then
+-    regexp --set=isoname "$isopath/(.*)" "$isofile"
+-    submenu "$isoname ->" "$isofile" {
+-      iso_path="$2"
+-      menuentry "Windows" {
+-  	search -f "--set-root $iso_path"
+-  	drivemap "$iso_path" '(hd32)'
+-  	set root='(hd32)'
+-  	chainloader +1
+-      }
+-    }
+-  fi
+-done

@@ -96,6 +96,11 @@ int main(int argc, char *argv[]) {
        print(stdout, tests);
        continue;
     }
+    if (strcasecmp("subunit", file_ext) == 0) {
+       printf("SubUnit %s\n", d_name);
+       printf("TODO\n");
+       continue;
+    }
     fclose(file);
   }
   closedir(d);

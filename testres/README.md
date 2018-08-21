@@ -21,6 +21,3 @@ https://git.zx2c4.com/cgit/tree/filters
 - фильтр для заведения бага
 - фильтр для построения графиков
 - скрипты для БД: flaky?, похожие проблемы в отчётах
-
-Check: Subunit, TAP, XML, and a generic logging format.
-CMocka: Subunit, Test Anything Protocol and jUnit XML reports.

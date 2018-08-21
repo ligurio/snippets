@@ -1,0 +1,19 @@
+os:
+  - linux
+
+sudo: required
+dist: trusty
+
+language: c
+
+compiler:
+  - clang
+  - gcc
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+
+script:
+  - make
+  - make check
+  - make test

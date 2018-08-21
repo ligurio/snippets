@@ -1,0 +1,23 @@
+language: cpp
+
+compiler: gcc
+
+before_install:
+    - sudo apt-get update -qq
+    - ( [ -e /proc/vz/veinfo ] && [ -e /proc/user_beancounters ] && echo "OpenVZ" )
+    - uname -a
+
+install:
+    - sudo apt-get install make curl
+
+script:
+    - ( curl http://codemonkey.org.uk/projects/trinity/trinity-1.4.tar.xz | unxz | tar xv )
+    - ( cd trinity-1.4 && ./configure.sh && make -j2 && sudo make install )
+    - trinity --verbose -D -c splice
+
+notifications:
+  email:
+    recipients:
+      - estetus+travis-ci@gmail.com
+    on_success: change
+    on_failure: always

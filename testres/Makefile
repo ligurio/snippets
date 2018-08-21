@@ -13,10 +13,18 @@ install: all
 	mkdir -p $(CGIDIR)
 	install -m 0755 testres.cgi $(CGIDIR)
 
+test:
+	make -C tests
+
 clean:
 	rm -f $(BIN)
 
-static-analysis:
-	cppcheck *
+check:
+	cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \
+		--enable=warning,portability,performance \
+		--suppress=redundantAssignment \
+		--suppress=uselessAssignmentPtrArg \
+		--suppress=incorrectStringBooleanError \
+		--std=c89 *.c *.h 2> cppcheck.log
 
 .PHONY: install

@@ -161,8 +161,7 @@ int is_flag_set(uint8_t feature_bits, int flag) {
 */
 
 int main()
-{  
-    
+{
     // Packet sample, with test id, runnable set, status=enumeration.
     // Spaces below are to visually break up
     // signature / flags / length / testid / crc32:

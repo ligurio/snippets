@@ -10,14 +10,14 @@ testres.cgi: $(SRCS)
 	$(CC) -static -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat -lz
 
 install: all
-	mkdir -p $(CGIDIR)
-	install -m 0755 testres.cgi $(CGIDIR)
+	@mkdir -p $(CGIDIR)
+	@install -m 0755 testres.cgi $(CGIDIR)
 
 test:
-	make -C tests
+	@make -C tests
 
 clean:
-	rm -f $(BIN)
+	rm -f $(BIN) cppcheck.log
 
 check:
 	cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

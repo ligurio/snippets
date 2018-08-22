@@ -33,6 +33,8 @@
 #include <string.h>
 #include <zlib.h>
 
+#include "varint.h"
+
 #define HI(x)  ((x) >> 8)
 #define LO(x)  ((x) & 0xFF)
 
@@ -102,11 +104,11 @@ int read_packet(FILE *stream) {
 
     uint32_t length = 0;
     fread(&length, 3, 1, stream);
-    printf("Length %x\n", length);
+    printf("Length %d\n", length);
     //assert(length < LENGTH_THRESHOLD);
 
-    char *content = malloc(length - 3);
-    fread(content, length - 3, 1, stream);
+    char *content = malloc(length - 6);
+    fread(content, length - 6, 1, stream);
     free(content);
 }
 
@@ -121,8 +123,6 @@ int main()
     uint32_t sample_length = 0x0c;
     uint32_t sample_testid = 0x03666f6f;
     uint32_t sample_crc32 = 0x08555f1b;
-
-    printf("header %zu\n", sizeof(subunit_header));
 
     char* buf = NULL;
     size_t buf_size= 0;
@@ -139,6 +139,7 @@ int main()
 
     FILE *file;
     char *name;
+    name = "subunit-sample-04.subunit";
     name = "01.subunit";
     
     printf("\nreading file %s\n", name);
@@ -151,9 +152,14 @@ int main()
     
     subunit_header header;
     while (!feof(file)) {
+	printf("===> next packet please\n");
 	read_packet(file);
     }
     fclose(file);
+
+    // crc32
+    const char *s = "0xb30x2901b329010c03666f6f";
+    printf("%lX, should be %X\n", crc32(0, (const void*)s, strlen(s)), sample_crc32);
 
     /*
 

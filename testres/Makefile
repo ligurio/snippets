@@ -1,4 +1,4 @@
-CFLAGS		= -O3
+CFLAGS		= -O3 -std=c99
 SRCS		= testres.c parse_junit.c parse_testanything.c
 BIN		= testres.cgi
 

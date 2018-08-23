@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Sergey Bronnikov <sergeyb@bronevichok.ru>
+ * Copyright © 2018 Sergey Bronnikov
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,16 +31,17 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <zlib.h>
 
-#include "varint.h"
+#include <arpa/inet.h>
+#include <zlib.h>
 
 #define HI(x)  ((x) >> 8)
 #define LO(x)  ((x) & 0xFF)
 
 #define SIGNATURE 		0xB3
 #define VERSION 		0x02
-#define LENGTH_THRESHOLD 	4194303
+#define PACKET_MAX_LENGTH 	4194303
+
 #define FLAG_TEST_ID		0x0800
 #define FLAG_ROUTE_CODE		0x0400
 #define FLAG_TIMESTAMP		0x0200
@@ -50,7 +51,15 @@
 #define FLAG_EOF		0x0010
 #define FLAG_FILE_CONTENT	0x0040
 
-// https://github.com/testing-cabal/subunit/blob/master/python/subunit/v2.py#L405
+struct packet {
+    char     *test_id;
+    char     *route_code;
+    char     *tags[];
+    uint32_t timestamp;
+    uint32_t status;
+}
+
+typedef packet packet;
 
 struct subunit_header {
     uint8_t  signature;
@@ -69,46 +78,94 @@ enum TestStatus { Undefined,
 		  Skipped,
 		  Failed,
 		  ExpectedFailure };
+
+uint32_t read_field(FILE *stream) {
+
+    int32_t field = 0;
+    int8_t byte = 0;
+    int8_t n_octets = 0;
+    uint8_t prefix = 0;
+
+    fread(&byte, sizeof(byte), 1, stream);
+    printf("FIRST BYTE %02hX ", byte);
+    prefix = byte >> 6;
+    printf("PREFIX %d\n", prefix);
+    switch (prefix) {
+        case 0x00:
+            n_octets = 1;
+            break;
+        case 0x40:
+            n_octets = 2;
+            break;
+        case 0x80:
+            n_octets = 3;
+            break;
+        case 0xc0:
+            n_octets = 4;
+            break;
+    }
+    printf("Number of octets %d\n", n_octets);
+
+    fseek(stream, -sizeof(byte), SEEK_CUR);
+    fread(&field, n_octets, 1, stream);
+    printf("Field value: %d\n", field);
+
+    return field;
+}
  
 int read_packet(FILE *stream) {
 
     subunit_header header;
     fread(&header, sizeof(subunit_header), 1, stream);
 
-    printf("Signature: %02X\n", header.signature);
-    printf("Flags: %02X\n", header.flags);
+    uint16_t flags = htons(header.flags);
+    printf("Signature: %02hhX\n", header.signature);
+    printf("Flags: %02hX\n", flags);
     assert(header.signature == SIGNATURE);
 
-    uint8_t version;
-    version = HI(header.flags) >> 4;
+    int8_t version;
+    version = HI(flags) >> 4;
     printf("Version %d\n", version);
-    //assert(version == VERSION);
+    assert(version == VERSION);
 
-    if (header.flags & FLAG_TEST_ID)
-        printf("FLAG_TEST_ID ");
-    if (header.flags & FLAG_ROUTE_CODE)
-        printf("FLAG_ROUTE_CODE ");
-    if (header.flags & FLAG_TIMESTAMP)
+    int8_t status;
+    status = flags & 0x0007;
+    printf("Status: %02hX\n", status);
+    assert(status <= 0x0007);
+
+    if (flags & FLAG_TIMESTAMP)
         printf("FLAG_TIMESTAMP ");
-    if (header.flags & FLAG_RUNNABLE)
-        printf("FLAG_RUNNABLE ");
-    if (header.flags & FLAG_TAGS)
+  	// read field
+    if (flags & FLAG_TEST_ID)
+        printf("FLAG_TEST_ID ");
+  	// read field
+    if (flags & FLAG_TAGS)
         printf("FLAG_TAGS ");
-    if (header.flags & FLAG_MIME_TYPE)
+  	// read field
+    if (flags & FLAG_MIME_TYPE)
         printf("FLAG_MIME_TYPE ");
-    if (header.flags & FLAG_EOF)
-        printf("FLAG_EOF ");
-    if (header.flags & FLAG_FILE_CONTENT)
+  	// read field
+    if (flags & FLAG_FILE_CONTENT)
         printf("FLAG_FILE_CONTENT ");
-    printf("\nStatus: %02X\n", header.flags & 0x0007);
+  	// read field
+    if (flags & FLAG_ROUTE_CODE)
+        printf("FLAG_ROUTE_CODE ");
+  	// read field
+    if (flags & FLAG_EOF)
+        printf("FLAG_EOF ");
+  	// read field
+    if (flags & FLAG_RUNNABLE)
+        printf("FLAG_RUNNABLE ");
+  	// read field
+    printf("\n");
 
-    uint32_t length = 0;
-    fread(&length, 3, 1, stream);
-    printf("Length %d\n", length);
-    //assert(length < LENGTH_THRESHOLD);
+    uint32_t field;
+    field = read_field(stream);
+    printf("Packet length: %d\n", htonl(field));
+    assert(field < PACKET_MAX_LENGTH);
 
-    char *content = malloc(length - 6);
-    fread(content, length - 6, 1, stream);
+    char *content = malloc(field - 6);
+    fread(content, field - 6, 1, stream);
     free(content);
 }
 
@@ -118,11 +175,12 @@ int main()
     // Spaces below are to visually break up:
     // signature / flags / length / testid / crc32
     // b3 2901 0c 03666f6f 08555f1b
+    // echo 03666f6f | xxd -p -r
 
-    subunit_header sample_header = { .signature = 0xb3, .flags = 0x2901 };
-    uint32_t sample_length = 0x0c;
-    uint32_t sample_testid = 0x03666f6f;
-    uint32_t sample_crc32 = 0x08555f1b;
+    subunit_header sample_header = { .signature = 0xb3, .flags = ntohs(0x2901) };
+    uint32_t sample_length = ntohl(0x0c);
+    uint32_t sample_testid = ntohl(0x03666f6f);
+    uint32_t sample_crc32 = ntohl(0x08555f1b);
 
     char* buf = NULL;
     size_t buf_size= 0;
@@ -139,8 +197,8 @@ int main()
 
     FILE *file;
     char *name;
-    name = "subunit-sample-04.subunit";
     name = "01.subunit";
+    name = "subunit-sample-01.subunit";
     
     printf("\nreading file %s\n", name);
     file = fopen(name, "r");
@@ -150,25 +208,32 @@ int main()
     	return 1;
     }
     
+    /*
     subunit_header header;
     while (!feof(file)) {
 	printf("===> next packet please\n");
 	read_packet(file);
     }
     fclose(file);
+    */
+
+    /*
 
     // crc32
     const char *s = "0xb30x2901b329010c03666f6f";
     printf("%lX, should be %X\n", crc32(0, (const void*)s, strlen(s)), sample_crc32);
 
-    /*
-
-    const char *s = "The quick brown fox jumps over the lazy dog";
-    printf("%lX\n", crc32(0, (const void*)s, strlen(s)));
-
     https://rosettacode.org/wiki/CRC-32#C
     http://csbruce.com/software/crc32.c
 
+    */
+
+    /*
+    // parse timestamp
+    int y, M, d, h, m;
+    float sec;
+    char *dateStr = "2014-11-12T19:12:14.505Z";
+    sscanf(dateStr, "%d-%d-%dT%d:%d:%fZ", &y, &M, &d, &h, &m, &sec);
     */
 
     return 0;

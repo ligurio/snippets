@@ -24,6 +24,7 @@ https://git.zx2c4.com/cgit/tree/filters
 
 ### Графики
 
-http://pages.cs.wisc.edu/~remzi/Zplot/Tcl/
-https://github.com/reddec/svg?files=1
-https://wiki.tcl.tk/21144
+- http://pages.cs.wisc.edu/~remzi/Zplot/Tcl/
+- https://github.com/reddec/svg?files=1
+- https://wiki.tcl.tk/21144
+- http://plplot.sourceforge.net/

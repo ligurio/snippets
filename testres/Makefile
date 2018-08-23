@@ -1,5 +1,5 @@
-CFLAGS		= -O3 -std=c99 -Wall
-SRCS		= testres.c parse_junit.c parse_testanything.c
+CFLAGS	= -O3 -std=c99 -Wall
+SRCS	= testres.c parse_junit.c parse_testanything.c
 BIN		= testres.cgi
 
 CGIDIR		= /var/www/cgi-bin
@@ -27,4 +27,4 @@ check:
 		--suppress=incorrectStringBooleanError \
 		--std=c89 *.c *.h 2> cppcheck.log
 
-.PHONY: install
+.PHONY: install clean check test

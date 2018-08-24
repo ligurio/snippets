@@ -54,12 +54,12 @@
 struct packet {
     char     *test_id;
     char     *route_code;
-    char     *tags[];
     uint32_t timestamp;
     uint32_t status;
-}
+    char     *tags[];
+};
 
-typedef packet packet;
+typedef struct packet packet;
 
 struct subunit_header {
     uint8_t  signature;
@@ -81,92 +81,98 @@ enum TestStatus { Undefined,
 
 uint32_t read_field(FILE *stream) {
 
-    int32_t field = 0;
-    int8_t byte = 0;
-    int8_t n_octets = 0;
+    uint32_t field_value = 0;
+    uint8_t byte = 0, byte0 = 0;
+    uint16_t buf = 0;
     uint8_t prefix = 0;
 
-    fread(&byte, sizeof(byte), 1, stream);
-    printf("FIRST BYTE %02hX ", byte);
+    fread(&byte, 1, 1, stream);
     prefix = byte >> 6;
-    printf("PREFIX %d\n", prefix);
-    switch (prefix) {
-        case 0x00:
-            n_octets = 1;
-            break;
-        case 0x40:
-            n_octets = 2;
-            break;
-        case 0x80:
-            n_octets = 3;
-            break;
-        case 0xc0:
-            n_octets = 4;
-            break;
-    }
-    printf("Number of octets %d\n", n_octets);
+    byte0 = byte & 0x3f;
+    if (prefix == 0x00) {
+       field_value = byte0;
+    } else if (prefix == 0x40) {
+       fread(&byte, 1, 1, stream);
+       field_value = (byte0 << 8) | byte;
+    } else if (prefix == 0x80) {
+       fread(&buf, 2, 1, stream);
+       field_value = (byte << 16) | buf;
+    } else {
+       fread(&byte, 1, 2, stream);
+       field_value = (byte0 << 24) | byte << 8;
+       fread(&byte, 1, 1, stream);
+       field_value = field_value | byte;
+    };
 
-    fseek(stream, -sizeof(byte), SEEK_CUR);
-    fread(&field, n_octets, 1, stream);
-    printf("Field value: %d\n", field);
-
-    return field;
+    return field_value;
 }
- 
+
 int read_packet(FILE *stream) {
 
     subunit_header header;
     fread(&header, sizeof(subunit_header), 1, stream);
 
     uint16_t flags = htons(header.flags);
-    printf("Signature: %02hhX\n", header.signature);
-    printf("Flags: %02hX\n", flags);
+    printf("SIGNATURE: %02hhX\n", header.signature);
+    printf("FLAGS: %02hX\n", flags);
     assert(header.signature == SIGNATURE);
 
     int8_t version;
     version = HI(flags) >> 4;
-    printf("Version %d\n", version);
+    printf("\tVERSION: %d\n", version);
     assert(version == VERSION);
 
     int8_t status;
     status = flags & 0x0007;
-    printf("Status: %02hX\n", status);
+    printf("\tSTATUS: %02hX\n", status);
     assert(status <= 0x0007);
 
-    if (flags & FLAG_TIMESTAMP)
+    uint32_t field_value;
+    field_value = read_field(stream);
+    printf("TOTAL LENGTH: %d\n", field_value);
+    assert(field_value < PACKET_MAX_LENGTH);
+
+    if (flags & FLAG_TIMESTAMP) {
         printf("FLAG_TIMESTAMP ");
-  	// read field
-    if (flags & FLAG_TEST_ID)
+        field_value = read_field(stream);
+        printf("%08hX\n", field_value);
+    };
+    if (flags & FLAG_TEST_ID) {
         printf("FLAG_TEST_ID ");
-  	// read field
-    if (flags & FLAG_TAGS)
+        field_value = read_field(stream);
+        printf("%08hX\n", field_value);
+    };
+    if (flags & FLAG_TAGS) {
         printf("FLAG_TAGS ");
-  	// read field
-    if (flags & FLAG_MIME_TYPE)
+        field_value = read_field(stream);
+        printf("%08hX\n", field_value);
+    };
+    if (flags & FLAG_MIME_TYPE) {
         printf("FLAG_MIME_TYPE ");
-  	// read field
-    if (flags & FLAG_FILE_CONTENT)
+        field_value = read_field(stream);
+        printf("%08hX\n", field_value);
+    };
+    if (flags & FLAG_FILE_CONTENT) {
         printf("FLAG_FILE_CONTENT ");
-  	// read field
-    if (flags & FLAG_ROUTE_CODE)
+        field_value = read_field(stream);
+        printf("%08hX\n", field_value);
+    };
+    if (flags & FLAG_ROUTE_CODE) {
         printf("FLAG_ROUTE_CODE ");
-  	// read field
-    if (flags & FLAG_EOF)
-        printf("FLAG_EOF ");
-  	// read field
-    if (flags & FLAG_RUNNABLE)
-        printf("FLAG_RUNNABLE ");
-  	// read field
-    printf("\n");
+        field_value = read_field(stream);
+        printf("%08hX\n", field_value);
+    };
+    if (flags & FLAG_EOF) {
+        printf("FLAG_EOF\n");
+    };
+    if (flags & FLAG_RUNNABLE) {
+        printf("FLAG_RUNNABLE\n");
+    };
+    printf("CRC32: ");
+    field_value = read_field(stream);
+    printf("%08hX\n", field_value);
 
-    uint32_t field;
-    field = read_field(stream);
-    printf("Packet length: %d\n", htonl(field));
-    assert(field < PACKET_MAX_LENGTH);
-
-    char *content = malloc(field - 6);
-    fread(content, field - 6, 1, stream);
-    free(content);
+    return 0;
 }
 
 int main()
@@ -178,9 +184,12 @@ int main()
     // echo 03666f6f | xxd -p -r
 
     subunit_header sample_header = { .signature = 0xb3, .flags = ntohs(0x2901) };
-    uint32_t sample_length = ntohl(0x0c);
-    uint32_t sample_testid = ntohl(0x03666f6f);
-    uint32_t sample_crc32 = ntohl(0x08555f1b);
+    // FIXME: endianess
+    uint16_t sample_length = 0x0c;
+    // FIXME: endianess
+    uint32_t sample_testid = 0x03666f6f;
+    // FIXME: endianess
+    uint32_t sample_crc32 = 0x08555f1b;
 
     char* buf = NULL;
     size_t buf_size= 0;
@@ -195,10 +204,11 @@ int main()
 
     // ===========================================
 
+    /*
     FILE *file;
     char *name;
-    name = "01.subunit";
     name = "subunit-sample-01.subunit";
+    name = "01.subunit";
     
     printf("\nreading file %s\n", name);
     file = fopen(name, "r");
@@ -208,8 +218,6 @@ int main()
     	return 1;
     }
     
-    /*
-    subunit_header header;
     while (!feof(file)) {
 	printf("===> next packet please\n");
 	read_packet(file);
@@ -218,7 +226,6 @@ int main()
     */
 
     /*
-
     // crc32
     const char *s = "0xb30x2901b329010c03666f6f";
     printf("%lX, should be %X\n", crc32(0, (const void*)s, strlen(s)), sample_crc32);
@@ -226,14 +233,14 @@ int main()
     https://rosettacode.org/wiki/CRC-32#C
     http://csbruce.com/software/crc32.c
 
-    */
-
-    /*
     // parse timestamp
     int y, M, d, h, m;
     float sec;
     char *dateStr = "2014-11-12T19:12:14.505Z";
     sscanf(dateStr, "%d-%d-%dT%d:%d:%fZ", &y, &M, &d, &h, &m, &sec);
+
+    // utf-8
+    https://github.com/benkasminbullock/unicode-c/blob/master/unicode.c
     */
 
     return 0;

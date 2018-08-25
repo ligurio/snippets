@@ -20,7 +20,7 @@ tags:
 	@find . -name '*.[ch]' | xargs ctags
 
 clean:
-	rm -f $(BIN) cppcheck.log
+	rm -f $(BIN) cppcheck.log *.core
 
 check:
 	cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

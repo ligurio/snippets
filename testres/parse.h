@@ -16,6 +16,10 @@ enum test_status {
 	TEST_TODO,			/* TestAnythingProtocol	*/
 	TEST_SKIP,			/* TestAnythingProtocol	*/
 
+	TEST_ABORTED,		/* JUnit */
+	TEST_FAILED,		/* JUnit */
+	TEST_SUCCESSFUL,	/* JUnit */
+
 	TEST_UNDEFINED,		/* Subunit */
 	TEST_ENUMERATION,	/* Subunit */
 	TEST_INPROGRESS,	/* Subunit */
@@ -56,5 +60,5 @@ struct report {
 typedef struct report report;
 
 char *get_filename_ext(const char *filename);
-int process_file(const char *path, const char *name);
-enum format detect_format(const char *basename);
+int process_file(const char *dirname, const char *basename);
+enum format detect_file_format(const char *basename);

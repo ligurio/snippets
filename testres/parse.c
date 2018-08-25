@@ -11,7 +11,7 @@ char *get_filename_ext(const char *filename) {
     return dot + 1;
 }
 
-enum format detect_format(const char *basename) {
+enum format detect_file_format(const char *basename) {
 
 	char *file_ext;
     file_ext = get_filename_ext(basename);
@@ -42,7 +42,7 @@ int process_file(const char *dirname, const char *basename) {
     }
 
 	enum format f;
-	f = detect_format(basename);
+	f = detect_file_format(basename);
 	switch(f) {
 		case FORMAT_JUNIT:
 			printf("JUnit %s\n", basename);

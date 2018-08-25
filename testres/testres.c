@@ -31,18 +31,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
+//#include <fcntl.h>
 #include <err.h>
 
-#include "parse_junit.h"
-#include "parse_testanything.h"
-
-char *get_filename_ext(const char *filename) {
-    char *dot = strrchr(filename, '.');
-    if (!dot || dot == filename) return "";
-
-    return dot + 1;
-}
+#include "parse.h"
 
 void print_headers() {
   printf("Content-Type: text/plain;charset=utf-8\n\n");
@@ -84,7 +76,6 @@ int main(int argc, char *argv[]) {
 
   DIR *d;
   struct dirent *dir;
-  char *d_name, *file_ext;
 
   print_headers();
 
@@ -95,41 +86,13 @@ int main(int argc, char *argv[]) {
   }
 
   while ((dir = readdir(d)) != NULL) {
-    d_name = dir->d_name;
-    if ((strcmp("..", d_name) == 0) || (strcmp(".", d_name) == 0)) {
+	char *basename;
+    basename = dir->d_name;
+    if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
        continue;
     }
-
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/%s", storage_dir, d_name);
-    printf("%s\n", path);
-
-    FILE *file;
-    file = fopen(path, "r");
-    if (!(file)) {
-       printf("failed to open file %s", path);
-       return 1;
-    }
-    file_ext = get_filename_ext(d_name);
-    printf("extension %s\n", file_ext);
-    if (strcasecmp("xml", file_ext) == 0) {
-       printf("JUnit %s\n", d_name);
-       parse_junit(file);
-       continue;
-    }
-    if (strcasecmp("tap", file_ext) == 0) {
-       printf("TestAnythingProtocol %s\n", d_name);
-       struct ast_test *tests;
-       tests = parse_testanything(file);
-       print(stdout, tests);
-       continue;
-    }
-    if (strcasecmp("subunit", file_ext) == 0) {
-       printf("SubUnit %s\n", d_name);
-       printf("TODO\n");
-       continue;
-    }
-    fclose(file);
+	/* TODO: check is it file or directory */
+	process_file(storage_dir, basename);
   }
   closedir(d);
   return(0);

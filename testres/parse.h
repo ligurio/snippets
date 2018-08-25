@@ -1,6 +1,14 @@
 #include "parse_testanything.h"
 #include "parse_junit.h"
 
+enum format {
+	FORMAT_UNKNOWN,
+	FORMAT_TAP13,
+	FORMAT_JUNIT,
+	FORMAT_SUBUNITV1,
+	FORMAT_SUBUNITV2
+};
+
 enum test_status {
 	TEST_OK,			/* TestAnythingProtocol	*/
 	TEST_NOTOK,			/* TestAnythingProtocol	*/
@@ -49,3 +57,4 @@ typedef struct report report;
 
 char *get_filename_ext(const char *filename);
 int process_file(const char *path, const char *name);
+enum format detect_format(const char *basename);

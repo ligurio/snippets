@@ -1,6 +1,6 @@
 /*
- * Copyright © 2018 Sergey Bronnikov <sergeyb@bronevichok.ru>
  * Copyright © 2015-2017 Katherine Flavel <kate@elide.org>
+ * Copyright © 2018 Sergey Bronnikov
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

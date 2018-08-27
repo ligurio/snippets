@@ -13,7 +13,7 @@ char *get_filename_ext(const char *filename) {
 
 enum format detect_format(const char *basename) {
 
-	char *file_ext;
+    char *file_ext;
     file_ext = get_filename_ext(basename);
     printf("extension %s\n", file_ext);
 
@@ -22,10 +22,10 @@ enum format detect_format(const char *basename) {
     } else if (strcasecmp("tap", file_ext) == 0) {
        return FORMAT_TAP13;
     } else if (strcasecmp("subunit", file_ext) == 0) {
-       return FORMAT_SUBUNITV2;
+       return FORMAT_SUBUNIT_V2;
     } else {
        return FORMAT_UNKNOWN;
-	}
+    }
 }
 
 int process_file(const char *dirname, const char *basename) {
@@ -41,32 +41,29 @@ int process_file(const char *dirname, const char *basename) {
        return 1;
     }
 
-	enum format f;
-	f = detect_format(basename);
-	switch(f) {
-		case FORMAT_JUNIT:
-			printf("JUnit %s\n", basename);
-			parse_junit(file);
-			break;
-		case FORMAT_TAP13:
-			printf("TestAnythingProtocol %s\n", basename);
-			struct ast_test *tests;
-			tests = parse_testanything(file);
-			print(stdout, tests);
-			break;
-		case FORMAT_SUBUNIT_V1:
-			printf("SubUnit v1 %s\n", basename);
-			printf("TODO\n");
-			break;
-		case FORMAT_SUBUNIT_V2:
-			printf("SubUnit v2 %s\n", basename);
-			printf("TODO\n");
-			break;
-		default:
-			printf("Unknown file format.\n");
-	}
-
+    enum format f;
+    f = detect_format(basename);
+    switch(f) {
+	case FORMAT_JUNIT:
+	    printf("JUnit %s\n", basename);
+	    parse_junit(file);
+	    break;
+	case FORMAT_TAP13:
+	    printf("TestAnythingProtocol %s\n", basename);
+	    struct ast_test *tests;
+	    tests = parse_testanything(file);
+	    print(stdout, tests);
+	    break;
+	case FORMAT_SUBUNIT_V1:
+	    printf("SubUnit v1 %s\n", basename);
+	    break;
+	case FORMAT_SUBUNIT_V2:
+	    printf("SubUnit v2 %s\n", basename);
+	    break;
+	case FORMAT_UNKNOWN:
+	    printf("Unknown file format.\n");
+    }
     fclose(file);
 
-	return 0;
+    return 0;
 }

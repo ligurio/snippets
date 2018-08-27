@@ -28,6 +28,7 @@ https://git.zx2c4.com/cgit/tree/filters
 - https://github.com/reddec/svg?files=1
 - https://wiki.tcl.tk/21144
 - http://plplot.sourceforge.net/
+- https://github.com/bytebrew/slope
 
 ### Тесты
 

@@ -5,55 +5,56 @@ enum format {
 	FORMAT_UNKNOWN,
 	FORMAT_TAP13,
 	FORMAT_JUNIT,
-	FORMAT_SUBUNITV1,
-	FORMAT_SUBUNITV2
+	FORMAT_SUBUNIT_V1,
+	FORMAT_SUBUNIT_V2
 };
 
 enum test_status {
-	TEST_OK,			/* TestAnythingProtocol	*/
-	TEST_NOTOK,			/* TestAnythingProtocol	*/
-	TEST_MISSING,		/* TestAnythingProtocol	*/
-	TEST_TODO,			/* TestAnythingProtocol	*/
-	TEST_SKIP,			/* TestAnythingProtocol	*/
+	STATUS_OK,		/* TestAnythingProtocol	*/
+	STATUS_NOTOK,		/* TestAnythingProtocol	*/
+	STATUS_MISSING,		/* TestAnythingProtocol	*/
+	STATUS_TODO,		/* TestAnythingProtocol	*/
+	STATUS_SKIP,		/* TestAnythingProtocol	*/
 
-	TEST_UNDEFINED,		/* Subunit */
-	TEST_ENUMERATION,	/* Subunit */
-	TEST_INPROGRESS,	/* Subunit */
-	TEST_SUCCESS,		/* Subunit */
-	TEST_UXSUCCESS,		/* Subunit */
-	TEST_SKIPPED,		/* Subunit */
-	TEST_FAILED,		/* Subunit */
-	TEST_XFAILURE		/* Subunit */
+	STATUS_UNDEFINED,	/* Subunit */
+	STATUS_ENUMERATION,	/* Subunit */
+	STATUS_INPROGRESS,	/* Subunit */
+	STATUS_SUCCESS,		/* Subunit */
+	STATUS_UXSUCCESS,	/* Subunit */
+	STATUS_SKIPPED,		/* Subunit */
+	STATUS_FAILED,		/* Subunit */
+	STATUS_XFAILURE		/* Subunit */
 };
 
 struct test {
-	const char *name;
-	const char *time;
+	char *name;
+	char *time;
 	enum test_status status;
 	struct test *next;
 };
 
-typedef struct test test;
+typedef struct test test_t;
 
 struct suite {
-	const char *name;
-	const char *hostname;
-	const char *timestamp;
-    double time;
+    char *name;
+    char *hostname;
+    char *timestamp;
     int n_failures;
     int n_errors;
-	struct test *test;
-	struct suite *next;
+    double time;
+    struct test *test;
+    struct suite *next;
 };
 
-typedef struct suite suite;
+typedef struct suite suite_t;
 
 struct report {
+	enum format format;
 	struct suite *suite;
 	struct report *next;
 };
 
-typedef struct report report;
+typedef struct report report_t;
 
 char *get_filename_ext(const char *filename);
 int process_file(const char *path, const char *name);

@@ -53,26 +53,6 @@ char Buff[BUFFSIZE];
 
 int Depth;
 
-typedef struct {
-	char* name;
-	char* status;
-	char* time;
-} testcase;
-
-typedef struct testsuite {
-    char* name;
-    char* hostname;
-    char* timestamp;
-    double time;
-    int failures;
-    int errors;
-} testsuite_t;
-
-typedef struct suite {
-    testsuite_t *next;
-    testsuite_t suite;
-} suite_t;
-
 static void XMLCALL
 start(void *data, const XML_Char *elem, const XML_Char **attr)
 {

@@ -54,11 +54,11 @@ int process_file(const char *dirname, const char *basename) {
 			tests = parse_testanything(file);
 			print(stdout, tests);
 			break;
-		case FORMAT_SUBUNITV1:
+		case FORMAT_SUBUNIT_V1:
 			printf("SubUnit v1 %s\n", basename);
 			printf("TODO\n");
 			break;
-		case FORMAT_SUBUNITV2:
+		case FORMAT_SUBUNIT_V2:
 			printf("SubUnit v2 %s\n", basename);
 			printf("TODO\n");
 			break;

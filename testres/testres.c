@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <err.h>
 
-#include "parse.h"
+#include "parse_common.h"
 
 void print_headers() {
   printf("Content-Type: text/plain;charset=utf-8\n\n");

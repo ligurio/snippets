@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "parse.h"
+#include "parse_common.h"
 
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');

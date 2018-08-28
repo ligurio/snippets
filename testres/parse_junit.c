@@ -31,6 +31,8 @@
 #include <expat.h>
 #include <fcntl.h>
 
+#include "parse_common.h"
+
 #ifdef XML_LARGE_SIZE
 # if defined(XML_USE_MSC_EXTENSIONS) && _MSC_VER < 1400
 #  define XML_FMT_INT_MOD "I64"
@@ -50,28 +52,8 @@
 #define BUFFSIZE        8192
 
 char Buff[BUFFSIZE];
-
 int Depth;
-
-typedef struct {
-	char* name;
-	char* status;
-	char* time;
-} testcase;
-
-typedef struct testsuite {
-    char* name;
-    char* hostname;
-    char* timestamp;
-    double time;
-    int failures;
-    int errors;
-} testsuite_t;
-
-typedef struct suite {
-    testsuite_t *next;
-    testsuite_t suite;
-} suite_t;
+report_t report;
 
 static void XMLCALL
 start(void *data, const XML_Char *elem, const XML_Char **attr)
@@ -79,27 +61,28 @@ start(void *data, const XML_Char *elem, const XML_Char **attr)
   int i;
   (void)data;
 
-  testsuite_t suite;
   if (strcmp(elem, "testsuite") == 0) {
      //printf("testsuite: %\n", XML_FMT_STR, elem);
      for (i = 0; attr[i]; i += 2) {
-        //printf(" %" XML_FMT_STR "='%" XML_FMT_STR "'", attr[i], attr[i + 1]);
-        //char attr_name = attr[i];
-        //char attr_value = attr[i + 1];
-        if (strcmp(attr[i], "name") == 0) {
-           printf("name %s\n", attr[i + 1]);
+        const char *attr_name = attr[i];
+        const char *attr_value = attr[i + 1];
+
+        //printf(" %" XML_FMT_STR "='%" XML_FMT_STR "'", attr_name, attr_value);
+
+        if (strcmp(attr_name, "name") == 0) {
+           printf("name %s\n", attr_value);
         }
-        if (strcmp(attr[i], "hostname") == 0) {
-           printf("hostname %s\n", attr[i + 1]);
+        if (strcmp(attr_name, "hostname") == 0) {
+           printf("hostname %s\n", attr_value);
         }
-        if (strcmp(attr[i], "timestamp") == 0) {
-           printf("timestamp %s\n", attr[i + 1]);
+        if (strcmp(attr_name, "timestamp") == 0) {
+           printf("timestamp %s\n", attr_value);
         }
-        if (strcmp(attr[i], "tests") == 0) {
-           printf("tests %s\n", attr[i + 1]);
+        if (strcmp(attr_name, "tests") == 0) {
+           printf("tests %s\n", attr_value);
         }
-        if (strcmp(attr[i], "failures") == 0) {
-           printf("failures %s\n", attr[i + 1]);
+        if (strcmp(attr_name, "failures") == 0) {
+           printf("failures %s\n", attr_value);
         }
         if (strcmp(attr[i], "time") == 0) {
            printf("time %s\n", attr[i + 1]);

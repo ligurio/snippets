@@ -1,13 +1,12 @@
 CFLAGS	= -O3 -std=c99 -Wall
-SRCS	= testres.c parse_junit.c parse_testanything.c parse.c
-BIN		= testres.cgi
-
-CGIDIR		= /var/www/cgi-bin
+SRCS	= testres.c parse_junit.c parse_testanything.c parse_common.c
+BIN	= testres.cgi
+CGIDIR	= /var/www/cgi-bin
 
 all: testres.cgi
 
 testres.cgi: $(SRCS)
-	$(CC) -static -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat
+	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat
 
 install: all
 	@mkdir -p $(CGIDIR)

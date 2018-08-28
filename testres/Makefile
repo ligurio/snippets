@@ -12,6 +12,9 @@ install: all
 	@mkdir -p $(CGIDIR)
 	@install -m 0755 testres.cgi $(CGIDIR)
 
+uninstall:
+	@rm -f $(CGIDIR)/testres.cgi
+
 test:
 	@make -C tests
 

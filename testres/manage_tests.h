@@ -1,4 +1,4 @@
-#include "parse.h"
+#include "parse_common.h"
 
 void print_reports(report_t * report);
 void print_suites(suite_t * suite);

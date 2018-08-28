@@ -1,12 +1,9 @@
-# Fruitycase
-
-[![Build Status](https://travis-ci.org/ligurio/fruitycase.svg?branch=master)](https://travis-ci.org/ligurio/fruitycase)
+# testicase
 
 handy tool to pass manual testcases.
 
 - Support of testplans with format described in the [829-2008 - IEEE Standard for Software and System Test Documentation](https://standards.ieee.org/findstds/standard/829-2008.html)
 - Produce [TAP compliant output](https://testanything.org/)
-- Used in [OpenVZ manual testing](https://openvz.org/QA)
 
 ### See also
 

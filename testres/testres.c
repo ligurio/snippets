@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  printf("storage directory %s", storage_dir);
+  printf("storage directory %s\n", storage_dir);
 
   DIR *d;
   struct dirent *dir;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   d = opendir(storage_dir);
   if (!(d)) {
-      printf("failed to open dir %s", storage_dir);
+      printf("failed to open dir %s\n", storage_dir);
       return 1;
   }
 

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "manage_tests.h"
+
 void print_reports(report_t * report) {
     report_t * current = report;
     printf("+++ report +++\n");
@@ -80,6 +82,7 @@ void delete_reports(report_t * report) {
     report = NULL;
 }
 
+/*
 void push_report(report_t * report, enum format format, suite_t * suite) {
     report_t * current = report;
 
@@ -91,7 +94,21 @@ void push_report(report_t * report, enum format format, suite_t * suite) {
     current->next->suite = suite;
     current->next->next = NULL;
 }
+*/
 
+void push_report(report_t * reports, report_t * report) {
+    report_t * current = reports;
+
+    while (current->next != NULL) {
+        current = current->next;
+    }
+    current->next = malloc(sizeof(report_t));
+    current->next->format = report->format;
+    current->next->suite = report->suite;
+    current->next->next = NULL;
+}
+
+/*
 void push_suite(suite_t * suite, char* name, test_t * test, int n_failures, int n_errors) {
     suite_t * current = suite;
 
@@ -105,7 +122,23 @@ void push_suite(suite_t * suite, char* name, test_t * test, int n_failures, int 
     current->next->n_errors = n_errors;
     current->next->next = NULL;
 }
+*/
 
+void push_suite(suite_t * suites, suite_t * suite) {
+    suite_t * current = suites;
+
+    while (current->next != NULL) {
+       current = current->next;
+    }
+    current->next = malloc(sizeof(suite_t));
+    current->next->name = suite->name;
+    current->next->test = suite->test;
+    current->next->n_failures = suite->n_failures;
+    current->next->n_errors = suite->n_errors;
+    current->next->next = NULL;
+}
+
+/*
 void push_test(test_t * test, char* name, char* time, enum test_status status) {
     test_t * current = test;
     while (current->next != NULL) {
@@ -118,7 +151,22 @@ void push_test(test_t * test, char* name, char* time, enum test_status status) {
     current->next->status = status;
     current->next->next = NULL;
 }
+*/
 
+void push_test(test_t * tests, test_t * test) {
+    test_t * current = tests;
+    while (current->next != NULL) {
+        current = current->next;
+    }
+    current->next = malloc(sizeof(test_t));
+    memset(current->next, 0, sizeof(test_t));
+    current->next->name = test->name;
+    current->next->time = test->time;
+    current->next->status = test->status;
+    current->next->next = NULL;
+}
+
+/*
 int main() {
 
     test_t * test;
@@ -133,7 +181,7 @@ int main() {
     push_test(test, "test3", "12:45:56", STATUS_OK);
     push_test(test, "test3", "12:45:56", STATUS_OK);
 
-    /* ----------------------- */
+    // ===============================
 
     suite_t * suite;
     suite = malloc(sizeof(suite_t));
@@ -146,7 +194,7 @@ int main() {
     push_suite(suite, "suite2", test, 11, 12);
     push_suite(suite, "suite3", test, 12, 13);
 
-    /* ----------------------- */
+    // ===============================
 
     report_t * report;
     report = malloc(sizeof(report_t));
@@ -157,8 +205,9 @@ int main() {
     report->next = NULL;
     push_report(report, FORMAT_SUBUNIT_V1, suite);
 
-    /* ----------------------- */
+    // ===============================
 
     print_reports(report);
     delete_reports(report);
 }
+*/

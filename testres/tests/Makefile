@@ -5,10 +5,11 @@ CFLAGS  += -I/usr/local/include/ -I$(TOP_SRC_DIR)
 LDFLAGS += -L/usr/local/lib -lexpat -lcmocka
 TEST_BIN = testres_tests
 SRCS	 = testres_tests.c
-OBJ 	 = testres_tests.o \
-	   $(TOP_SRC_DIR)/parse_testanything.o \
-	   $(TOP_SRC_DIR)/parse_junit.o \
-           $(TOP_SRC_DIR)/parse_subunit_v2.o
+OBJ 	 = testres_tests.o			\
+	   $(TOP_SRC_DIR)/parse_testanything.o 	\
+	   $(TOP_SRC_DIR)/parse_junit.o 	\
+           $(TOP_SRC_DIR)/parse_subunit_v2.o	\
+           $(TOP_SRC_DIR)/manage_tests.o
 
 all: $(TEST_BIN) build_app test
 

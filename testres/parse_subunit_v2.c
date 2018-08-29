@@ -28,7 +28,6 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -36,9 +35,13 @@
 #include <zlib.h>
 
 #include "parse_subunit_v2.h"
+#include "manage_tests.h"
 
 // https://github.com/testing-cabal/subunit/blob/master/python/subunit/v2.py#L412
 // https://github.com/testing-cabal/subunit
+
+#define HI(x)  ((x) >> 8)
+#define LO(x)  ((x) & 0xFF)
 
 uint32_t read_field(FILE *stream) {
 
@@ -47,38 +50,91 @@ uint32_t read_field(FILE *stream) {
     uint16_t buf = 0;
     uint8_t prefix = 0;
 
-    fread(&byte, 1, 1, stream);
+    int n_bytes = 0;
+
+    n_bytes = fread(&byte, 1, 1, stream);
+    if (n_bytes == 0) {
+       return 0;
+    }
     prefix = byte >> 6;
     byte0 = byte & 0x3f;
     if (prefix == 0x00) {
        field_value = byte0;
     } else if (prefix == 0x40) {
-       fread(&byte, 1, 1, stream);
+       n_bytes = fread(&byte, 1, 1, stream);
+       if (n_bytes == 0) {
+          return 0;
+       }
        field_value = (byte0 << 8) | byte;
     } else if (prefix == 0x80) {
-       fread(&buf, 2, 1, stream);
+       n_bytes = fread(&buf, 2, 1, stream);
+       if (n_bytes == 0) {
+          return 0;
+       }
        field_value = (byte << 16) | buf;
     } else {
-       fread(&byte, 1, 2, stream);
+       n_bytes = fread(&byte, 1, 2, stream);
+       if (n_bytes == 0) {
+          return 0;
+       }
        field_value = (byte0 << 24) | byte << 8;
-       fread(&byte, 1, 1, stream);
+       n_bytes = fread(&byte, 1, 1, stream);
+       if (n_bytes == 0) {
+          return 0;
+       }
        field_value = field_value | byte;
     };
 
     return field_value;
 }
 
-int read_stream(FILE *stream) {
+report_t *parse_subunit_v2(FILE *stream) {
+
+    test_t *tests, *test;
+
+    tests = malloc(sizeof(test_t));
+    memset(tests, 0, sizeof(test_t));
+    tests->next = NULL;
 
     while (!feof(stream)) {
-	read_packet(stream);
+        test = read_packet(stream);
+        push_test(tests, test);
     }
+
+    suite_t *suites;
+    suites = malloc(sizeof(suite_t));
+    memset(suites, 0, sizeof(suite_t));
+
+    suites->name = "suite";	// FIXME
+    suites->test = tests;
+    suites->n_failures = 0;	// FIXME
+    suites->n_errors = 0;	// FIXME
+    suites->next = NULL;
+    //push_suite(suites, &suite);
+
+    report_t * report;
+    report = malloc(sizeof(report_t));
+    memset(report, 0, sizeof(report_t));
+    report->next = NULL;
+    report->format = FORMAT_SUBUNIT_V2;
+    report->suite = suites;
+
+    return report;
 }
 
-int read_packet(FILE *stream) {
+test_t *read_packet(FILE *stream) {
+
+    test_t *test;
+    test = malloc(sizeof(test_t));
+    memset(test, 0, sizeof(test_t));
+    test->next = NULL;
 
     subunit_header header;
-    fread(&header, sizeof(subunit_header), 1, stream);
+    int n_bytes = 0;
+    n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
+    if ((n_bytes == 0) || (n_bytes < sizeof(subunit_header))) {
+       return NULL;
+    }
 
     uint16_t flags = htons(header.flags);
     printf("SIGNATURE: %02hhX\n", header.signature);
@@ -140,7 +196,11 @@ int read_packet(FILE *stream) {
     field_value = read_field(stream);
     printf("%08hX\n", field_value);
 
-    return 0;
+    test->status = STATUS_FAILED;
+    test->name = "test";
+    test->time = "12:14:44";
+
+    return test;
 }
 
 

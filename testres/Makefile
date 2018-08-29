@@ -1,6 +1,6 @@
-CFLAGS	= -O3 -Wall
-SRCS	= testres.c parse_junit.c parse_testanything.c parse_common.c
-OBJ 	= testres.o parse_junit.o parse_testanything.o parse_common.o
+CFLAGS	= -O1 -Wall
+SRCS	= testres.c parse_junit.c parse_subunit_v2.c parse_testanything.c parse_common.c manage_tests.c
+OBJ 	= testres.o parse_junit.o parse_subunit_v2.o parse_testanything.o parse_common.o manage_tests.o
 BIN	= testres.cgi
 CGIDIR	= /var/www/cgi-bin
 

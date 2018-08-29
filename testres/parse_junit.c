@@ -31,7 +31,10 @@
 #include <expat.h>
 #include <fcntl.h>
 
+#ifndef PARSE_COMMON_H
+#define PARSE_COMMON_H
 #include "parse_common.h"
+#endif /* PARSE_COMMON_H */
 
 #ifdef XML_LARGE_SIZE
 # if defined(XML_USE_MSC_EXTENSIONS) && _MSC_VER < 1400
@@ -104,7 +107,7 @@ end(void *data, const XML_Char *el)
   Depth--;
 }
 
-void parse_junit(FILE *f) {
+report_t *parse_junit(FILE *f) {
   XML_Parser p = XML_ParserCreate(NULL);
   if (! p) {
     fprintf(stderr, "Couldn't allocate memory for parser\n");
@@ -135,4 +138,6 @@ void parse_junit(FILE *f) {
     }
   }
   XML_ParserFree(p);
+
+  return NULL;
 }

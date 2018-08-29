@@ -80,18 +80,18 @@ int main(int argc, char *argv[]) {
 
   d = opendir(storage_dir);
   if (!(d)) {
-    printf("failed to open dir %s", storage_dir);
-    return 1;
+      printf("failed to open dir %s", storage_dir);
+      return 1;
   }
 
   while ((dir = readdir(d)) != NULL) {
-    char *basename;
-    basename = dir->d_name;
-    if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
-       continue;
-    }
-	/* TODO: check is it file or directory */
-	process_file(storage_dir, basename);
+      char *basename;
+      basename = dir->d_name;
+      if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
+         continue;
+      }
+      /* TODO: check is it file or directory */
+      process_file(storage_dir, basename);
   }
   closedir(d);
   return(0);

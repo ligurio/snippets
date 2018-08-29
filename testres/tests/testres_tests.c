@@ -1,7 +1,11 @@
 #include <stdarg.h>
+#include <stdio.h>
 #include <stddef.h>
 #include <setjmp.h>
 #include <cmocka.h>
+
+#include "parse_junit.h"
+#include "parse_testanything.h"
 
 /*
  * -----------------------
@@ -20,9 +24,9 @@ main(void)
 	/* Array of test functions */
 	const struct CMUnitTest tests[] =
 	{
-		cmocka_unit_test(test_junit),
 		cmocka_unit_test(test_testanything),
 		cmocka_unit_test(test_subunit),
+		cmocka_unit_test(test_junit),
 	};
 
 	/* Run series of tests */
@@ -35,23 +39,21 @@ main(void)
  * ----------------------
  */
 
-/* Basic JUnit format support */
-static void
-test_junit(void **state)
-{
-	assert_int_equal(99, 99);
-	assert_int_equal(0, 0);
-	assert_int_equal(0, 0);
-}
-
-
 /* Basic TAP format support */
 static void
 test_testanything(void **state)
 {
-	assert_int_equal(99, 99);
-	assert_int_equal(0, 0);
-	assert_int_equal(0, 0);
+    skip();
+/*
+    char *filename = "./tests/testanything/example.tap";
+    struct ast_test *tests;
+    FILE *f;
+    f = fopen(filename, "r");
+    tests = parse_testanything(f);
+    fclose(f);
+    print(stdout, tests);
+    assert_int_equal(99, 99);
+*/
 }
 
 
@@ -59,7 +61,13 @@ test_testanything(void **state)
 static void
 test_subunit(void **state)
 {
-	assert_int_equal(99, 99);
-	assert_int_equal(0, 0);
-	assert_int_equal(0, 0);
+    skip();
+}
+
+
+/* Basic JUnit format support */
+static void
+test_junit(void **state)
+{
+    skip();
 }

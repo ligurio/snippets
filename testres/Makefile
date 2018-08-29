@@ -1,12 +1,17 @@
-CFLAGS	= -O3 -std=c99 -Wall
+CFLAGS	= -O3 -Wall
 SRCS	= testres.c parse_junit.c parse_testanything.c parse_common.c
+OBJ 	= testres.o parse_junit.o parse_testanything.o parse_common.o
 BIN	= testres.cgi
 CGIDIR	= /var/www/cgi-bin
 
+
 all: testres.cgi
 
-testres.cgi: $(SRCS)
+testres.cgi: $(OBJ) $(SRCS)
 	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat
+
+%.o: %.c
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 install: all
 	@mkdir -p $(CGIDIR)
@@ -23,6 +28,7 @@ tags:
 
 clean:
 	rm -f $(BIN) cppcheck.log *.core
+	@make -C tests clean
 
 check:
 	cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

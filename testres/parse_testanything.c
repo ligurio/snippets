@@ -389,17 +389,3 @@ parse_testanything(FILE *f)
 	/* TODO: warn about duplicate test names */
 	return tests;
 }
-
-/*
-int main() {
-  char *filename = "./testresults.tap";
-  FILE *f;
-
-  f = fopen(filename, "r");
-  struct ast_test *tests;
-  tests = parse_testanything(f);
-  fclose(f);
-
-  print(stdout, tests);
-}
-*/

@@ -58,21 +58,6 @@ ast_line(struct ast_line **head, const char *text);
 struct ast_test *
 ast_test(struct ast_test **head, enum ast_status status, const char *name);
 
-static void
-rtrim(char *s);
-
-static void
-plan(const char *line, int *a, int *b);
-
-static void
-yaml(struct ast_test *test, const char *line);
-
-static void
-gap(struct ast_test **head, int *a, int b);
-
-static void
-starttest(struct ast_test **head, const char *line, int *a, int b);
-
 void
 print(FILE *f, const struct ast_test *tests);
 

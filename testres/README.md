@@ -9,6 +9,8 @@ https://github.com/kristapsdz/sblg
 https://man.openbsd.org/man.cgi.8
 https://man.openbsd.org/bgplg.8
 
+- добавить pledge(), capsicum() (см. https://kristaps.bsd.lv/lowdown/)
+
 ### Фильтры
 
 https://git.zx2c4.com/cgit/tree/filters

@@ -218,6 +218,7 @@ int y, M, d, h, m;
 float sec;
 char *dateStr = "2014-11-12T19:12:14.505Z";
 sscanf(dateStr, "%d-%d-%dT%d:%d:%fZ", &y, &M, &d, &h, &m, &sec);
+https://github.com/mlabbe/c_date_parse
 
 UTF-8
 https://github.com/benkasminbullock/unicode-c/blob/master/unicode.c

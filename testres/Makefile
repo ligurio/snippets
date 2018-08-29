@@ -1,13 +1,17 @@
 CFLAGS	= -O1 -Wall
-SRCS	= testres.c parse_junit.c parse_subunit_v2.c parse_testanything.c parse_common.c manage_tests.c
-OBJ 	= testres.o parse_junit.o parse_subunit_v2.o parse_testanything.o parse_common.o manage_tests.o
+SRCS	= testres.c manage_tests.c		\
+	  parse_junit.c	parse_subunit_v2.c	\
+	  parse_testanything.c parse_common.c
+OBJ 	= testres.o manage_tests.o		\
+	  parse_junit.o parse_subunit_v2.o	\
+	  parse_testanything.o parse_common.o
 BIN	= testres.cgi
 CGIDIR	= /var/www/cgi-bin
 
 
-all: testres.cgi
+all: $(BIN)
 
-testres.cgi: $(OBJ) $(SRCS)
+$(BIN): $(OBJ) $(SRCS)
 	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat
 
 %.o: %.c
@@ -15,10 +19,10 @@ testres.cgi: $(OBJ) $(SRCS)
 
 install: all
 	@mkdir -p $(CGIDIR)
-	@install -m 0755 testres.cgi $(CGIDIR)
+	@install -m 0755 $(BIN) $(CGIDIR)
 
 uninstall:
-	@rm -f $(CGIDIR)/testres.cgi
+	@rm -f $(CGIDIR)/$(BIN)
 
 test:
 	@make -C tests
@@ -27,8 +31,8 @@ tags:
 	@find . -name '*.[ch]' | xargs ctags
 
 clean:
-	rm -f $(BIN) $(OBJ) cppcheck.log *.core
 	@make -C tests clean
+	rm -f $(BIN) $(OBJ) cppcheck.log *.core
 
 check:
 	cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

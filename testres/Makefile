@@ -27,7 +27,7 @@ tags:
 	@find . -name '*.[ch]' | xargs ctags
 
 clean:
-	rm -f $(BIN) cppcheck.log *.core
+	rm -f $(BIN) $(OBJ) cppcheck.log *.core
 	@make -C tests clean
 
 check:

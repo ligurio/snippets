@@ -35,49 +35,10 @@
 #include <arpa/inet.h>
 #include <zlib.h>
 
-#define HI(x)  ((x) >> 8)
-#define LO(x)  ((x) & 0xFF)
+#include "parse_subunit_v2.h"
 
-#define SIGNATURE 			0xB3
-#define VERSION 			0x02
-#define PACKET_MAX_LENGTH 	4194303
-
-#define FLAG_TEST_ID		0x0800
-#define FLAG_ROUTE_CODE		0x0400
-#define FLAG_TIMESTAMP		0x0200
-#define FLAG_RUNNABLE		0x0100
-#define FLAG_TAGS			0x0080
-#define FLAG_MIME_TYPE		0x0020
-#define FLAG_EOF			0x0010
-#define FLAG_FILE_CONTENT	0x0040
-
-struct packet {
-    char     *test_id;
-    char     *route_code;
-    uint32_t timestamp;
-    uint32_t status;
-    char     *tags[];
-};
-
-typedef struct packet packet;
-
-struct subunit_header {
-    uint8_t  signature;
-    uint16_t flags;
-} __attribute__ ((packed));
-
-typedef struct subunit_header subunit_header;
-
-typedef uint32_t timestamp;
-
-enum TestStatus { Undefined,
-		  Enumeration,
-		  InProgress,
-          Success,
-          UnexpectedSuccess,
-		  Skipped,
-		  Failed,
-		  ExpectedFailure };
+// https://github.com/testing-cabal/subunit/blob/master/python/subunit/v2.py#L412
+// https://github.com/testing-cabal/subunit
 
 uint32_t read_field(FILE *stream) {
 
@@ -105,6 +66,13 @@ uint32_t read_field(FILE *stream) {
     };
 
     return field_value;
+}
+
+int read_stream(FILE *stream) {
+
+    while (!feof(stream)) {
+	read_packet(stream);
+    }
 }
 
 int read_packet(FILE *stream) {
@@ -175,73 +143,24 @@ int read_packet(FILE *stream) {
     return 0;
 }
 
-int main()
-{
-    // Packet sample, with test id, runnable set, status=enumeration.
-    // Spaces below are to visually break up:
-    // signature / flags / length / testid / crc32
-    // b3 2901 0c 03666f6f 08555f1b
-    // echo 03666f6f | xxd -p -r
 
-    subunit_header sample_header = { .signature = 0xb3, .flags = ntohs(0x2901) };
-    // FIXME: endianess
-    uint16_t sample_length = 0x0c;
-    // FIXME: endianess
-    uint32_t sample_testid = 0x03666f6f;
-    // FIXME: endianess
-    uint32_t sample_crc32 = 0x08555f1b;
+/*
 
-    char* buf = NULL;
-    size_t buf_size= 0;
-    FILE* stream = open_memstream(&buf, &buf_size);
-    fwrite(&sample_header, 1, sizeof(sample_header), stream);
-    fwrite(&sample_length, 1, sizeof(sample_length), stream);
-    fwrite(&sample_testid, 1, sizeof(sample_testid), stream);
-    fwrite(&sample_crc32, 1, sizeof(sample_crc32), stream);
-    read_packet(stream);
-    fclose(stream);
-    free(buf);
+CRC32
+const char *s = "0xb30x2901b329010c03666f6f";
+printf("%lX, should be %X\n", crc32(0, (const void*)s, strlen(s)), sample_crc32);
 
-    // ===========================================
+https://rosettacode.org/wiki/CRC-32#C
+http://csbruce.com/software/crc32.c
 
-    /*
-    FILE *file;
-    char *name;
-    name = "subunit-sample-01.subunit";
-    name = "01.subunit";
-    
-    printf("\nreading file %s\n", name);
-    file = fopen(name, "r");
-    if (file == NULL)
-    {
-    	fprintf(stderr, "Error opening file\n");
-    	return 1;
-    }
-    
-    while (!feof(file)) {
-	printf("===> next packet please\n");
-	read_packet(file);
-    }
-    fclose(file);
-    */
+Parse timestamp
+int y, M, d, h, m;
+float sec;
+char *dateStr = "2014-11-12T19:12:14.505Z";
+sscanf(dateStr, "%d-%d-%dT%d:%d:%fZ", &y, &M, &d, &h, &m, &sec);
 
-    /*
-    // crc32
-    const char *s = "0xb30x2901b329010c03666f6f";
-    printf("%lX, should be %X\n", crc32(0, (const void*)s, strlen(s)), sample_crc32);
+UTF-8
+https://github.com/benkasminbullock/unicode-c/blob/master/unicode.c
+https://github.com/clibs/cutef8
 
-    https://rosettacode.org/wiki/CRC-32#C
-    http://csbruce.com/software/crc32.c
-
-    // parse timestamp
-    int y, M, d, h, m;
-    float sec;
-    char *dateStr = "2014-11-12T19:12:14.505Z";
-    sscanf(dateStr, "%d-%d-%dT%d:%d:%fZ", &y, &M, &d, &h, &m, &sec);
-
-    // utf-8
-    https://github.com/benkasminbullock/unicode-c/blob/master/unicode.c
-    */
-
-    return 0;
-}
+*/

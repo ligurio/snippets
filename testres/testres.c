@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   }
 
   while ((dir = readdir(d)) != NULL) {
-	char *basename;
+    char *basename;
     basename = dir->d_name;
     if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
        continue;

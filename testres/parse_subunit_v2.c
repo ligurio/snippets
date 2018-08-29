@@ -133,7 +133,7 @@ test_t *read_packet(FILE *stream) {
     int n_bytes = 0;
     n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
     if ((n_bytes == 0) || (n_bytes < sizeof(subunit_header))) {
-       return NULL;
+       return test;
     }
 
     uint16_t flags = htons(header.flags);
@@ -148,43 +148,43 @@ test_t *read_packet(FILE *stream) {
 
     int8_t status;
     status = flags & 0x0007;
-    printf("\tSTATUS: %02hX\n", status);
+    printf("\tSTATUS: %u\n", status);
     assert(status <= 0x0007);
 
     uint32_t field_value;
     field_value = read_field(stream);
-    printf("TOTAL LENGTH: %d\n", field_value);
+    printf("TOTAL LENGTH: %u\n", field_value);
     assert(field_value < PACKET_MAX_LENGTH);
 
     if (flags & FLAG_TIMESTAMP) {
         printf("FLAG_TIMESTAMP ");
         field_value = read_field(stream);
-        printf("%08hX\n", field_value);
+        printf("%08X\n", field_value);
     };
     if (flags & FLAG_TEST_ID) {
         printf("FLAG_TEST_ID ");
         field_value = read_field(stream);
-        printf("%08hX\n", field_value);
+        printf("%08X\n", field_value);
     };
     if (flags & FLAG_TAGS) {
         printf("FLAG_TAGS ");
         field_value = read_field(stream);
-        printf("%08hX\n", field_value);
+        printf("%02X\n", field_value);
     };
     if (flags & FLAG_MIME_TYPE) {
         printf("FLAG_MIME_TYPE ");
         field_value = read_field(stream);
-        printf("%08hX\n", field_value);
+        printf("%02X\n", field_value);
     };
     if (flags & FLAG_FILE_CONTENT) {
         printf("FLAG_FILE_CONTENT ");
         field_value = read_field(stream);
-        printf("%08hX\n", field_value);
+        printf("%08X\n", field_value);
     };
     if (flags & FLAG_ROUTE_CODE) {
         printf("FLAG_ROUTE_CODE ");
         field_value = read_field(stream);
-        printf("%08hX\n", field_value);
+        printf("%08X\n", field_value);
     };
     if (flags & FLAG_EOF) {
         printf("FLAG_EOF\n");
@@ -194,7 +194,7 @@ test_t *read_packet(FILE *stream) {
     };
     printf("CRC32: ");
     field_value = read_field(stream);
-    printf("%08hX\n", field_value);
+    printf("%08X\n", field_value);
 
     test->status = STATUS_FAILED;
     test->name = "test";

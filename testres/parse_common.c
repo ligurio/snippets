@@ -49,7 +49,7 @@ report_t *process_file(const char *dirname, const char *basename) {
 
     enum format f;
     f = detect_file_format(basename);
-    report_t * report;
+    report_t * report = NULL;
     switch(f) {
         case FORMAT_JUNIT:
 	    parse_junit(file);

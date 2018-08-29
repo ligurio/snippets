@@ -1,13 +1,10 @@
 CFLAGS	= -O1 -Wall
-SRCS	= testres.c manage_tests.c		\
-	  parse_junit.c	parse_subunit_v2.c	\
-	  parse_testanything.c parse_common.c
-OBJ 	= testres.o manage_tests.o		\
-	  parse_junit.o parse_subunit_v2.o	\
-	  parse_testanything.o parse_common.o
-BIN	= testres.cgi
+SRCS	= testres.c manage_tests.c parse_common.c	\
+	parse_junit.c parse_subunit_v2.c parse_testanything.c
+OBJ 	= testres.o manage_tests.o parse_common.o	\
+	parse_junit.o parse_subunit_v2.o parse_testanything.o
+BIN		= testres.cgi
 CGIDIR	= /var/www/cgi-bin
-
 
 all: $(BIN)
 

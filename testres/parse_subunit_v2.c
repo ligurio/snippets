@@ -122,17 +122,17 @@ report_t *parse_subunit_v2(FILE *stream) {
 
 test_t *read_packet(FILE *stream) {
 
-    test_t *test;
-    test = malloc(sizeof(test_t));
-    memset(test, 0, sizeof(test_t));
-    test->next = NULL;
-
     subunit_header header;
     int n_bytes = 0;
     n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
     if ((n_bytes == 0) || (n_bytes < sizeof(subunit_header))) {
-       return test;
+       return NULL;
     }
+
+    test_t *test;
+    test = malloc(sizeof(test_t));
+    memset(test, 0, sizeof(test_t));
+    test->next = NULL;
 
     uint16_t flags = htons(header.flags);
     printf("SIGNATURE: %02hhX\n", header.signature);

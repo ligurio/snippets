@@ -44,6 +44,11 @@
 #include <string.h>
 #include <strings.h>
 
+#ifndef PARSE_COMMON_H
+#define PARSE_COMMON_H
+#include "parse_common.h"
+#endif /* PARSE_COMMON_H */
+
 #include "parse_testanything.h"
 
 const char *
@@ -58,6 +63,17 @@ ast_status(enum ast_status status)
 
 	default:
 		return "?";
+	}
+}
+
+enum test_status test_status(enum ast_status status)
+{
+	switch (status) {
+	case AST_OK:      return STATUS_OK;
+	case AST_NOTOK:   return STATUS_NOTOK;
+	case AST_MISSING: return STATUS_MISSING;
+	case AST_TODO:    return STATUS_TODO;
+	case AST_SKIP:    return STATUS_SKIP;
 	}
 }
 
@@ -387,5 +403,42 @@ parse_testanything(FILE *f)
 	}
 
 	/* TODO: warn about duplicate test names */
-	return tests;
+
+	struct ast_test * current;
+	test_t * t;
+	current = tests;
+	while (current != NULL) {
+	    t = malloc(sizeof(test_t));
+            memset(t, 0, sizeof(test_t));
+            t->name = current->name;
+            t->status = test_status(current->status);
+            t->next = NULL;
+
+            current = current->next;
+	}
+
+	/* TODO: remove ast_test * tests here */
+
+        suite_t * suite;
+        suite = malloc(sizeof(suite_t));
+        if (suite == NULL) {
+            return NULL;
+        }
+        memset(suite, 0, sizeof(suite_t));
+        suite->name = "testanything suite1";
+        suite->hostname = "";
+        suite->test = t;
+        suite->next = NULL;
+
+        report_t * report;
+        report = malloc(sizeof(report_t));
+        if (report == NULL) {
+            return NULL;
+        }
+        memset(report, 0, sizeof(report_t));
+        report->format = FORMAT_TAP13;
+        report->suite = suite;
+        report->next = NULL;
+
+        return report;
 }

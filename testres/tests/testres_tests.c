@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include <cmocka.h>
+#include <assert.h>
 #include <arpa/inet.h>
 
 #ifndef PARSE_COMMON_H
@@ -16,9 +17,9 @@
 #include "parse_subunit_v2.h"
 #include "manage_tests.h"
 
-#define SAMPLE_FILE_JUNIT "junit/junit-sample-1.xml"
-#define SAMPLE_FILE_SUBUNIT_V2 "subunit/subunit-sample-02.subunit"
-#define SAMPLE_FILE_TESTANYTHING "testanything/tap-sample-01.tap"
+#define SAMPLE_FILE_JUNIT "samples/junit/junit-sample-1.xml"
+#define SAMPLE_FILE_SUBUNIT_V2 "samples/subunit/subunit-sample-02.subunit"
+#define SAMPLE_FILE_TESTANYTHING "samples/testanything/tap-sample-01.tap"
 
 /*
  * -----------------------
@@ -83,9 +84,24 @@ test_parse_testanything(void **state)
 static void
 test_parse_testanything_common(void **state)
 {
+    /* parse via parse() and parse_subunit_v2() and compare structs */
+
+    FILE *file;
     char *name = SAMPLE_FILE_TESTANYTHING;
-    skip();
-    /* parse via parse() and parse_testanything() and compare structs */
+    report_t *report1, *report2;
+
+    file = fopen(name, "r");
+    if (file == NULL)
+    {
+        fail();
+    }
+    report1 = parse_testanything(file);
+    report2 = process_file(name);
+    fclose(file);
+
+    assert(report1->format == report2->format);
+
+    /* FIXME: free report1 and report2 */
 }
 
 /* Basic SubUnit format support */
@@ -103,15 +119,18 @@ test_parse_subunit_packet(void **state)
     uint32_t sample_testid = 0x03666f6f;
     uint32_t sample_crc32 = 0x08555f1b;
 
-    report_t *report;
     char* buf = NULL;
     size_t buf_size = 0;
+    test_t * test;
     FILE* stream = open_memstream(&buf, &buf_size);
     fwrite(&sample_header, 1, sizeof(sample_header), stream);
     fwrite(&sample_length, 1, sizeof(sample_length), stream);
     fwrite(&sample_testid, 1, sizeof(sample_testid), stream);
     fwrite(&sample_crc32, 1, sizeof(sample_crc32), stream);
-    read_packet(stream);
+    test = read_packet(stream);
+
+    assert_string_equal(test->name, "");
+    /* FIXME: free test */
     fclose(stream);
     free(buf);
 }
@@ -121,7 +140,6 @@ static void
 test_parse_subunit(void **state)
 {
     char *name = SAMPLE_FILE_SUBUNIT_V2;
-    report_t *report;
     FILE *file;
 
     file = fopen(name, "r");
@@ -129,7 +147,10 @@ test_parse_subunit(void **state)
     {
         fail();
     }
+    report_t *report;
     report = parse_subunit_v2(file);
+    assert(report->format == FORMAT_SUBUNIT_V2);
+    /* FIXME: free report */
     fclose(file);
 }
 
@@ -137,7 +158,23 @@ static void
 test_parse_subunit_common(void **state)
 {
     /* parse via parse() and parse_subunit_v2() and compare structs */
-    skip();
+
+    FILE *file;
+    char *name = SAMPLE_FILE_SUBUNIT_V2;
+    report_t *report1, *report2;
+
+    file = fopen(name, "r");
+    if (file == NULL)
+    {
+        fail();
+    }
+    report1 = parse_subunit_v2(file);
+    report2 = process_file(name);
+    fclose(file);
+
+    assert(report1->format == report2->format);
+
+    /* FIXME: free report1 and report2 */
 }
 
 /* Basic JUnit format support */
@@ -146,14 +183,40 @@ test_parse_junit(void **state)
 {
     FILE *file;
     char *name = SAMPLE_FILE_JUNIT;
-    skip();
+    report_t *report;
+
+    file = fopen(name, "r");
+    if (file == NULL)
+    {
+        fail();
+    }
+    report = parse_junit(file);
+    assert(report->format == FORMAT_JUNIT);
+    /* FIXME: free report */
+    fclose(file);
 }
 
 static void
 test_parse_junit_common(void **state)
 {
     /* parse via parse() and parse_junit() and compare structs */
-    skip();
+
+    FILE *file;
+    char *name = SAMPLE_FILE_JUNIT;
+    report_t *report1, *report2;
+
+    file = fopen(name, "r");
+    if (file == NULL)
+    {
+        fail();
+    }
+    report1 = parse_junit(file);
+    report2 = process_file(name);
+    fclose(file);
+
+    assert(report1->format == report2->format);
+
+    /* FIXME: free report1 and report2 */
 }
 
 static void

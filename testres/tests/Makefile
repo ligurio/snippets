@@ -9,6 +9,7 @@ OBJ 	 = testres_tests.o			\
 	   $(TOP_SRC_DIR)/parse_testanything.o 	\
 	   $(TOP_SRC_DIR)/parse_junit.o 	\
            $(TOP_SRC_DIR)/parse_subunit_v2.o	\
+           $(TOP_SRC_DIR)/parse_common.o	\
            $(TOP_SRC_DIR)/manage_tests.o
 
 all: test

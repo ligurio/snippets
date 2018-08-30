@@ -70,7 +70,7 @@ start(void *data, const XML_Char *elem, const XML_Char **attr)
         const char *attr_value = attr[i + 1];
 
         //printf(" %" XML_FMT_STR "='%" XML_FMT_STR "'", attr_name, attr_value);
-
+        /*
         if (strcmp(attr_name, "name") == 0) {
            printf("name %s\n", attr_value);
         }
@@ -92,6 +92,7 @@ start(void *data, const XML_Char *elem, const XML_Char **attr)
         if (strcmp(attr[i], "errors") == 0) {
            printf("errors %s\n", attr[i + 1]);
         }
+        */
      }
   }
   Depth++;
@@ -114,7 +115,6 @@ report_t *parse_junit(FILE *f) {
   }
   XML_SetElementHandler(p, start, end);
 
-  printf("parse_junit()\n");
   for (;;) {
     int len, done;
     len = fread(Buff, 1, BUFFSIZE, f);

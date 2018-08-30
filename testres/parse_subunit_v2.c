@@ -194,6 +194,7 @@ test_t *read_packet(FILE *stream) {
     field_value = read_field(stream);
     printf("%08X\n", field_value);
 
+    /* FIXME */
     test->status = STATUS_FAILED;
     test->name = "test";
     test->time = "12:14:44";

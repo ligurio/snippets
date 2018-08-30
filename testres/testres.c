@@ -44,19 +44,24 @@
 int main(int argc, char *argv[]) {
 
   const char *storage_dir = "/";
+  char *path;
   int opt = 0;
 
-  while ((opt = getopt(argc, argv, "hd:")) != -1) {
+  path = NULL;
+
+  while ((opt = getopt(argc, argv, "hd:f:")) != -1) {
       switch (opt) {
       case 'h':
-          fprintf(stderr, "Usage: %s [-d directory] [-h]\n", argv[0]);
+          fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", argv[0]);
           return(1);
       case 'd':
-          printf("%s\n", optarg);
           storage_dir = optarg;
           break;
+      case 'f':
+          path = optarg;
+          break;
       default: /* '?' */
-          fprintf(stderr, "Usage: %s [-d directory] [-h]\n", argv[0]);
+          fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", argv[0]);
           return 1;
       }
   }
@@ -68,19 +73,22 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  printf("storage directory %s\n", storage_dir);
+  report_t *report;
+  if (path != NULL) {
+     report = process_file(path);
+     print_reports(report);
+     return 0;
+  }
 
   DIR *d;
   struct dirent *dir;
-
-  print_headers();
-
   d = opendir(storage_dir);
-  if (!(d)) {
+  if (d == NULL) {
       printf("failed to open dir %s\n", storage_dir);
       return 1;
   }
 
+  print_headers();
   while ((dir = readdir(d)) != NULL) {
       char *basename;
       basename = dir->d_name;
@@ -89,8 +97,8 @@ int main(int argc, char *argv[]) {
       }
       /* TODO: check is it file or directory */
 
-      report_t *report;
-      report = process_file(storage_dir, basename);
+      snprintf(path, sizeof(path), "%s/%s", storage_dir, basename);
+      report = process_file(path);
       print_reports(report);
   }
   closedir(d);

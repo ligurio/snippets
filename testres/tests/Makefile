@@ -11,7 +11,7 @@ OBJ 	 = testres_tests.o			\
            $(TOP_SRC_DIR)/parse_subunit_v2.o	\
            $(TOP_SRC_DIR)/manage_tests.o
 
-all: $(TEST_BIN) build_app test
+all: test
 
 $(TEST_BIN): $(OBJ)
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
@@ -22,8 +22,7 @@ $(TEST_BIN): $(OBJ)
 build_app:
 	$(MAKE) -C $(TOP_SRC_DIR)/
 
-test: all
-	# CMOCKA_XML_FILE='output.xml' CMOCKA_MESSAGE_OUTPUT=xml
+test: $(TEST_BIN) build_app
 	./$(TEST_BIN)
 
 clean:

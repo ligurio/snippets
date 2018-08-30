@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
 
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
@@ -35,20 +36,17 @@ enum format detect_file_format(const char *basename) {
     }
 }
 
-report_t *process_file(const char *dirname, const char *basename) {
-
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/%s", dirname, basename);
+report_t *process_file(char *path) {
 
     FILE *file;
     file = fopen(path, "r");
-    if (!(file)) {
+    if (file == NULL) {
        printf("failed to open file %s\n", path);
        return NULL;
     }
 
     enum format f;
-    f = detect_file_format(basename);
+    f = detect_file_format(basename(path));
     report_t * report = NULL;
     switch(f) {
         case FORMAT_JUNIT:

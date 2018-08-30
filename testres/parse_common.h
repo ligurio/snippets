@@ -55,4 +55,4 @@ typedef struct report report_t;
 
 char *get_filename_ext(const char *filename);
 enum format detect_format(const char *basename);
-report_t *process_file(const char *path, const char *name);
+report_t *process_file(char *path);

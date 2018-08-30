@@ -45,7 +45,7 @@ tags:
 
 clean:
 	@make -C tests clean
-	rm -f $(BIN) $(OBJ) $(PLIST) cppcheck.log *.core
+	rm -f $(BIN) $(OBJ) $(PLIST) cppcheck.log *.core tags
 
 check: $(PLIST)
 	@cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

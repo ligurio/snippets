@@ -104,13 +104,11 @@ report_t *parse_subunit_v2(FILE *stream) {
     suite_t *suites;
     suites = malloc(sizeof(suite_t));
     memset(suites, 0, sizeof(suite_t));
-
-    suites->name = "suite";	// FIXME
+    suites->name = "def_suite";
     suites->test = tests;
-    suites->n_failures = 0;	// FIXME
-    suites->n_errors = 0;	// FIXME
+    suites->n_failures = 0;
+    suites->n_errors = 0;
     suites->next = NULL;
-    //push_suite(suites, &suite);
 
     report_t * report;
     report = malloc(sizeof(report_t));

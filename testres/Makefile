@@ -1,9 +1,17 @@
-CFLAGS	= -O1 -Wall
-SRCS	= testres.c manage_tests.c parse_common.c	\
-	parse_junit.c parse_subunit_v2.c parse_testanything.c
-OBJ 	= testres.o manage_tests.o parse_common.o	\
-	parse_junit.o parse_subunit_v2.o parse_testanything.o
-BIN		= testres.cgi
+CFLAGS	+= -Wall -Wextra -Wfloat-equal -Wundef
+CFLAGS	+= -Wpointer-arith -Wcast-align -Wshadow
+CFLAGS	+= -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
+CFLAGS	+= -Wswitch-enum -Wunreachable-code -Winit-self
+CFLAGS	+= -O1 -g -fPIC -fsigned-char
+# TODO: -Wstrict-prototypes -Wconversion -Wcast-qual -Werror
+
+SRCS	= testres.c manage_tests.c parse_common.c \
+	parse_junit.c parse_subunit_v2.c parse_testanything.c \
+	ui_common.c
+OBJ 	= testres.o manage_tests.o parse_common.o \
+	parse_junit.o parse_subunit_v2.o parse_testanything.o \
+	ui_common.o
+BIN	= testres.cgi
 CGIDIR	= /var/www/cgi-bin
 
 all: $(BIN)

@@ -34,19 +34,12 @@
 #include <err.h>
 
 #include "parse_common.h"
+#include "ui_common.h"
 
-void print_headers() {
-  printf("Content-Type: text/plain;charset=utf-8\n\n");
-}
-
-void usage() {
-  printf("testres\n");
-  printf("\tUsage: testres -d DIR\n");
-}
 
 int main(int argc, char *argv[]) {
 
-  char *storage_dir = "/";
+  const char *storage_dir = "/";
   int opt = 0;
 
   while ((opt = getopt(argc, argv, "hd:")) != -1) {
@@ -94,5 +87,6 @@ int main(int argc, char *argv[]) {
       process_file(storage_dir, basename);
   }
   closedir(d);
-  return(0);
+
+  return 0;
 }

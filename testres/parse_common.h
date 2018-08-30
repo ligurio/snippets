@@ -24,8 +24,8 @@ enum test_status {
 };
 
 struct test {
-	char *name;
-	char *time;
+	const char *name;
+	const char *time;
 	enum test_status status;
 	struct test *next;
 };
@@ -33,9 +33,9 @@ struct test {
 typedef struct test test_t;
 
 struct suite {
-    char *name;
-    char *hostname;
-    char *timestamp;
+    const char *name;
+    const char *hostname;
+    const char *timestamp;
     int n_failures;
     int n_errors;
     double time;

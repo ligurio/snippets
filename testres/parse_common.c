@@ -12,7 +12,8 @@
 
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');
-    if (!dot || dot == filename) return "";
+    if (!dot || dot == filename)
+        return "";
 
     return dot + 1;
 }
@@ -21,7 +22,6 @@ enum format detect_file_format(const char *basename) {
 
     char *file_ext;
     file_ext = get_filename_ext(basename);
-    printf("extension %s\n", file_ext);
 
     if (strcasecmp("xml", file_ext) == 0) {
        return FORMAT_JUNIT;

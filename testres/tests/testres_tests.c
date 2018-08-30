@@ -14,6 +14,7 @@
 #include "parse_junit.h"
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
+#include "manage_tests.h"
 
 #define SAMPLE_FILE_JUNIT "junit/junit-sample-1.xml"
 #define SAMPLE_FILE_SUBUNIT_V2 "subunit/subunit-sample-02.subunit"
@@ -35,6 +36,8 @@ static void test_parse_subunit(void **state);
 static void test_parse_junit_common(void **state);
 static void test_parse_junit(void **state);
 
+static void test_list(void **state);
+
 /* Entrypoint */
 int
 main(void)
@@ -49,6 +52,7 @@ main(void)
 		cmocka_unit_test(test_parse_subunit),
 		cmocka_unit_test(test_parse_junit_common),
 		cmocka_unit_test(test_parse_junit),
+		cmocka_unit_test(test_list),
 	};
 
 	/* Run series of tests */
@@ -150,4 +154,48 @@ test_parse_junit_common(void **state)
 {
     /* parse via parse() and parse_junit() and compare structs */
     skip();
+}
+
+static void
+test_list(void **state) {
+
+    /* see https://github.com/clibs/list/blob/master/test.c */
+
+    /*
+    test_t * test;
+    test = malloc(sizeof(test_t));
+    if (test == NULL) {
+        fail();
+    }
+    memset(test, 0, sizeof(test_t));
+    test->name = "test1";
+    test->time = "12:45:56";
+    test->status = STATUS_OK;
+    test->next = NULL;
+
+    suite_t * suite;
+    suite = malloc(sizeof(suite_t));
+    if (suite == NULL) {
+        fail();
+    }
+    memset(suite, 0, sizeof(suite_t));
+    suite->name = "suite1";
+    suite->test = test;
+    suite->n_failures = 10;
+    suite->n_errors = 11;
+    suite->next = NULL;
+
+    report_t * report;
+    report = malloc(sizeof(report_t));
+    if (report == NULL) {
+        fail();
+    }
+    memset(report, 0, sizeof(report_t));
+    report->format = FORMAT_SUBUNIT_V1;
+    report->suite = suite;
+    report->next = NULL;
+
+    print_reports(report);
+    delete_reports(report);
+    */
 }

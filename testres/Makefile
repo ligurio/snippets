@@ -47,6 +47,9 @@ clean:
 	@make -C tests clean
 	rm -f $(BIN) $(OBJ) $(PLIST) cppcheck.log *.core tags
 
+techdebt:
+	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"
+
 check: $(PLIST)
 	@cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \
 		--enable=warning,portability,performance \
@@ -55,4 +58,4 @@ check: $(PLIST)
 		--suppress=incorrectStringBooleanError \
 		--std=c89 *.c *.h 2> cppcheck.log
 
-.PHONY: install clean check test tags
+.PHONY: clean check install tags test techdebt

@@ -1,9 +1,10 @@
-CFLAGS	+= -Wall -Wextra -Wfloat-equal -Wundef
-CFLAGS	+= -Wpointer-arith -Wcast-align -Wshadow
-CFLAGS	+= -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
-CFLAGS	+= -Wswitch-enum -Wunreachable-code -Winit-self
-CFLAGS	+= -O1 -g -fPIC -fsigned-char
-# TODO: -Wstrict-prototypes -Wconversion -Wcast-qual -Werror
+CC         = gcc
+CFLAGS	  += -O1 -g3
+CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
+CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
+CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
+CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
+LDFLAGS   += -lexpat
 
 SRCS	= testres.c manage_tests.c parse_common.c \
 	parse_junit.c parse_subunit_v2.c parse_testanything.c \
@@ -11,16 +12,23 @@ SRCS	= testres.c manage_tests.c parse_common.c \
 OBJ 	= testres.o manage_tests.o parse_common.o \
 	parse_junit.o parse_subunit_v2.o parse_testanything.o \
 	ui_common.o
+PLIST	= testres.plist manage_tests.plist parse_common.plist \
+	parse_junit.plist parse_subunit_v2.plist parse_testanything.plist \
+	ui_common.plist
 BIN	= testres.cgi
 CGIDIR	= /var/www/cgi-bin
 
 all: $(BIN)
 
 $(BIN): $(OBJ) $(SRCS)
-	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) -lexpat
+	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+%.plist: %.c
+	@clang --analyze $<
+	echo $<
 
 install: all
 	@mkdir -p $(CGIDIR)
@@ -37,10 +45,10 @@ tags:
 
 clean:
 	@make -C tests clean
-	rm -f $(BIN) $(OBJ) cppcheck.log *.core
+	rm -f $(BIN) $(OBJ) $(PLIST) cppcheck.log *.core
 
-check:
-	cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \
+check: $(PLIST)
+	@cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \
 		--enable=warning,portability,performance \
 		--suppress=redundantAssignment \
 		--suppress=uselessAssignmentPtrArg \

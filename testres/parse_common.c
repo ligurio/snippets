@@ -9,6 +9,7 @@
 
 #include "parse_junit.h"
 #include "parse_testanything.h"
+#include "parse_subunit_v2.h"
 
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');
@@ -38,12 +39,11 @@ report_t *process_file(const char *dirname, const char *basename) {
 
     char path[1024];
     snprintf(path, sizeof(path), "%s/%s", dirname, basename);
-    printf("%s\n", path);
 
     FILE *file;
     file = fopen(path, "r");
     if (!(file)) {
-       printf("failed to open file %s", path);
+       printf("failed to open file %s\n", path);
        return NULL;
     }
 
@@ -52,16 +52,16 @@ report_t *process_file(const char *dirname, const char *basename) {
     report_t * report = NULL;
     switch(f) {
         case FORMAT_JUNIT:
-	    parse_junit(file);
+	    report = parse_junit(file);
 	    break;
         case FORMAT_TAP13:
-	    /* FIXME: return report_t */
-	    parse_testanything(file);
+	    report = parse_testanything(file);
 	    break;
         case FORMAT_SUBUNIT_V1:
-	    //parse_subunit_v2(file);
+	    /* TODO */
 	    break;
         case FORMAT_SUBUNIT_V2:
+	    report = parse_subunit_v2(file);
 	    break;
         case FORMAT_UNKNOWN:
 	    break;

@@ -56,7 +56,6 @@
 
 char Buff[BUFFSIZE];
 int Depth;
-report_t report;
 
 static void XMLCALL
 start(void *data, const XML_Char *elem, const XML_Char **attr)
@@ -139,5 +138,38 @@ report_t *parse_junit(FILE *f) {
   }
   XML_ParserFree(p);
 
-  return NULL;
+  test_t * test;
+  test = malloc(sizeof(test_t));
+  if (test == NULL) {
+      return NULL;
+  }
+  memset(test, 0, sizeof(test_t));
+  test->name = "junit test1";
+  test->time = "12:34:78";
+  test->status = STATUS_OK;
+  test->next = NULL;
+
+  suite_t * suite;
+  suite = malloc(sizeof(suite_t));
+  if (suite == NULL) {
+      return NULL;
+  }
+  memset(suite, 0, sizeof(suite_t));
+  suite->name = "junit suite1";
+  suite->hostname = "hostname1";
+  suite->n_errors= 44;
+  suite->n_failures = 12;
+  suite->next = NULL;
+
+  report_t * report;
+  report = malloc(sizeof(report_t));
+  if (report == NULL) {
+      return NULL;
+  }
+  memset(report, 0, sizeof(report_t));
+  report->format = FORMAT_JUNIT;
+  report->suite = suite;
+  report->next = NULL;
+
+  return report;
 }

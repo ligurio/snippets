@@ -33,9 +33,13 @@
 #include <unistd.h>
 #include <err.h>
 
+#ifndef PARSE_COMMON_H
+#define PARSE_COMMON_H
 #include "parse_common.h"
-#include "ui_common.h"
+#endif /* PARSE_COMMON_H */
 
+#include "manage_tests.h"
+#include "ui_common.h"
 
 int main(int argc, char *argv[]) {
 
@@ -84,7 +88,10 @@ int main(int argc, char *argv[]) {
          continue;
       }
       /* TODO: check is it file or directory */
-      process_file(storage_dir, basename);
+
+      report_t *report;
+      report = process_file(storage_dir, basename);
+      print_reports(report);
   }
   closedir(d);
 

@@ -1,6 +1,6 @@
 TOP_SRC_DIR = ..
 
-CC 	 = gcc
+CC 	?= gcc
 CFLAGS  += -I/usr/local/include/ -I$(TOP_SRC_DIR)
 LDFLAGS += -L/usr/local/lib -lexpat -lcmocka
 TEST_BIN = testres_tests
@@ -47,7 +47,9 @@ test-fuzz:
 	@cp $(SAMPLE_FILE_TESTANYTHING) $(AFL_IN)
 	@make -C $(TOP_SRC_DIR) clean
 	@CC=afl-clang make -C $(TOP_SRC_DIR)
-	@afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) $(TOP_SRC_DIR)/$(BIN) -f @@
+	@afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -f @@
 
 clean:
-	rm -f $(OBJ) $(TEST_BIN)
+	rm -f $(OBJ) $(TEST_BIN) $(AFL_IN) $(AFL_OUT)
+
+.PHONY: test-unit test-module test-fuzz clean

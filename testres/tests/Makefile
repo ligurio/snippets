@@ -14,10 +14,12 @@ OBJ 	 = testres_tests.o			\
 BIN	 = testres.cgi
 
 SAMPLE_FILE_JUNIT = "samples/junit/junit-sample-1.xml"
-SAMPLE_FILE_SUBUNIT_V2 = "samples/subunit/subunit-sample-02.subunit"
+SAMPLE_FILE_SUBUNIT_V2 = "samples/subunit/01.subunit"
 SAMPLE_FILE_TESTANYTHING = "samples/testanything/tap-sample-01.tap"
 
 VALGRIND_OPT = --leak-check=yes --leak-check=full --show-leak-kinds=all
+AFL_IN = in
+AFL_OUT = out
 
 all: test-unit test-module
 
@@ -37,6 +39,15 @@ test-module: build_app
 	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_TESTANYTHING)
 	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_SUBUNIT_V2)
 	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_JUNIT)
+
+test-fuzz:
+	@rm -rf $(AFL_OUT) $(AFL_IN) && mkdir $(AFL_OUT) $(AFL_IN)
+	@cp $(SAMPLE_FILE_JUNIT) $(AFL_IN)
+	@cp $(SAMPLE_FILE_SUBUNIT_V2) $(AFL_IN)
+	@cp $(SAMPLE_FILE_TESTANYTHING) $(AFL_IN)
+	@make -C $(TOP_SRC_DIR) clean
+	@CC=afl-clang make -C $(TOP_SRC_DIR)
+	@afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) $(TOP_SRC_DIR)/$(BIN) -f @@
 
 clean:
 	rm -f $(OBJ) $(TEST_BIN)

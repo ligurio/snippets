@@ -1,4 +1,4 @@
-CC         = gcc
+CC        ?= gcc
 CFLAGS	  += -O1 -g3
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow

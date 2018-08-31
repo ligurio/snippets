@@ -41,15 +41,16 @@ test-module: build_app
 	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_JUNIT)
 
 test-fuzz:
-	@rm -rf $(AFL_OUT) $(AFL_IN) && mkdir $(AFL_OUT) $(AFL_IN)
+	@rm -rf $(AFL_OUT) $(AFL_IN); mkdir $(AFL_OUT) $(AFL_IN)
 	@cp $(SAMPLE_FILE_JUNIT) $(AFL_IN)
 	@cp $(SAMPLE_FILE_SUBUNIT_V2) $(AFL_IN)
 	@cp $(SAMPLE_FILE_TESTANYTHING) $(AFL_IN)
 	@make -C $(TOP_SRC_DIR) clean
 	@CC=afl-clang make -C $(TOP_SRC_DIR)
-	@afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -f @@
+	@AFL_USE_MSAN=1 AFL_USE_ASAN=1 AFL_EXIT_WHEN_DONE=1 \
+	afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -f @@
 
 clean:
-	rm -f $(OBJ) $(TEST_BIN) $(AFL_IN) $(AFL_OUT)
+	rm -rf $(OBJ) $(TEST_BIN) $(AFL_IN) $(AFL_OUT)
 
-.PHONY: test-unit test-module test-fuzz clean
+.PHONY: all test-unit test-module test-fuzz clean

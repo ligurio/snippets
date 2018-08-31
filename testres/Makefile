@@ -58,4 +58,4 @@ check: $(PLIST)
 		--suppress=incorrectStringBooleanError \
 		--std=c89 *.c *.h 2> cppcheck.log
 
-.PHONY: clean check install tags test techdebt
+.PHONY: all clean check install tags test techdebt

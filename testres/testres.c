@@ -41,6 +41,10 @@
 #include "manage_tests.h"
 #include "ui_common.h"
 
+void usage(char *name) {
+  fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", name);
+}
+
 int main(int argc, char *argv[]) {
 
   const char *storage_dir = "/";
@@ -52,7 +56,7 @@ int main(int argc, char *argv[]) {
   while ((opt = getopt(argc, argv, "hd:f:")) != -1) {
       switch (opt) {
       case 'h':
-          fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", argv[0]);
+          usage(argv[0]);
           return(1);
       case 'd':
           storage_dir = optarg;
@@ -61,17 +65,15 @@ int main(int argc, char *argv[]) {
           path = optarg;
           break;
       default: /* '?' */
-          fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", argv[0]);
+          usage(argv[0]);
           return 1;
       }
   }
 
-  /*
   if (optind >= argc) {
-      fprintf(stderr, "Expected argument after options\n");
+      usage(argv[0]);
       return 1;
   }
-  */
 
   report_t *report;
   if (path != NULL) {

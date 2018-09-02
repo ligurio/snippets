@@ -4,6 +4,222 @@
 
 #include "manage_tests.h"
 
+/*
+ * Allocate a new list_t. NULL on failure.
+ */
+
+list_t *
+list_new() {
+  list_t *self;
+  if (!(self = malloc(sizeof(list_t))))
+    return NULL;
+  self->head = NULL;
+  self->tail = NULL;
+  self->free = NULL;
+  self->match = NULL;
+  self->len = 0;
+  return self;
+}
+
+/*
+ * Free the list.
+ */
+
+void
+list_destroy(list_t *self) {
+  unsigned int len = self->len;
+  list_node_t *next;
+  list_node_t *curr = self->head;
+
+  while (len--) {
+    next = curr->next;
+    if (self->free) self->free(curr->val);
+    free(curr);
+    curr = next;
+  }
+
+  free(self);
+}
+
+/*
+ * Append the given node to the list
+ * and return the node, NULL on failure.
+ */
+
+list_node_t *
+list_rpush(list_t *self, list_node_t *node) {
+  if (!node) return NULL;
+
+  if (self->len) {
+    node->prev = self->tail;
+    node->next = NULL;
+    self->tail->next = node;
+    self->tail = node;
+  } else {
+    self->head = self->tail = node;
+    node->prev = node->next = NULL;
+  }
+
+  ++self->len;
+  return node;
+}
+
+/*
+ * Return / detach the last node in the list, or NULL.
+ */
+
+list_node_t *
+list_rpop(list_t *self) {
+  if (!self->len) return NULL;
+
+  list_node_t *node = self->tail;
+
+  if (--self->len) {
+    (self->tail = node->prev)->next = NULL;
+  } else {
+    self->tail = self->head = NULL;
+  }
+
+  node->next = node->prev = NULL;
+  return node;
+}
+
+/*
+ * Return / detach the first node in the list, or NULL.
+ */
+
+list_node_t *
+list_lpop(list_t *self) {
+  if (!self->len) return NULL;
+
+  list_node_t *node = self->head;
+
+  if (--self->len) {
+    (self->head = node->next)->prev = NULL;
+  } else {
+    self->head = self->tail = NULL;
+  }
+
+  node->next = node->prev = NULL;
+  return node;
+}
+
+/*
+ * Prepend the given node to the list
+ * and return the node, NULL on failure.
+ */
+
+list_node_t *
+list_lpush(list_t *self, list_node_t *node) {
+  if (!node) return NULL;
+
+  if (self->len) {
+    node->next = self->head;
+    node->prev = NULL;
+    self->head->prev = node;
+    self->head = node;
+  } else {
+    self->head = self->tail = node;
+    node->prev = node->next = NULL;
+  }
+
+  ++self->len;
+  return node;
+}
+
+/*
+ * Remove the given node from the list, freeing it and it's value.
+ */
+
+void
+list_remove(list_t *self, list_node_t *node) {
+  node->prev
+    ? (node->prev->next = node->next)
+    : (self->head = node->next);
+
+  node->next
+    ? (node->next->prev = node->prev)
+    : (self->tail = node->prev);
+
+  if (self->free) self->free(node->val);
+
+  free(node);
+  --self->len;
+}
+
+/*
+ * Allocates a new list_node_t. NULL on failure.
+ */
+
+list_node_t *
+list_node_new(void *val) {
+  list_node_t *self;
+  if (!(self = malloc(sizeof(list_node_t))))
+    return NULL;
+  self->prev = NULL;
+  self->next = NULL;
+  self->val = val;
+  return self;
+}
+
+/*
+ * Allocate a new list_iterator_t. NULL on failure.
+ * Accepts a direction, which may be LIST_HEAD or LIST_TAIL.
+ */
+
+list_iterator_t *
+list_iterator_new(list_t *list, list_direction_t direction) {
+  list_node_t *node = direction == LIST_HEAD
+    ? list->head
+    : list->tail;
+  return list_iterator_new_from_node(node, direction);
+}
+
+/*
+ * Allocate a new list_iterator_t with the given start
+ * node. NULL on failure.
+ */
+
+list_iterator_t *
+list_iterator_new_from_node(list_node_t *node, list_direction_t direction) {
+  list_iterator_t *self;
+  if (!(self = malloc(sizeof(list_iterator_t))))
+    return NULL;
+  self->next = node;
+  self->direction = direction;
+  return self;
+}
+
+/*
+ * Return the next list_node_t or NULL when no more
+ * nodes remain in the list.
+ */
+
+list_node_t *
+list_iterator_next(list_iterator_t *self) {
+  list_node_t *curr = self->next;
+  if (curr) {
+    self->next = self->direction == LIST_HEAD
+      ? curr->next
+      : curr->prev;
+  }
+  return curr;
+}
+
+/*
+ * Free the list iterator.
+ */
+
+void
+list_iterator_destroy(list_iterator_t *self) {
+  free(self);
+  self = NULL;
+}
+
+
+
+
+/*
 void print_reports(report_t * report) {
     report_t * current = report;
     printf("+++ report +++\n");
@@ -81,6 +297,7 @@ void delete_reports(report_t * report) {
     }
     report = NULL;
 }
+*/
 
 /*
 void push_report(report_t * report, enum format format, suite_t * suite) {
@@ -96,6 +313,7 @@ void push_report(report_t * report, enum format format, suite_t * suite) {
 }
 */
 
+/*
 void push_report(report_t * reports, report_t * report) {
     report_t * current = reports;
 
@@ -107,6 +325,7 @@ void push_report(report_t * reports, report_t * report) {
     current->next->suite = report->suite;
     current->next->next = NULL;
 }
+*/
 
 /*
 void push_suite(suite_t * suite, char* name, test_t * test, int n_failures, int n_errors) {
@@ -124,6 +343,7 @@ void push_suite(suite_t * suite, char* name, test_t * test, int n_failures, int 
 }
 */
 
+/*
 void push_suite(suite_t * suites, suite_t * suite) {
     suite_t * current = suites;
 
@@ -137,6 +357,7 @@ void push_suite(suite_t * suites, suite_t * suite) {
     current->next->n_errors = suite->n_errors;
     current->next->next = NULL;
 }
+*/
 
 /*
 void push_test(test_t * test, char* name, char* time, enum test_status status) {
@@ -153,6 +374,7 @@ void push_test(test_t * test, char* name, char* time, enum test_status status) {
 }
 */
 
+/*
 void push_test(test_t * tests, test_t * test) {
     test_t * current = tests;
     while (current->next != NULL) {
@@ -165,3 +387,4 @@ void push_test(test_t * tests, test_t * test) {
     current->next->status = test->status;
     current->next->next = NULL;
 }
+*/

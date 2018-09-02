@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
       }
   }
 
-  if (optind >= argc) {
+  if (optind > argc) {
       usage(argv[0]);
       return 1;
   }
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   report_t *report;
   if (path != NULL) {
      report = process_file(path);
-     print_reports(report);
+     //print_reports(report);
      return 0;
   }
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
       snprintf(path, sizeof(path), "%s/%s", storage_dir, basename);
       report = process_file(path);
-      print_reports(report);
+      //print_reports(report);
   }
   closedir(d);
 

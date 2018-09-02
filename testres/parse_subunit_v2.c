@@ -98,7 +98,7 @@ report_t *parse_subunit_v2(FILE *stream) {
 
     while (!feof(stream)) {
         test = read_packet(stream);
-        push_test(tests, test);
+        //push_test(tests, test);
     }
 
     suite_t *suites;
@@ -208,6 +208,7 @@ test_t *read_packet(FILE *stream) {
 CRC32
 const char *s = "0xb30x2901b329010c03666f6f";
 printf("%lX, should be %X\n", crc32(0, (const void*)s, strlen(s)), sample_crc32);
+http://bxr.su/OpenBSD/bin/md5/crc.c
 
 https://rosettacode.org/wiki/CRC-32#C
 http://csbruce.com/software/crc32.c

@@ -1,20 +1,97 @@
+#include <stdlib.h>
+
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
 #include "parse_common.h"
 #endif /* PARSE_COMMON_H */
 
-void print_reports(report_t * report);
-void print_suites(suite_t * suite);
-void print_tests(test_t * test);
+//
+// Copyright (c) 2010 TJ Holowaychuk <tj@vision-media.ca>
+//
 
-void delete_reports(report_t * report);
-void delete_suites(suite_t * suite);
-void delete_tests(test_t * test);
+#define LIST_VERSION "0.0.5"
 
-//void push_report(report_t * report, enum format format, suite_t * suite);
-//void push_suite(suite_t * suite, char* name, test_t * test, int n_failures, int n_errors);
-//void push_test(test_t * test, char* name, char* time, enum test_status status);
+/*
+ * list_t iterator direction.
+ */
 
-void push_report(report_t *reports, report_t *report);
-void push_suite(suite_t *suites, suite_t *suite);
-void push_test(test_t *tests, test_t *test);
+typedef enum {
+    LIST_HEAD
+  , LIST_TAIL
+} list_direction_t;
+
+/*
+ * list_t node struct.
+ */
+
+typedef struct list_node {
+  struct list_node *prev;
+  struct list_node *next;
+  void *val;
+} list_node_t;
+
+/*
+ * list_t struct.
+ */
+
+typedef struct {
+  list_node_t *head;
+  list_node_t *tail;
+  unsigned int len;
+  void (*free)(void *val);
+  int (*match)(void *a, void *b);
+} list_t;
+
+/*
+ * list_t iterator struct.
+ */
+
+typedef struct {
+  list_node_t *next;
+  list_direction_t direction;
+} list_iterator_t;
+
+// Node prototypes.
+
+list_node_t *
+list_node_new(void *val);
+
+// list_t prototypes.
+
+list_t *
+list_new();
+
+list_node_t *
+list_rpush(list_t *self, list_node_t *node);
+
+list_node_t *
+list_lpush(list_t *self, list_node_t *node);
+
+list_node_t *
+list_rpop(list_t *self);
+
+list_node_t *
+list_lpop(list_t *self);
+
+list_node_t *
+list_print(list_t *self);
+
+void
+list_remove(list_t *self, list_node_t *node);
+
+void
+list_destroy(list_t *self);
+
+// list_t iterator prototypes.
+
+list_iterator_t *
+list_iterator_new(list_t *list, list_direction_t direction);
+
+list_iterator_t *
+list_iterator_new_from_node(list_node_t *node, list_direction_t direction);
+
+list_node_t *
+list_iterator_next(list_iterator_t *self);
+
+void
+list_iterator_destroy(list_iterator_t *self);

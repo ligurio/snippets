@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
 
@@ -47,21 +48,33 @@ report_t *process_file(char *path) {
 
     enum format f;
     f = detect_file_format(basename(path));
-    report_t * report = NULL;
+    report_t *report = NULL;
+    suite_t *suites = NULL;
+    if (!(report = malloc(sizeof(report_t)))) {
+       return NULL;
+    }
+    memset(report, 0, sizeof(report_t));
     switch(f) {
-        case FORMAT_JUNIT:
-	    report = parse_junit(file);
+      case FORMAT_JUNIT:
+	    parse_junit(file);
+        report->format = FORMAT_JUNIT;
+        report->suite = suites;
 	    break;
-        case FORMAT_TAP13:
-	    report = parse_testanything(file);
+      case FORMAT_TAP13:
+	    parse_testanything(file);
+        report->format = FORMAT_TAP13;
+        report->suite = suites;
 	    break;
-        case FORMAT_SUBUNIT_V1:
+      case FORMAT_SUBUNIT_V1:
 	    /* TODO */
+        report->format = FORMAT_SUBUNIT_V1;
 	    break;
-        case FORMAT_SUBUNIT_V2:
-	    report = parse_subunit_v2(file);
+      case FORMAT_SUBUNIT_V2:
+	    parse_subunit_v2(file);
+        report->format = FORMAT_SUBUNIT_V2;
+        report->suite = suites;
 	    break;
-        case FORMAT_UNKNOWN:
+      case FORMAT_UNKNOWN:
 	    break;
     }
     fclose(file);

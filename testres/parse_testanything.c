@@ -296,7 +296,7 @@ print(FILE *f, const struct ast_test *tests)
 	}
 }
 
-report_t *
+tailq_suite *
 parse_testanything(FILE *f)
 {
 	struct ast_test *tests;
@@ -404,41 +404,39 @@ parse_testanything(FILE *f)
 
 	/* TODO: warn about duplicate test names */
 
+        tailq_test *test_item;
+        TAILQ_HEAD(, tailq_test) tests_head;
+        TAILQ_INIT(&tests_head);
+
 	struct ast_test * current;
-	test_t * t = NULL;
 	current = tests;
 	while (current != NULL) {
-	    t = malloc(sizeof(test_t));
-            memset(t, 0, sizeof(test_t));
-            t->name = current->name;
-            t->status = test_status(current->status);
-            t->next = NULL;
-
+            test_item = malloc(sizeof(tailq_test));
+            memset(test_item, 0, sizeof(tailq_test));
+            if (test_item == NULL) {
+               perror("malloc failed");
+            }
+            test_item->name = current->name;
+            test_item->status = test_status(current->status);
+	    TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
             current = current->next;
 	}
 
 	/* TODO: remove ast_test * tests here */
 
-        suite_t * suite = NULL;
-        suite = malloc(sizeof(suite_t));
-        if (suite == NULL) {
-            return NULL;
+        tailq_suite *suite_item;
+        TAILQ_HEAD(, tailq_suite) suites_head;
+        TAILQ_INIT(&suites_head);
+        suite_item = malloc(sizeof(tailq_suite));
+        if (suite_item == NULL) {
+           perror("malloc failed");
         }
-        memset(suite, 0, sizeof(suite_t));
-        suite->name = "testanything suite1";
-        suite->hostname = "";
-        suite->test = t;
-        suite->next = NULL;
+        memset(suite_item, 0, sizeof(tailq_suite));
+        suite_item->name = "default suite";
+        suite_item->n_errors = 0;
+        suite_item->n_failures = 0;
+        //suite_item->tests = tests_head;
+        TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
 
-        report_t * report;
-        report = malloc(sizeof(report_t));
-        if (report == NULL) {
-            return NULL;
-        }
-        memset(report, 0, sizeof(report_t));
-        report->format = FORMAT_TAP13;
-        report->suite = suite;
-        report->next = NULL;
-
-        return report;
+        return NULL;
 }

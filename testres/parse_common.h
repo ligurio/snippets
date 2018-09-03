@@ -29,48 +29,15 @@ enum test_status {
 	STATUS_PASS			/* JUnit */
 };
 
-struct test {
-	const char *name;
-	const char *time;
-	const char *comment;
-	enum test_status status;
-	struct test *next;
-};
-
-typedef struct test test_t;
-
-struct suite {
-    const char *name;
-    const char *hostname;
-    const char *timestamp;
-    int n_failures;
-    int n_errors;
-    double time;
-    struct test *test;
-    struct suite *next;
-};
-
-typedef struct suite suite_t;
-
-struct report {
-    enum format format;
-    struct suite *suite;
-    struct report *next;
-};
-
-typedef struct report report_t;
-
-struct tailq_test {
+typedef struct tailq_test {
     const char *name;
     const char *time;
     const char *comment;
     enum test_status status;
     TAILQ_ENTRY(tailq_test) entries;
-};
+} tailq_test;
 
-typedef struct tailq_test tailq_test;
-
-struct tailq_suite {
+typedef struct tailq_suite {
     const char *name;
     const char *hostname;
     const char *timestamp;
@@ -79,18 +46,15 @@ struct tailq_suite {
     double time;
     tailq_test *tests;
     TAILQ_ENTRY(tailq_suite) entries;
-};
+} tailq_suite;
 
-typedef struct tailq_suite tailq_suite;
-
-struct tailq_report {
+typedef struct tailq_report {
     enum format format;
     tailq_suite *suites;
     TAILQ_ENTRY(tailq_report) entries;
-};
-
-typedef struct tailq_report tailq_report;
+} tailq_report;
 
 char *get_filename_ext(const char *filename);
 enum format detect_format(const char *basename);
 tailq_report *process_file(char *path);
+tailq_test *make_test(char *name, char *time, char *comment);

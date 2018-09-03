@@ -63,14 +63,15 @@ tailq_suite *suite_item;
 TAILQ_HEAD(, tailq_test) tests_head;
 TAILQ_HEAD(, tailq_suite) suites_head;
 
-const char * name_to_value(const XML_Char **attr, const char name[]) {
-  const char * value = NULL;
+const char *name_to_value(const XML_Char **attr, const char name[]) {
+  char * value = NULL;
   int i;
   for (i = 0; attr[i]; i += 2) {
      const char *attr_name = attr[i];
      const char *attr_value = attr[i + 1];
      if (strcmp(attr_name, name) == 0) {
         value = attr_value;
+        break;
      }
   }
   return value;
@@ -80,6 +81,7 @@ static void XMLCALL
 start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
 {
   (void)data;
+  char *value;
 
   if (strcmp(elem, "testsuite") == 0) {
      suite_item = malloc(sizeof(tailq_suite));
@@ -87,29 +89,55 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
        perror("malloc failed");
      }
      memset(suite_item, 0, sizeof(tailq_suite));
-     suite_item->name = name_to_value(attr, "name");
-     suite_item->hostname = name_to_value(attr, "hostname");
+
+     value = name_to_value(attr, "name");
+     suite_item->name = malloc(sizeof(value));
+     strncpy(suite_item->name, value, sizeof(value));
+
+     /*
+     value = name_to_value(attr, "hostname");
+     suite_item->hostname = malloc(sizeof(value));
+     strncpy(suite_item->hostname, value, sizeof(value));
+     */
+
      suite_item->n_errors= atoi(name_to_value(attr, "errors"));
      suite_item->n_failures = atoi(name_to_value(attr, "failures"));
-     //suite_item->suite = suite;
-     TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
+     //TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
   } else if (strcmp(elem, "testcase") == 0) {
      test_item = malloc(sizeof(tailq_test));
      if (test_item == NULL) {
         perror("malloc failed");
      };
      memset(test_item, 0, sizeof(tailq_test));
-     test_item->name = name_to_value(attr, "name");
-     test_item->time = name_to_value(attr, "time");
+
+     /*
+     value = name_to_value(attr, "name");
+     test_item->name = malloc(sizeof(value));
+     strncpy(test_item->name, value, sizeof(value));
+     */
+     
+     value = name_to_value(attr, "time");
+     test_item->time = malloc(sizeof(value));
+     strncpy(test_item->time, value, sizeof(value));
+
      test_item->status = STATUS_PASS;
-     //test_item->test = test;
      TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
-  } else if (strcmp(elem, "error") == 0) {
+  }  else if (strcmp(elem, "error") == 0) {
      test_item->status = STATUS_ERROR;
-     test_item->comment = name_to_value(attr, "message");
+
+     /*
+     value = name_to_value(attr, "comment");
+     test_item->comment = malloc(sizeof(value));
+     strncpy(test_item->comment, value, sizeof(value));
+     */
   } else if (strcmp(elem, "failure") == 0) {
      test_item->status = STATUS_FAILURE;
-     test_item->comment = name_to_value(attr, "message");
+
+     /*
+     value = name_to_value(attr, "comment");
+     test_item->comment = malloc(sizeof(value));
+     strncpy(test_item->comment, value, sizeof(value));
+     */
   }
 }
 
@@ -120,10 +148,11 @@ end_handler(void *data, const XML_Char *elem)
   (void)elem;
   if (strcmp(elem, "testsuite") == 0) {
      /* TODO: check a number of failures and errors */
-     //suite_item->tests = tests_head;
-     printf("\ttestsuite\n");
+     printf("");
   } else if (strcmp(elem, "testcase") == 0) {
-     printf("\ttestcase\n");
+     //suite_item->tests = tests_head;
+     TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
+     printf("");
   }
 }
 
@@ -133,7 +162,7 @@ char_handler(void *data, const char *txt, int txtlen) {
   fwrite(txt, txtlen, sizeof(char), stdout);
 }
 
-tailq_suite *parse_junit(FILE *f, tailq_suite *suites) {
+tailq_suite *parse_junit(FILE *f) {
   XML_Parser p = XML_ParserCreate(NULL);
   if (! p) {
     fprintf(stderr, "Couldn't allocate memory for parser\n");
@@ -170,13 +199,18 @@ tailq_suite *parse_junit(FILE *f, tailq_suite *suites) {
     }
   }
   XML_ParserFree(p);
-
   /*
-  tailq_suite *suite_item;
-  TAILQ_FOREACH(suite_item, suites, entries) {
-      printf("suite name %s\n", suite_item->name);
+  TAILQ_FOREACH(suite_item, &suites_head, entries) {
+      //printf("suite name %s\n", suite_item->name);
+      printf("suite n_failures %d\n", suite_item->n_failures);
+      printf("suite n_errors %d\n", suite_item->n_errors);
   }
   */
+  TAILQ_FOREACH(test_item, &tests_head, entries) {
+      printf("test name %s\n", test_item->name);
+      printf("test time %s\n", test_item->time);
+      printf("test status %d\n", test_item->status);
+  }
 
   return NULL;
 }

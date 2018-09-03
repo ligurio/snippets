@@ -47,7 +47,7 @@ void usage(char *name) {
 /*
 void print_single_report(tailq_report *report) {
   tailq_suite *suite_item;
-  TAILQ_FOREACH(suite_item, &report->suites, entries) {
+  TAILQ_FOREACH(suite_item, report->suites, entries) {
       printf("suite name %s\n", suite_item->name);
       tailq_test *test_item;
       TAILQ_FOREACH(test_item, &(suite_item->tests), entries) {
@@ -68,10 +68,8 @@ void print_reports(tailq_report *reports_head) {
 int main(int argc, char *argv[]) {
 
   const char *storage_dir = "/";
-  char *path;
+  char *path = NULL;
   int opt = 0;
-
-  path = NULL;
 
   while ((opt = getopt(argc, argv, "hd:f:")) != -1) {
       switch (opt) {
@@ -86,14 +84,17 @@ int main(int argc, char *argv[]) {
           break;
       default: /* '?' */
           usage(argv[0]);
+          printf("hello\n");
           return 1;
       }
   }
 
+  /*
   if (optind > argc) {
       usage(argv[0]);
       return 1;
   }
+  */
 
   tailq_report *report_item;
   if (path != NULL) {
@@ -120,14 +121,16 @@ int main(int argc, char *argv[]) {
          continue;
       }
       /* TODO: recursive search in directories */
-      snprintf(path, sizeof(path), "%s/%s", storage_dir, basename);
+      snprintf(path, 1024, "%s/%s", storage_dir, basename);
       report_item = process_file(path);
       TAILQ_INSERT_TAIL(&reports_head, report_item, entries);
   }
   closedir(d);
 
+  /*
   print_headers();
-  // FIXME: print_reports(reports_head);
+  print_reports(reports_head);
+  */
 
   /* Free the entire tail queue. */
   /*

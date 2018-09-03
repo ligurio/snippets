@@ -80,24 +80,16 @@ tailq_report *process_file(char *path) {
     }
     memset(report, 0, sizeof(tailq_report));
 
-    tailq_suite *suites = NULL;
-    if (!(suites = malloc(sizeof(tailq_suite)))) {
-       perror("malloc failed");
-    }
-    memset(suites, 0, sizeof(tailq_suite));
-
     enum format f;
     f = detect_file_format(basename(path));
     switch(f) {
       case FORMAT_JUNIT:
         report->format = FORMAT_JUNIT;
-        /* report->suites = parse_junit(file, suites); */
-        parse_junit(file, suites);
-        report->suites = suites;
+        report->suites = parse_junit(file);
 	break;
       case FORMAT_TAP13:
         report->format = FORMAT_TAP13;
-        //report->suites = parse_testanything(file);
+        report->suites = parse_testanything(file);
 	break;
       case FORMAT_SUBUNIT_V1:
 	/* TODO */
@@ -105,7 +97,7 @@ tailq_report *process_file(char *path) {
 	break;
       case FORMAT_SUBUNIT_V2:
         report->format = FORMAT_SUBUNIT_V2;
-        report->suites = (tailq_suite*)parse_subunit_v2(file);
+        report->suites = parse_subunit_v2(file);
 	break;
       case FORMAT_UNKNOWN:
 	break;
@@ -113,4 +105,29 @@ tailq_report *process_file(char *path) {
     fclose(file);
 
     return report;
+}
+
+tailq_test *make_test(char *name, char *time, char *comment) {
+
+    tailq_test *test_item;
+    test_item = malloc(sizeof(tailq_test));
+    if (test_item == NULL) {
+       perror("malloc failed");
+    };
+    memset(test_item, 0, sizeof(tailq_test));
+    
+    printf("DEBUG: name %s\n", name);
+    test_item->name = malloc(sizeof(name));
+    strncpy(test_item->name, name, sizeof(name));
+
+    printf("DEBUG: time %s\n", time);
+    test_item->time = malloc(sizeof(time));
+    strncpy(test_item->time, time, sizeof(time));
+
+    /*
+    test_item->comment = malloc(sizeof(comment));
+    strncpy(test_item->comment, comment, sizeof(comment));
+    */
+
+    return test_item;
 }

@@ -435,8 +435,15 @@ parse_testanything(FILE *f)
         suite_item->name = "default suite";
         suite_item->n_errors = 0;
         suite_item->n_failures = 0;
-        //suite_item->tests = tests_head;
+        /* FIXME: suite_item->tests = tests_head; */
         TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
+
+        TAILQ_FOREACH(suite_item, &suites_head, entries) {
+            printf("SUITE name %s, n_failures %d, n_errors %d\n", suite_item->name, suite_item->n_failures, suite_item->n_errors);
+        }
+        TAILQ_FOREACH(test_item, &tests_head, entries) {
+            printf("TEST name %s, time %s, status %d\n", test_item->name, test_item->time, test_item->status);
+        }
 
         return NULL;
 }

@@ -38,7 +38,6 @@
 #include "parse_common.h"
 #endif /* PARSE_COMMON_H */
 
-#include "manage_tests.h"
 #include "ui_common.h"
 
 void usage(char *name) {

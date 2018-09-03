@@ -6,13 +6,13 @@ CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
 LDFLAGS   += -lexpat
 
-SRCS	= testres.c manage_tests.c parse_common.c \
+SRCS	= testres.c parse_common.c \
 	parse_junit.c parse_subunit_v2.c parse_testanything.c \
 	ui_common.c
-OBJ 	= testres.o manage_tests.o parse_common.o \
+OBJ 	= testres.o parse_common.o \
 	parse_junit.o parse_subunit_v2.o parse_testanything.o \
 	ui_common.o
-PLIST	= testres.plist manage_tests.plist parse_common.plist \
+PLIST	= testres.plist parse_common.plist \
 	parse_junit.plist parse_subunit_v2.plist parse_testanything.plist \
 	ui_common.plist
 BIN	= testres.cgi

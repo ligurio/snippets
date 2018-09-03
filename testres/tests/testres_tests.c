@@ -15,7 +15,6 @@
 #include "parse_junit.h"
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
-#include "manage_tests.h"
 
 #define SAMPLE_FILE_JUNIT "samples/junit/junit-sample-1.xml"
 #define SAMPLE_FILE_SUBUNIT_V2 "samples/subunit/subunit-sample-02.subunit"

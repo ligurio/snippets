@@ -35,7 +35,6 @@
 #include <zlib.h>
 
 #include "parse_subunit_v2.h"
-#include "manage_tests.h"
 
 // https://github.com/testing-cabal/subunit/blob/master/python/subunit/v2.py#L412
 // https://github.com/testing-cabal/subunit

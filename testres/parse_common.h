@@ -34,7 +34,7 @@ struct test {
 	const char *time;
 	const char *comment;
 	enum test_status status;
-	struct test *next;	// REMOVE
+	struct test *next;
 };
 
 typedef struct test test_t;
@@ -47,40 +47,50 @@ struct suite {
     int n_errors;
     double time;
     struct test *test;
-    struct suite *next;	// REMOVE
+    struct suite *next;
 };
 
 typedef struct suite suite_t;
 
 struct report {
-	enum format format;
-	struct suite *suite;
-	struct report *next;	// REMOVE
+    enum format format;
+    struct suite *suite;
+    struct report *next;
 };
 
 typedef struct report report_t;
 
-char *get_filename_ext(const char *filename);
-enum format detect_format(const char *basename);
-report_t *process_file(char *path);
-
 struct tailq_test {
-	test_t *test;
-	TAILQ_ENTRY(tailq_test) entries;
+    const char *name;
+    const char *time;
+    const char *comment;
+    enum test_status status;
+    TAILQ_ENTRY(tailq_test) entries;
 };
 
 typedef struct tailq_test tailq_test;
 
 struct tailq_suite {
-	suite_t *suite;
-	TAILQ_ENTRY(tailq_suite) entries;
+    const char *name;
+    const char *hostname;
+    const char *timestamp;
+    int n_failures;
+    int n_errors;
+    double time;
+    tailq_test *tests;
+    TAILQ_ENTRY(tailq_suite) entries;
 };
 
 typedef struct tailq_suite tailq_suite;
 
 struct tailq_report {
-	report_t *report;
-	TAILQ_ENTRY(tailq_report) entries;
+    enum format format;
+    tailq_suite *suites;
+    TAILQ_ENTRY(tailq_report) entries;
 };
 
 typedef struct tailq_report tailq_report;
+
+char *get_filename_ext(const char *filename);
+enum format detect_format(const char *basename);
+tailq_report *process_file(char *path);

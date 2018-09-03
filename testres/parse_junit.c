@@ -56,10 +56,6 @@
 #define BUFFSIZE        8192
 
 char buf[BUFFSIZE];
-//int depth;
-
-test_t * test = NULL;
-suite_t * suite = NULL;
 
 tailq_test *test_item;
 tailq_suite *suite_item;
@@ -86,39 +82,35 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
   (void)data;
 
   if (strcmp(elem, "testsuite") == 0) {
-     suite = malloc(sizeof(suite_t));
-     memset(suite, 0, sizeof(suite_t));
-     suite->name = name_to_value(attr, "name");
-     suite->hostname = name_to_value(attr, "hostname");
-     suite->n_errors= atoi(name_to_value(attr, "errors"));
-     suite->n_failures = atoi(name_to_value(attr, "failures"));
-	 suite_item = malloc(sizeof(tailq_suite));
-	 if (suite_item == NULL) {
-	    perror("malloc failed");
-	 }
-	 suite_item->suite = suite;
-	 TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
+     suite_item = malloc(sizeof(tailq_suite));
+     if (suite_item == NULL) {
+       perror("malloc failed");
+     }
+     memset(suite_item, 0, sizeof(tailq_suite));
+     suite_item->name = name_to_value(attr, "name");
+     suite_item->hostname = name_to_value(attr, "hostname");
+     suite_item->n_errors= atoi(name_to_value(attr, "errors"));
+     suite_item->n_failures = atoi(name_to_value(attr, "failures"));
+     //suite_item->suite = suite;
+     TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
   } else if (strcmp(elem, "testcase") == 0) {
-     test = malloc(sizeof(test_t));
-     memset(test, 0, sizeof(test_t));
-     test->name = name_to_value(attr, "name");
-     test->time = name_to_value(attr, "time");
-     test->status = STATUS_PASS;
-
-	 test_item = malloc(sizeof(tailq_test));
-	 if (test_item == NULL) {
-	    perror("malloc failed");
-	 }
-	 test_item->test = test;
-	 TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
+     test_item = malloc(sizeof(tailq_test));
+     if (test_item == NULL) {
+        perror("malloc failed");
+     };
+     memset(test_item, 0, sizeof(tailq_test));
+     test_item->name = name_to_value(attr, "name");
+     test_item->time = name_to_value(attr, "time");
+     test_item->status = STATUS_PASS;
+     //test_item->test = test;
+     TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
   } else if (strcmp(elem, "error") == 0) {
-     test->status = STATUS_ERROR;
-     test->comment = name_to_value(attr, "message");
+     test_item->status = STATUS_ERROR;
+     test_item->comment = name_to_value(attr, "message");
   } else if (strcmp(elem, "failure") == 0) {
-     test->status = STATUS_FAILURE;
-     test->comment = name_to_value(attr, "message");
+     test_item->status = STATUS_FAILURE;
+     test_item->comment = name_to_value(attr, "message");
   }
-  //depth++;
 }
 
 static void XMLCALL
@@ -127,13 +119,12 @@ end_handler(void *data, const XML_Char *elem)
   (void)data;
   (void)elem;
   if (strcmp(elem, "testsuite") == 0) {
-     printf("End testsuite\n");
      /* TODO: check a number of failures and errors */
-     suite->test = test;
+     //suite_item->tests = tests_head;
+     printf("\ttestsuite\n");
   } else if (strcmp(elem, "testcase") == 0) {
-     printf("\tEnd testcase\n");
+     printf("\ttestcase\n");
   }
-  //depth--;
 }
 
 void
@@ -142,7 +133,7 @@ char_handler(void *data, const char *txt, int txtlen) {
   fwrite(txt, txtlen, sizeof(char), stdout);
 }
 
-report_t *parse_junit(FILE *f) {
+tailq_suite *parse_junit(FILE *f, tailq_suite *suites) {
   XML_Parser p = XML_ParserCreate(NULL);
   if (! p) {
     fprintf(stderr, "Couldn't allocate memory for parser\n");
@@ -179,13 +170,13 @@ report_t *parse_junit(FILE *f) {
     }
   }
   XML_ParserFree(p);
-  TAILQ_FOREACH(suite_item, &suites_head, entries) {
-      //suite = suite_item->suite;
-      printf("suite ========== \n");
+
+  /*
+  tailq_suite *suite_item;
+  TAILQ_FOREACH(suite_item, suites, entries) {
+      printf("suite name %s\n", suite_item->name);
   }
-  TAILQ_FOREACH(test_item, &tests_head, entries) {
-      printf("test ========== \n");
-  }
+  */
 
   return NULL;
 }

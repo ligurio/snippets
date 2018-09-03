@@ -45,6 +45,27 @@ void usage(char *name) {
   fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", name);
 }
 
+/*
+void print_single_report(tailq_report *report) {
+  tailq_suite *suite_item;
+  TAILQ_FOREACH(suite_item, &report->suites, entries) {
+      printf("suite name %s\n", suite_item->name);
+      tailq_test *test_item;
+      TAILQ_FOREACH(test_item, &(suite_item->tests), entries) {
+          printf("test name %s\n", test_item->name);
+      }
+  }
+}
+
+void print_reports(tailq_report *reports_head) {
+  tailq_report *report_item;
+  TAILQ_FOREACH(report_item, &reports_head, entries) {
+      printf("report format %d\n", report_item->format);
+      print_single_report(report_item);
+  }
+}
+*/
+
 int main(int argc, char *argv[]) {
 
   const char *storage_dir = "/";
@@ -75,10 +96,10 @@ int main(int argc, char *argv[]) {
       return 1;
   }
 
-  report_t *report;
+  tailq_report *report_item;
   if (path != NULL) {
-     report = process_file(path);
-     //print_reports(report);
+     report_item = process_file(path);
+     //print_single_report(report_item);
      return 0;
   }
 
@@ -90,20 +111,42 @@ int main(int argc, char *argv[]) {
       return 1;
   }
 
-  print_headers();
+  TAILQ_HEAD(, tailq_report) reports_head;
+  TAILQ_INIT(&reports_head);
+
   while ((dir = readdir(d)) != NULL) {
       char *basename;
       basename = dir->d_name;
       if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
          continue;
       }
-      /* TODO: check is it file or directory */
-
+      /* TODO: recursive search in directories */
       snprintf(path, sizeof(path), "%s/%s", storage_dir, basename);
-      report = process_file(path);
-      //print_reports(report);
+      report_item = process_file(path);
+      TAILQ_INSERT_TAIL(&reports_head, report_item, entries);
   }
   closedir(d);
+
+  print_headers();
+  // FIXME: print_reports(reports_head);
+
+  /* Free the entire tail queue. */
+  /*
+  while (report_item = TAILQ_FIRST(&reports_head)) {
+     tailq_suite *suite_item;
+     while (suite_item = TAILQ_FIRST(&report_item->suites)) {
+        tailq_test *test_item;
+        while (test_item = TAILQ_FIRST(&suite_item->tests)) {
+           TAILQ_REMOVE(&suite_item->tests, test_item, entries);
+           free(test_item);
+        }
+        TAILQ_REMOVE(&report_item->suites, suite_item, entries);
+        free(suite_item);
+     }
+     TAILQ_REMOVE(&reports_head, report_item, entries);
+     free(report_item);
+  }
+  */
 
   return 0;
 }

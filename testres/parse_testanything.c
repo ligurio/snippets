@@ -405,7 +405,7 @@ parse_testanything(FILE *f)
 	/* TODO: warn about duplicate test names */
 
 	struct ast_test * current;
-	test_t * t;
+	test_t * t = NULL;
 	current = tests;
 	while (current != NULL) {
 	    t = malloc(sizeof(test_t));
@@ -419,7 +419,7 @@ parse_testanything(FILE *f)
 
 	/* TODO: remove ast_test * tests here */
 
-        suite_t * suite;
+        suite_t * suite = NULL;
         suite = malloc(sizeof(suite_t));
         if (suite == NULL) {
             return NULL;

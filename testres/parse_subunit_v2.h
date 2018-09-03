@@ -49,5 +49,5 @@ enum TestStatus { Undefined,
 		  ExpectedFailure };
 
 uint32_t read_field(FILE *stream);
-test_t *read_packet(FILE *stream);
-report_t *parse_subunit_v2(FILE *stream);
+tailq_test *read_packet(FILE *stream);
+tailq_suite *parse_subunit_v2(FILE *stream);

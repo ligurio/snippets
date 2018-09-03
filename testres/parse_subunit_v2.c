@@ -88,39 +88,36 @@ uint32_t read_field(FILE *stream) {
     return field_value;
 }
 
-report_t *parse_subunit_v2(FILE *stream) {
+tailq_suite *parse_subunit_v2(FILE *stream) {
 
-    test_t *tests, *test;
-
-    tests = malloc(sizeof(test_t));
-    memset(tests, 0, sizeof(test_t));
-    tests->next = NULL;
+    tailq_test *test_item;
+    TAILQ_HEAD(, tailq_test) tests_head;
+    TAILQ_INIT(&tests_head);
 
     while (!feof(stream)) {
-        test = read_packet(stream);
-        //push_test(tests, test);
+        test_item = read_packet(stream);
+	TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
     }
 
-    suite_t *suites;
-    suites = malloc(sizeof(suite_t));
-    memset(suites, 0, sizeof(suite_t));
-    suites->name = "def_suite";
-    suites->test = tests;
-    suites->n_failures = 0;
-    suites->n_errors = 0;
-    suites->next = NULL;
+    tailq_suite *suite_item;
+    TAILQ_HEAD(, tailq_suite) suites_head;
+    TAILQ_INIT(&suites_head);
+    suite_item = malloc(sizeof(suite_item));
+    if (suite_item == NULL) {
+       perror("malloc failed");
+    }
+    memset(suite_item, 0, sizeof(tailq_suite));
+    suite_item->name = "default suite";
+    suite_item->hostname = "hostname";
+    suite_item->n_errors = 0;
+    suite_item->n_failures = 0;
+    //suite_item->tests = tests_head;
+    TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
 
-    report_t * report;
-    report = malloc(sizeof(report_t));
-    memset(report, 0, sizeof(report_t));
-    report->next = NULL;
-    report->format = FORMAT_SUBUNIT_V2;
-    report->suite = suites;
-
-    return report;
+    return NULL;
 }
 
-test_t *read_packet(FILE *stream) {
+tailq_test *read_packet(FILE *stream) {
 
     subunit_header header;
     int n_bytes = 0;
@@ -129,10 +126,12 @@ test_t *read_packet(FILE *stream) {
        return NULL;
     }
 
-    test_t *test;
-    test = malloc(sizeof(test_t));
-    memset(test, 0, sizeof(test_t));
-    test->next = NULL;
+    tailq_test *test_item;
+    test_item = malloc(sizeof(tailq_test));
+    memset(test_item, 0, sizeof(tailq_test));
+    if (test_item == NULL) {
+       perror("malloc failed");
+    }
 
     uint16_t flags = htons(header.flags);
     printf("SIGNATURE: %02hhX\n", header.signature);
@@ -195,11 +194,11 @@ test_t *read_packet(FILE *stream) {
     printf("%08X\n", field_value);
 
     /* FIXME */
-    test->status = STATUS_FAILED;
-    test->name = "test";
-    test->time = "12:14:44";
+    test_item->status = STATUS_FAILED;
+    test_item->name = "test";
+    test_item->time = "12:14:44";
 
-    return test;
+    return test_item;
 }
 
 

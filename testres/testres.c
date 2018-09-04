@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   tailq_report *report_item;
   if (path != NULL) {
      report_item = process_file(path);
-     //print_single_report(report_item);
+     /* FIXME: print_single_report(report_item); */
      return 0;
   }
 
@@ -92,7 +92,6 @@ int main(int argc, char *argv[]) {
 
 
   tailq_report reportq;
-  //TAILQ_HEAD(, tailq_report) reports_head;
   TAILQ_INIT(&reportq.head);
 
   while ((dir = readdir(d)) != NULL) {

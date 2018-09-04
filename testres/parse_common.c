@@ -41,6 +41,19 @@
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
 
+void print_single_report(tailq_report *report) {
+  tailq_suite *suite_item;
+  /* FIXME: print_suites(report->suiteq); */
+}
+
+void print_reports(tailq_report *reports_head) {
+  tailq_report *report_item;
+  TAILQ_FOREACH(report_item, &reports_head->head, entries) {
+      printf("report format %d\n", report_item->format);
+      print_single_report(report_item);
+  }
+}
+
 void print_suites(tailq_suite *suites_head) {
 
   tailq_suite *suite_item;

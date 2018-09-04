@@ -9,7 +9,7 @@ enum format {
 };
 
 enum test_status {
-	STATUS_OK,			/* TestAnythingProtocol	*/
+	STATUS_OK,		/* TestAnythingProtocol	*/
 	STATUS_NOTOK,		/* TestAnythingProtocol	*/
 	STATUS_MISSING,		/* TestAnythingProtocol	*/
 	STATUS_TODO,		/* TestAnythingProtocol	*/
@@ -45,7 +45,7 @@ typedef struct tailq_suite {
     int n_failures;
     int n_errors;
     double time;
-    tailq_test *tests;
+    TAILQ_HEAD(, tailq_test) testq;
     TAILQ_ENTRY(tailq_suite) entries;
     TAILQ_HEAD(, tailq_suite) head;
 } tailq_suite;
@@ -53,6 +53,7 @@ typedef struct tailq_suite {
 typedef struct tailq_report {
     enum format format;
     tailq_suite *suites;
+    TAILQ_HEAD(, tailq_suite) suiteq;
     TAILQ_ENTRY(tailq_report) entries;
     TAILQ_HEAD(, tailq_report) head;
 } tailq_report;
@@ -62,3 +63,7 @@ enum format detect_format(const char *basename);
 tailq_report *process_file(char *path);
 tailq_test *make_test(char *name, char *time, char *comment);
 const char *status_string(enum test_status status);
+void print_single_report(tailq_report *report);
+void print_reports(tailq_report *reports_head);
+void print_suites(tailq_suite *suites_head);
+void print_tests(tailq_test *tests_head);

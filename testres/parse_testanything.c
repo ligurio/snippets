@@ -404,9 +404,10 @@ parse_testanything(FILE *f)
 
 	/* TODO: warn about duplicate test names */
 
+        tailq_test testq;
         tailq_test *test_item;
-        TAILQ_HEAD(, tailq_test) tests_head;
-        TAILQ_INIT(&tests_head);
+
+        TAILQ_INIT(&testq.head);
 
 	struct ast_test * current;
 	current = tests;
@@ -418,15 +419,16 @@ parse_testanything(FILE *f)
             }
             test_item->name = current->name;
             test_item->status = test_status(current->status);
-	    TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
+	    TAILQ_INSERT_TAIL(&testq.head, test_item, entries);
             current = current->next;
 	}
 
 	/* TODO: remove ast_test * tests here */
 
+        tailq_suite suiteq;
         tailq_suite *suite_item;
-        TAILQ_HEAD(, tailq_suite) suites_head;
-        TAILQ_INIT(&suites_head);
+        TAILQ_INIT(&suiteq.head);
+
         suite_item = malloc(sizeof(tailq_suite));
         if (suite_item == NULL) {
            perror("malloc failed");
@@ -436,25 +438,10 @@ parse_testanything(FILE *f)
         suite_item->n_errors = 0;
         suite_item->n_failures = 0;
         /* FIXME: suite_item->tests = tests_head; */
+	TAILQ_INSERT_TAIL(&suiteq.head, suite_item, entries);
 
-        /*
-        TAILQ_FOREACH(suite_item, &suites_head, entries) {
-            printf("TESTSUITE %10s ", suite_item->name);
-            printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
-        }
-        TAILQ_FOREACH(test_item, &tests_head, entries) {
-            printf("\t%10s ", status_string(test_item->status));
-            printf("%10s ", test_item->name);
-            if (test_item->time != NULL) {
-               printf("(%5ss)\n", test_item->time);
-            } else {
-               printf("\n", test_item->time);
-            }
-            if (test_item->comment != NULL) {
-               printf("Comment: %5s\n", test_item->comment);
-            }
-        }
-        */
+        print_suites(&suiteq);
+        print_tests(&testq);
 
         return NULL;
 }

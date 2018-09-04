@@ -28,9 +28,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <expat.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <expat.h>
 
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
@@ -158,7 +158,7 @@ tailq_suite *parse_junit(FILE *f) {
               "Parse error at line %" XML_FMT_INT_MOD "u:\n%" XML_FMT_STR "\n",
               XML_GetCurrentLineNumber(p),
               XML_ErrorString(XML_GetErrorCode(p)));
-      /* FIXME: free report, suite and test */
+      /* FIXME: free tailq_suite, tailq_test */
       exit(-1);
     }
     if (done) {
@@ -166,6 +166,7 @@ tailq_suite *parse_junit(FILE *f) {
     }
   }
   XML_ParserFree(p);
+  /*
   TAILQ_FOREACH(suite_item, &suites_head, entries) {
       printf("TESTSUITE %10s ", suite_item->name);
       printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
@@ -182,6 +183,10 @@ tailq_suite *parse_junit(FILE *f) {
          printf("Comment: %5s\n", test_item->comment);
       }
   }
+  */
+
+  print_suites(&suite_item);
+  print_tests(&test_item);
 
   return NULL;
 }

@@ -41,6 +41,32 @@
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
 
+void print_suites(tailq_suite *suites_head) {
+
+  tailq_suite *suite_item;
+  TAILQ_FOREACH(suite_item, &suites_head->head, entries) {
+      printf("TESTSUITE %10s ", suite_item->name);
+      printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
+  }
+}
+
+void print_tests(tailq_test *tests_head) {
+
+  tailq_test *test_item;
+  TAILQ_FOREACH(test_item, &tests_head->head, entries) {
+      printf("\t%10s ", status_string(test_item->status));
+      printf("%10s ", test_item->name);
+      if (test_item->time != NULL) {
+         printf("(%5ss)\n", test_item->time);
+      } else {
+         printf("\n");
+      }
+      if (test_item->comment != NULL) {
+         printf("Comment: %5s\n", test_item->comment);
+      }
+  }
+}
+
 const char *
 status_string(enum test_status status)
 {

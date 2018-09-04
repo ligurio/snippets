@@ -22,36 +22,39 @@ enum test_status {
 	STATUS_UXSUCCESS,	/* Subunit */
 	STATUS_SKIPPED,		/* Subunit */
 	STATUS_FAILED,		/* Subunit */
-STATUS_XFAILURE,	/* Subunit */
+	STATUS_XFAILURE,	/* Subunit */
 
-STATUS_ERROR,		/* JUnit */
-STATUS_FAILURE,		/* JUnit */
-STATUS_PASS			/* JUnit */
+	STATUS_ERROR,		/* JUnit */
+	STATUS_FAILURE,		/* JUnit */
+	STATUS_PASS		/* JUnit */
 };
 
 typedef struct tailq_test {
-const char *name;
-const char *time;
-const char *comment;
-enum test_status status;
-TAILQ_ENTRY(tailq_test) entries;
+    const char *name;
+    const char *time;
+    const char *comment;
+    enum test_status status;
+    TAILQ_ENTRY(tailq_test) entries;
+    TAILQ_HEAD(, tailq_test) head;
 } tailq_test;
 
 typedef struct tailq_suite {
-const char *name;
-const char *hostname;
-const char *timestamp;
-int n_failures;
-int n_errors;
-double time;
-tailq_test *tests;
-TAILQ_ENTRY(tailq_suite) entries;
+    const char *name;
+    const char *hostname;
+    const char *timestamp;
+    int n_failures;
+    int n_errors;
+    double time;
+    tailq_test *tests;
+    TAILQ_ENTRY(tailq_suite) entries;
+    TAILQ_HEAD(, tailq_suite) head;
 } tailq_suite;
 
 typedef struct tailq_report {
-enum format format;
-tailq_suite *suites;
-TAILQ_ENTRY(tailq_report) entries;
+    enum format format;
+    tailq_suite *suites;
+    TAILQ_ENTRY(tailq_report) entries;
+    TAILQ_HEAD(, tailq_report) head;
 } tailq_report;
 
 char *get_filename_ext(const char *filename);

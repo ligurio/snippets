@@ -437,6 +437,7 @@ parse_testanything(FILE *f)
         suite_item->n_failures = 0;
         /* FIXME: suite_item->tests = tests_head; */
 
+        /*
         TAILQ_FOREACH(suite_item, &suites_head, entries) {
             printf("TESTSUITE %10s ", suite_item->name);
             printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
@@ -453,6 +454,7 @@ parse_testanything(FILE *f)
                printf("Comment: %5s\n", test_item->comment);
             }
         }
+        */
 
         return NULL;
 }

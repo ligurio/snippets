@@ -161,17 +161,26 @@ tailq_suite *parse_junit(FILE *f) {
       /* FIXME: free report, suite and test */
       exit(-1);
     }
-
     if (done) {
        break;
     }
   }
   XML_ParserFree(p);
   TAILQ_FOREACH(suite_item, &suites_head, entries) {
-      printf("SUITE name %s, n_failures %d, n_errors %d\n", suite_item->name, suite_item->n_failures, suite_item->n_errors);
+      printf("TESTSUITE %10s ", suite_item->name);
+      printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
   }
   TAILQ_FOREACH(test_item, &tests_head, entries) {
-      printf("TEST name %s, time %s, status %d\n", test_item->name, test_item->time, test_item->status);
+      printf("\t%10s ", status_string(test_item->status));
+      printf("%10s ", test_item->name);
+      if (test_item->time != NULL) {
+         printf("(%5ss)\n", test_item->time);
+      } else {
+         printf("\n", test_item->time);
+      }
+      if (test_item->comment != NULL) {
+         printf("Comment: %5s\n", test_item->comment);
+      }
   }
 
   return NULL;

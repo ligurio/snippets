@@ -41,6 +41,32 @@
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
 
+const char *
+status_string(enum test_status status)
+{
+	switch (status) {
+	case STATUS_OK:          return "STATUS_OK";
+	case STATUS_NOTOK:       return "STATUS_NOTOK";
+	case STATUS_MISSING:     return "STATUS_MISSING";
+	case STATUS_TODO:        return "STATUS_TODO";
+	case STATUS_SKIP:        return "STATUS_SKIP";
+	case STATUS_UNDEFINED:   return "STATUS_UNDEFINED";
+	case STATUS_ENUMERATION: return "STATUS_ENUMERATION";
+	case STATUS_INPROGRESS:  return "STATUS_INPROGRESS";
+	case STATUS_SUCCESS:     return "STATUS_SUCCESS";
+	case STATUS_UXSUCCESS:   return "STATUS_UXSUCCESS";
+	case STATUS_SKIPPED:     return "STATUS_SKIPPED";
+	case STATUS_FAILED:      return "STATUS_FAILED";
+	case STATUS_XFAILURE:    return "STATUS_XFAILURE";
+	case STATUS_ERROR:       return "STATUS_ERROR";
+	case STATUS_FAILURE:     return "STATUS_FAILURE";
+	case STATUS_PASS:        return "STATUS_PASS";
+
+	default:
+		return "STATUS_UNKNOWN";
+	}
+}
+
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');
     if (!dot || dot == filename)

@@ -150,7 +150,7 @@ tailq_report *process_file(char *path) {
     switch(f) {
       case FORMAT_JUNIT:
         report->format = FORMAT_JUNIT;
-        report->suiteq = parse_junit(file);
+        report->suites = parse_junit(file);
 	break;
       case FORMAT_TAP13:
         report->format = FORMAT_TAP13;

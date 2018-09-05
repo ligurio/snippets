@@ -55,6 +55,8 @@
 
 #define BUFFSIZE        8192
 
+/* https://github.com/kristapsdz/divecmd/blob/master/parser.c */
+
 char buf[BUFFSIZE];
 
 tailq_test testq;
@@ -117,7 +119,7 @@ end_handler(void *data, const XML_Char *elem)
   (void)elem;
   if (strcmp(elem, "testsuite") == 0) {
      /* TODO: check a number of failures and errors */
-     /* FIXME: suite_item->testq = &testq.head; */
+     /* FIXME: suite_item->testq = test_item->head; */
      TAILQ_INSERT_TAIL(&suiteq.head, suite_item, entries);
   } else if (strcmp(elem, "testcase") == 0) {
      TAILQ_INSERT_TAIL(&testq.head, test_item, entries);
@@ -170,5 +172,5 @@ tailq_suite *parse_junit(FILE *f) {
   print_suites(&suiteq);
   print_tests(&testq);
 
-  return &suiteq;
+  return NULL;
 }

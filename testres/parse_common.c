@@ -43,30 +43,31 @@
 
 void print_single_report(tailq_report *report) {
   tailq_suite *suite_item;
-  /* FIXME: print_suites(report->suiteq); */
+  print_suites(&report->suiteq);
 }
 
-void print_reports(tailq_report *reports_head) {
+void print_reports(tailq_report *reports) {
   tailq_report *report_item;
-  TAILQ_FOREACH(report_item, &reports_head->head, entries) {
+  TAILQ_FOREACH(report_item, &reports->head, entries) {
       printf("report format %d\n", report_item->format);
       print_single_report(report_item);
   }
 }
 
-void print_suites(tailq_suite *suites_head) {
+void print_suites(tailq_suite *suites) {
 
   tailq_suite *suite_item;
-  TAILQ_FOREACH(suite_item, &suites_head->head, entries) {
+  TAILQ_FOREACH(suite_item, &suites->head, entries) {
       printf("TESTSUITE %10s ", suite_item->name);
       printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
+      print_tests(&suite_item->testq);
   }
 }
 
-void print_tests(tailq_test *tests_head) {
+void print_tests(tailq_test *tests) {
 
   tailq_test *test_item;
-  TAILQ_FOREACH(test_item, &tests_head->head, entries) {
+  TAILQ_FOREACH(test_item, &tests->head, entries) {
       printf("\t%10s ", status_string(test_item->status));
       printf("%10s ", test_item->name);
       if (test_item->time != NULL) {
@@ -154,7 +155,7 @@ tailq_report *process_file(char *path) {
 	break;
       case FORMAT_TAP13:
         report->format = FORMAT_TAP13;
-        report->suites = parse_testanything(file);
+        //report->suites = parse_testanything(file);
 	break;
       case FORMAT_SUBUNIT_V1:
 	/* TODO */
@@ -162,7 +163,7 @@ tailq_report *process_file(char *path) {
 	break;
       case FORMAT_SUBUNIT_V2:
         report->format = FORMAT_SUBUNIT_V2;
-        report->suites = parse_subunit_v2(file);
+        //report->suites = parse_subunit_v2(file);
 	break;
       case FORMAT_UNKNOWN:
 	break;

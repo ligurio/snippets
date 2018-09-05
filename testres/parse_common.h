@@ -52,7 +52,6 @@ typedef struct tailq_suite {
 
 typedef struct tailq_report {
     enum format format;
-    tailq_suite *suites;
     TAILQ_HEAD(, tailq_suite) suiteq;
     TAILQ_ENTRY(tailq_report) entries;
     TAILQ_HEAD(, tailq_report) head;

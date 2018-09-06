@@ -59,14 +59,15 @@
 
 char buf[BUFFSIZE];
 
-tailq_test testq;
-tailq_suite suiteq;
+//tailq_test testq;
+//tailq_suite suiteq;
 
 tailq_test *test_item;
 tailq_suite *suite_item;
+struct suiteq suites;
 
 const XML_Char *name_to_value(const XML_Char **attr, const char name[]) {
-  const XML_Char *value = NULL;
+  XML_Char *value = NULL;
   int i;
   for (i = 0; attr[i]; i += 2) {
      if (strcmp(attr[i], name) == 0) {
@@ -82,7 +83,6 @@ static void XMLCALL
 start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
 {
   (void)data;
-  const char *value;
 
   if (strcmp(elem, "testsuite") == 0) {
      suite_item = malloc(sizeof(tailq_suite));
@@ -94,6 +94,7 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
      suite_item->hostname = name_to_value(attr, "hostname");
      suite_item->n_errors = atoi(name_to_value(attr, "errors"));
      suite_item->n_failures = atoi(name_to_value(attr, "failures"));
+     // TAILQ_INIT(suite_item->tests);
   } else if (strcmp(elem, "testcase") == 0) {
      test_item = malloc(sizeof(tailq_test));
      if (test_item == NULL) {
@@ -103,7 +104,7 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
      test_item->name = name_to_value(attr, "name");
      test_item->time = name_to_value(attr, "time");
      test_item->status = STATUS_PASS;
-  }  else if (strcmp(elem, "error") == 0) {
+  } else if (strcmp(elem, "error") == 0) {
      test_item->status = STATUS_ERROR;
      test_item->comment = name_to_value(attr, "comment");
   } else if (strcmp(elem, "failure") == 0) {
@@ -117,20 +118,24 @@ end_handler(void *data, const XML_Char *elem)
 {
   (void)data;
   (void)elem;
+
   if (strcmp(elem, "testsuite") == 0) {
      /* TODO: check a number of failures and errors */
      /* FIXME: suite_item->testq = test_item->head; */
-     TAILQ_INSERT_TAIL(&suiteq.head, suite_item, entries);
+     TAILQ_INSERT_TAIL(&suites, suite_item, entries);
   } else if (strcmp(elem, "testcase") == 0) {
-     TAILQ_INSERT_TAIL(&testq.head, test_item, entries);
+     //TAILQ_INSERT_TAIL(&suite_item->tests, test_item, entries);
+     printf("+");
   }
 }
 
+/*
 void
 char_handler(void *data, const char *txt, int txtlen) {
   (void)data;
-  /* TODO: fwrite(txt, txtlen, sizeof(char), stdout); */
+  fwrite(txt, txtlen, sizeof(char), stdout);
 }
+*/
 
 tailq_suite *parse_junit(FILE *f) {
   XML_Parser p = XML_ParserCreate(NULL);
@@ -139,12 +144,12 @@ tailq_suite *parse_junit(FILE *f) {
     exit(-1);
   }
 
-  TAILQ_INIT(&testq.head);
-  TAILQ_INIT(&suiteq.head);
+  memset(&suites, 0, sizeof(struct suiteq));
+  TAILQ_INIT(&suites);
 
   XML_UseParserAsHandlerArg(p);
   XML_SetElementHandler(p, start_handler, end_handler);
-  XML_SetCharacterDataHandler(p, char_handler);
+  //XML_SetCharacterDataHandler(p, char_handler);
 
   for (;;) {
     int len, done;
@@ -169,8 +174,5 @@ tailq_suite *parse_junit(FILE *f) {
   }
   XML_ParserFree(p);
 
-  print_suites(&suiteq);
-  print_tests(&testq);
-
-  return NULL;
+  return &suites;
 }

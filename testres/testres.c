@@ -46,8 +46,8 @@ void usage(char *name) {
 
 int main(int argc, char *argv[]) {
 
-  const char *storage_dir = "/";
-  char *path = NULL;
+  const char *path_dir = (char*)NULL;
+  char *path_file = (char*)NULL;
   int opt = 0;
 
   while ((opt = getopt(argc, argv, "hd:f:")) != -1) {
@@ -56,43 +56,39 @@ int main(int argc, char *argv[]) {
           usage(argv[0]);
           return(1);
       case 'd':
-          storage_dir = optarg;
+          path_dir = optarg;
           break;
       case 'f':
-          path = optarg;
+          path_file = optarg;
           break;
       default: /* '?' */
           usage(argv[0]);
-          printf("hello\n");
           return 1;
       }
   }
 
-  /*
-  if (optind > argc) {
+  if (argc == 1) {
       usage(argv[0]);
       return 1;
   }
-  */
 
   tailq_report *report_item;
-  if (path != NULL) {
-     report_item = process_file(path);
-     /* FIXME: print_single_report(report_item); */
+  if (path_file != NULL) {
+     report_item = process_file(path_file);
+     print_single_report(report_item);
      return 0;
   }
 
   DIR *d;
   struct dirent *dir;
-  d = opendir(storage_dir);
+  d = opendir(path_dir);
   if (d == NULL) {
-      printf("failed to open dir %s\n", storage_dir);
-      return 1;
+     printf("failed to open dir %s\n", path_dir);
+     return 1;
   }
 
-
-  tailq_report reportq;
-  TAILQ_INIT(&reportq.head);
+  struct reportq reports;
+  TAILQ_INIT(&reports);
 
   while ((dir = readdir(d)) != NULL) {
       char *basename;
@@ -101,16 +97,18 @@ int main(int argc, char *argv[]) {
          continue;
       }
       /* TODO: recursive search in directories */
-      snprintf(path, 1024, "%s/%s", storage_dir, basename);
-      report_item = process_file(path);
-      TAILQ_INSERT_TAIL(&reportq.head, report_item, entries);
+      int path_len = strlen(path_dir) + strlen(basename) + 2;
+      path_file = malloc(path_len);
+      snprintf(path_file, path_len, "%s/%s", path_dir, basename);
+      report_item = process_file(path_file);
+      TAILQ_INSERT_TAIL(&reports, report_item, entries);
+      free(path_file);
   }
   closedir(d);
 
   print_headers();
-  /* FIXME: print_reports(&reportq); */
-
-  /* Free the entire tail queue. */
+  print_reports(&reports);
+  /* FIXME: Free the entire tail queue. */
 
   return 0;
 }

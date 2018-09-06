@@ -404,6 +404,7 @@ parse_testanything(FILE *f)
 
 	/* TODO: warn about duplicate test names */
 
+/*
         tailq_test testq;
         tailq_test *test_item;
 
@@ -423,7 +424,7 @@ parse_testanything(FILE *f)
             current = current->next;
 	}
 
-	/* TODO: remove ast_test * tests here */
+	// TODO: remove ast_test * tests here
 
         tailq_suite suiteq;
         tailq_suite *suite_item;
@@ -437,11 +438,12 @@ parse_testanything(FILE *f)
         suite_item->name = "default suite";
         suite_item->n_errors = 0;
         suite_item->n_failures = 0;
-        /* FIXME: suite_item->tests = tests_head; */
+        suite_item->tests = tests_head;
 	TAILQ_INSERT_TAIL(&suiteq.head, suite_item, entries);
 
         print_suites(&suiteq);
         print_tests(&testq);
+*/
 
         return NULL;
 }

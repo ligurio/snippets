@@ -1,6 +1,6 @@
 #include <sys/queue.h>
 
-enum format {
+enum test_format {
 	FORMAT_UNKNOWN,
 	FORMAT_TAP13,
 	FORMAT_JUNIT,
@@ -35,8 +35,9 @@ typedef struct tailq_test {
     const char *comment;
     enum test_status status;
     TAILQ_ENTRY(tailq_test) entries;
-    TAILQ_HEAD(, tailq_test) head;
 } tailq_test;
+
+TAILQ_HEAD(testq, tailq_test);
 
 typedef struct tailq_suite {
     const char *name;
@@ -45,24 +46,28 @@ typedef struct tailq_suite {
     int n_failures;
     int n_errors;
     double time;
-    TAILQ_HEAD(, tailq_test) testq;
+    struct testq *tests;
     TAILQ_ENTRY(tailq_suite) entries;
-    TAILQ_HEAD(, tailq_suite) head;
 } tailq_suite;
 
+TAILQ_HEAD(suiteq, tailq_suite);
+
 typedef struct tailq_report {
-    enum format format;
-    TAILQ_HEAD(, tailq_suite) suiteq;
+    enum test_format format;
+    struct suiteq *suites;
+    time_t ctime;
     TAILQ_ENTRY(tailq_report) entries;
-    TAILQ_HEAD(, tailq_report) head;
 } tailq_report;
+
+TAILQ_HEAD(reportq, tailq_report);
 
 char *get_filename_ext(const char *filename);
 enum format detect_format(const char *basename);
 tailq_report *process_file(char *path);
 tailq_test *make_test(char *name, char *time, char *comment);
 const char *status_string(enum test_status status);
+const char *format_string(enum test_format format);
 void print_single_report(tailq_report *report);
-void print_reports(tailq_report *reports_head);
-void print_suites(tailq_suite *suites_head);
-void print_tests(tailq_test *tests_head);
+void print_reports(struct reportq *reports_head);
+void print_suites(struct suiteq *suites_head);
+void print_tests(struct testq *tests_head);

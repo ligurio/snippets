@@ -32,6 +32,11 @@
 #include <string.h>
 #include <libgen.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
+
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
 #include "parse_common.h"
@@ -41,33 +46,38 @@
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
 
-void print_single_report(tailq_report *report) {
-  tailq_suite *suite_item;
-  print_suites(&report->suiteq);
+void print_single_report(struct tailq_report *report) {
+  printf("\nTEST REPORT (%s)\n", format_string(report->format));
+
+  char buffer[80];
+  struct tm *info = localtime(report->ctime);
+  strftime(buffer, 1024, "%x - %I:%M%p", info);
+  printf("Formatted date & time : |%s|\n", buffer);
+
+  print_suites(report->suites);
 }
 
-void print_reports(tailq_report *reports) {
+void print_reports(struct reportq *reports) {
   tailq_report *report_item;
-  TAILQ_FOREACH(report_item, &reports->head, entries) {
-      printf("report format %d\n", report_item->format);
+  TAILQ_FOREACH(report_item, reports, entries) {
       print_single_report(report_item);
   }
 }
 
-void print_suites(tailq_suite *suites) {
+void print_suites(struct suiteq *suites) {
 
   tailq_suite *suite_item;
-  TAILQ_FOREACH(suite_item, &suites->head, entries) {
+  TAILQ_FOREACH(suite_item, suites, entries) {
       printf("TESTSUITE %10s ", suite_item->name);
       printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
-      print_tests(&suite_item->testq);
+      // FIXME: print_tests(suite_item->tests);
   }
 }
 
-void print_tests(tailq_test *tests) {
+void print_tests(struct testq *tests) {
 
   tailq_test *test_item;
-  TAILQ_FOREACH(test_item, &tests->head, entries) {
+  TAILQ_FOREACH(test_item, tests, entries) {
       printf("\t%10s ", status_string(test_item->status));
       printf("%10s ", test_item->name);
       if (test_item->time != NULL) {
@@ -79,6 +89,20 @@ void print_tests(tailq_test *tests) {
          printf("Comment: %5s\n", test_item->comment);
       }
   }
+}
+
+const char *format_string(enum test_format format) {
+
+	switch (format) {
+	case FORMAT_TAP13:       return "FORMAT_TAP13";
+	case FORMAT_JUNIT:       return "FORMAT_JUNIT";
+	case FORMAT_SUBUNIT_V1:  return "FORMAT_SUBUNIT_V1";
+	case FORMAT_SUBUNIT_V2:  return "FORMAT_SUBUNIT_V2";
+	case FORMAT_UNKNOWN:     return "FORMAT_UNKNOWN";
+
+	default:
+	    return "FORMAT_UNKNOWN";
+	}
 }
 
 const char *
@@ -103,19 +127,28 @@ status_string(enum test_status status)
 	case STATUS_PASS:        return "STATUS_PASS";
 
 	default:
-		return "STATUS_UNKNOWN";
+	    return "STATUS_UNKNOWN";
 	}
 }
+
+/*
+time_t *report_ctime(char *filename) {
+    struct stat sb;
+    stat(filename, &sb);
+
+    return &sb.st_ctime;
+}
+*/
 
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');
     if (!dot || dot == filename)
-        return "";
+        return (char *)NULL;
 
     return dot + 1;
 }
 
-enum format detect_file_format(const char *basename) {
+enum test_format detect_file_format(const char *basename) {
 
     char *file_ext;
     file_ext = get_filename_ext(basename);
@@ -146,9 +179,9 @@ tailq_report *process_file(char *path) {
     }
     memset(report, 0, sizeof(tailq_report));
 
-    enum format f;
-    f = detect_file_format(basename(path));
-    switch(f) {
+    enum test_format format;
+    format = detect_file_format(basename(path));
+    switch(format) {
       case FORMAT_JUNIT:
         report->format = FORMAT_JUNIT;
         report->suites = parse_junit(file);
@@ -168,7 +201,11 @@ tailq_report *process_file(char *path) {
       case FORMAT_UNKNOWN:
 	break;
     }
+
     fclose(file);
+    struct stat sb;
+    stat(file, &sb);
+    report->ctime = ctime(&sb.st_ctime);
 
     return report;
 }

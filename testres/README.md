@@ -22,15 +22,21 @@ https://git.zx2c4.com/cgit/tree/filters
 	- получать статус по багам
 - фильтр для заведения бага
 - фильтр для построения графиков
-- скрипты для БД: flaky?, похожие проблемы в отчётах
+- скрипты для БД: flaky?, анализ логов в отчетах
 
 ### Графики
 
 - http://pages.cs.wisc.edu/~remzi/Zplot/Tcl/
-- https://github.com/reddec/svg?files=1
+- https://github.com/reddec/svg
 - https://wiki.tcl.tk/21144
 - http://plplot.sourceforge.net/
 - https://github.com/bytebrew/slope
+- https://github.com/marmalade/libsvg/
+- https://batchloaf.wordpress.com/2011/11/23/simple-data-plotting-from-a-c-console-application-using-svg/
+- http://biolpc22.york.ac.uk/linux/plotutils/ascii_chart.c
+- https://github.com/ravhed/libsvg
+- https://www.gnu.org/software/plotutils/
+
 
 ### Тесты
 

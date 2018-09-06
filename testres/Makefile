@@ -52,7 +52,7 @@ tags:
 
 clean:
 	@make -C tests clean
-	rm -f $(BIN) $(OBJ) $(PLIST) cppcheck.log *.core tags
+	rm -f $(BIN) $(CGIBIN) $(OBJ) $(PLIST) cppcheck.log *.core tags
 
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"

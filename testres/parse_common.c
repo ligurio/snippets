@@ -52,7 +52,7 @@ void print_single_report(struct tailq_report *report) {
   char buffer[80];
   struct tm *info = localtime(report->ctime);
   strftime(buffer, 1024, "%x - %I:%M%p", info);
-  printf("TIME: %s\n", buffer);
+  printf("CREATED: %s\n", buffer);
   print_suites(report->suites);
 }
 
@@ -67,8 +67,16 @@ void print_suites(struct suiteq *suites) {
 
   tailq_suite *suite_item;
   TAILQ_FOREACH(suite_item, suites, entries) {
-      printf("TESTSUITE %10s ", suite_item->name);
-      printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
+      printf("%10s ", suite_item->name);
+      printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
+      printf("%5f ", suite_item->time);
+      if (suite_item->timestamp != (char*)NULL) {
+         printf("%10s ", suite_item->timestamp);
+      }
+      if (suite_item->hostname != (char*)NULL) {
+         printf("%10s ", suite_item->hostname);
+      }
+      printf("\n");
       // FIXME: print_tests(suite_item->tests);
   }
 }

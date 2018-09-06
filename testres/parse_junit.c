@@ -91,6 +91,8 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
      suite_item->hostname = name_to_value(attr, "hostname");
      suite_item->n_errors = atoi(name_to_value(attr, "errors"));
      suite_item->n_failures = atoi(name_to_value(attr, "failures"));
+     suite_item->time = atof(name_to_value(attr, "time"));
+     suite_item->timestamp = name_to_value(attr, "timestamp");
      // TAILQ_INIT(suite_item->tests);
   } else if (strcmp(elem, "testcase") == 0) {
      test_item = malloc(sizeof(tailq_test));

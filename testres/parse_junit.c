@@ -66,17 +66,17 @@ tailq_test *test_item;
 tailq_suite *suite_item;
 struct suiteq suites;
 
-const XML_Char *name_to_value(const XML_Char **attr, const char name[]) {
-  XML_Char *value = NULL;
+const XML_Char *name_to_value(const XML_Char **attr, const char attr_name[]) {
+  XML_Char *attr_value = NULL;
   int i;
   for (i = 0; attr[i]; i += 2) {
-     if (strcmp(attr[i], name) == 0) {
-        value = malloc(sizeof(attr[i + 1]));
-        strncpy(value, attr[i + 1], sizeof(attr[i + 1]));
+     if (strcmp(attr[i], attr_name) == 0) {
+        attr_value = malloc(strlen(attr[i + 1]) + 1);
+        strcpy(attr_value, attr[i + 1]);
         break;
      }
   }
-  return value;
+  return attr_value;
 }
 
 static void XMLCALL

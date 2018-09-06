@@ -52,8 +52,7 @@ void print_single_report(struct tailq_report *report) {
   char buffer[80];
   struct tm *info = localtime(report->ctime);
   strftime(buffer, 1024, "%x - %I:%M%p", info);
-  printf("Formatted date & time : |%s|\n", buffer);
-
+  printf("TIME: %s\n", buffer);
   print_suites(report->suites);
 }
 
@@ -204,8 +203,8 @@ tailq_report *process_file(char *path) {
 
     fclose(file);
     struct stat sb;
-    stat(file, &sb);
-    report->ctime = ctime(&sb.st_ctime);
+    stat(path, &sb);
+    report->ctime = &sb.st_ctime;
 
     return report;
 }

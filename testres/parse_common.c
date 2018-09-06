@@ -187,7 +187,7 @@ tailq_report *process_file(char *path) {
 	break;
       case FORMAT_TAP13:
         report->format = FORMAT_TAP13;
-        //report->suites = parse_testanything(file);
+        report->suites = parse_testanything(file);
 	break;
       case FORMAT_SUBUNIT_V1:
 	/* TODO */

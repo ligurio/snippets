@@ -74,6 +74,10 @@ enum test_status test_status(enum ast_status status)
 	case AST_MISSING: return STATUS_MISSING;
 	case AST_TODO:    return STATUS_TODO;
 	case AST_SKIP:    return STATUS_SKIP;
+        /*
+        default:
+            return STATUS_UNDEFINED;
+        */
 	}
 }
 
@@ -296,7 +300,7 @@ print(FILE *f, const struct ast_test *tests)
 	}
 }
 
-tailq_suite *
+struct suiteq *
 parse_testanything(FILE *f)
 {
 	struct ast_test *tests;
@@ -404,11 +408,21 @@ parse_testanything(FILE *f)
 
 	/* TODO: warn about duplicate test names */
 
-/*
-        tailq_test testq;
         tailq_test *test_item;
+        tailq_suite *suite_item;
+        struct suiteq suites;
 
-        TAILQ_INIT(&testq.head);
+        memset(&suites, 0, sizeof(struct suiteq));
+        TAILQ_INIT(&suites);
+        suite_item = malloc(sizeof(tailq_suite));
+        if (suite_item == NULL) {
+           perror("malloc failed");
+        }
+        memset(suite_item, 0, sizeof(tailq_suite));
+        suite_item->name = "default suite";
+        suite_item->n_errors = 0;
+        suite_item->n_failures = 0;
+        //TAILQ_INIT(suite_item->tests);
 
 	struct ast_test * current;
 	current = tests;
@@ -420,30 +434,12 @@ parse_testanything(FILE *f)
             }
             test_item->name = current->name;
             test_item->status = test_status(current->status);
-	    TAILQ_INSERT_TAIL(&testq.head, test_item, entries);
+	    //TAILQ_INSERT_TAIL(&suite_item->tests, test_item, entries);
             current = current->next;
 	}
 
 	// TODO: remove ast_test * tests here
+	TAILQ_INSERT_TAIL(&suites, suite_item, entries);
 
-        tailq_suite suiteq;
-        tailq_suite *suite_item;
-        TAILQ_INIT(&suiteq.head);
-
-        suite_item = malloc(sizeof(tailq_suite));
-        if (suite_item == NULL) {
-           perror("malloc failed");
-        }
-        memset(suite_item, 0, sizeof(tailq_suite));
-        suite_item->name = "default suite";
-        suite_item->n_errors = 0;
-        suite_item->n_failures = 0;
-        suite_item->tests = tests_head;
-	TAILQ_INSERT_TAIL(&suiteq.head, suite_item, entries);
-
-        print_suites(&suiteq);
-        print_tests(&testq);
-*/
-
-        return NULL;
+        return &suites;
 }

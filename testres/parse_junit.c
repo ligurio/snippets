@@ -59,9 +59,6 @@
 
 char buf[BUFFSIZE];
 
-//tailq_test testq;
-//tailq_suite suiteq;
-
 tailq_test *test_item;
 tailq_suite *suite_item;
 struct suiteq suites;

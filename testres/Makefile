@@ -18,7 +18,7 @@ PLIST	= testres.plist parse_common.plist \
 	parse_junit.plist parse_subunit_v2.plist parse_testanything.plist \
 	ui_common.plist
 BIN	= testres
-CGIBIN	= testres.cgi
+CGIBIN	= $(BIN)-static
 CGIDIR	= /var/www/cgi-bin
 
 all: $(BIN) $(CGIBIN)

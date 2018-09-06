@@ -136,7 +136,7 @@ char_handler(void *data, const char *txt, int txtlen) {
 }
 */
 
-tailq_suite *parse_junit(FILE *f) {
+struct suiteq *parse_junit(FILE *f) {
   XML_Parser p = XML_ParserCreate(NULL);
   if (! p) {
     fprintf(stderr, "Couldn't allocate memory for parser\n");

@@ -68,7 +68,11 @@ const XML_Char *name_to_value(const XML_Char **attr, const char attr_name[]) {
   int i;
   for (i = 0; attr[i]; i += 2) {
      if (strcmp(attr[i], attr_name) == 0) {
-        attr_value = malloc(strlen(attr[i + 1]) + 1);
+        attr_value = calloc(strlen(attr[i + 1]) + 1, sizeof(XML_Char));
+        if (attr_value == NULL) {
+           perror("malloc failed");
+           return (char *)NULL;
+        }
         strcpy(attr_value, attr[i + 1]);
         break;
      }

@@ -412,10 +412,10 @@ struct suiteq *parse_testanything(FILE *f) {
     suite_item->name = "default suite";
     suite_item->n_errors = 0;
     suite_item->n_failures = 0;
-
     suite_item->tests = calloc(1, sizeof(struct testq));
     if (suite_item->tests == NULL) {
        perror("malloc failed");
+       free(suite_item);
     }
     TAILQ_INIT(suite_item->tests);
 
@@ -427,17 +427,29 @@ struct suiteq *parse_testanything(FILE *f) {
         test_item = calloc(1, sizeof(tailq_test));
         if (test_item == NULL) {
            perror("malloc failed");
+           free(suite_item);
+           return NULL;
         }
-        test_item->name = current->name;
+        test_item->name = calloc(strlen(current->name), sizeof(char));
+        if (test_item->name == NULL) {
+           perror("malloc failed");
+           free(suite_item);
+           free(test_item);
+           return NULL;
+        }
+        strcpy(test_item->name, current->name);
         test_item->status = test_status(current->status);
 	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
         current = current->next;
+        /* TODO: remove ast_test item */
     }
 
     struct suiteq *suites;
     suites = calloc(1, sizeof(struct suiteq));
     if (suites == NULL) {
        perror("malloc failed");
+       free(suite_item);
+       return NULL;
     }
     TAILQ_INIT(suites);
     TAILQ_INSERT_TAIL(suites, suite_item, entries);

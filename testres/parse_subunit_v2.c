@@ -93,11 +93,14 @@ struct suiteq *parse_subunit_v2(FILE *stream) {
     suite_item = (tailq_suite*)malloc(sizeof(tailq_suite));
     if (suite_item == NULL) {
        perror("malloc failed");
+       return NULL;
     }
     /* TODO: n_errors, n_failures */
-    suite_item->tests = (struct testq*)calloc(1, sizeof(struct testq));
+    suite_item->tests = calloc(1, sizeof(struct testq));
     if (suite_item->tests == NULL) {
        perror("malloc failed");
+       free(suite_item);
+       return NULL;
     }
     TAILQ_INIT(suite_item->tests);
 

@@ -55,7 +55,7 @@ TAILQ_HEAD(suiteq, tailq_suite);
 typedef struct tailq_report {
     enum test_format format;
     struct suiteq *suites;
-    const time_t *ctime;
+    time_t ctime;
     TAILQ_ENTRY(tailq_report) entries;
 } tailq_report;
 

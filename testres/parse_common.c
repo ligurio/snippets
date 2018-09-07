@@ -86,7 +86,7 @@ void free_tests(struct testq *tests) {
 void print_single_report(struct tailq_report *report) {
   printf("\nTEST REPORT (%s)\n", format_string(report->format));
   char buffer[80] = "";
-  struct tm *info = localtime(report->ctime);
+  struct tm *info = localtime(&report->ctime);
   strftime(buffer, 80, "%x - %I:%M%p", info);
   printf("CREATED ON: %s\n", buffer);
   if (!TAILQ_EMPTY(report->suites)) {
@@ -218,6 +218,8 @@ tailq_report *process_file(char *path) {
     report = calloc(1, sizeof(tailq_report));
     if (report == NULL ) {
        perror("malloc failed");
+       fclose(file);
+       return NULL;
     }
 
     enum test_format format;
@@ -246,11 +248,7 @@ tailq_report *process_file(char *path) {
 
     struct stat sb;
     stat(path, &sb);
-    report->ctime = malloc(sizeof(const time_t));
-    if (report->ctime == NULL ) {
-       perror("malloc failed");
-    }
-    report->ctime = &sb.st_ctime;
+    report->ctime = sb.st_ctime;
 
     return report;
 }

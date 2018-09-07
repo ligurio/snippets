@@ -61,7 +61,7 @@ char buf[BUFFSIZE];
 
 tailq_test *test_item;
 tailq_suite *suite_item;
-struct suiteq suites;
+struct suiteq *suites;
 
 const XML_Char *name_to_value(const XML_Char **attr, const char attr_name[]) {
   XML_Char *attr_value = NULL;
@@ -93,7 +93,12 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
      suite_item->n_failures = atoi(name_to_value(attr, "failures"));
      suite_item->time = atof(name_to_value(attr, "time"));
      suite_item->timestamp = name_to_value(attr, "timestamp");
-     // TAILQ_INIT(suite_item->tests);
+     suite_item->tests = malloc(sizeof(struct testq));
+     if (suite_item->tests == NULL) {
+        perror("malloc failed");
+     }
+     memset(suite_item->tests, 0, sizeof(struct testq));
+     TAILQ_INIT(suite_item->tests);
   } else if (strcmp(elem, "testcase") == 0) {
      test_item = malloc(sizeof(tailq_test));
      if (test_item == NULL) {
@@ -120,11 +125,9 @@ end_handler(void *data, const XML_Char *elem)
 
   if (strcmp(elem, "testsuite") == 0) {
      /* TODO: check a number of failures and errors */
-     /* FIXME: suite_item->testq = test_item->head; */
-     TAILQ_INSERT_TAIL(&suites, suite_item, entries);
+     TAILQ_INSERT_TAIL(suites, suite_item, entries);
   } else if (strcmp(elem, "testcase") == 0) {
-     //TAILQ_INSERT_TAIL(&suite_item->tests, test_item, entries);
-     printf("+");
+     TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
   }
 }
 
@@ -143,8 +146,12 @@ struct suiteq *parse_junit(FILE *f) {
     exit(-1);
   }
 
-  memset(&suites, 0, sizeof(struct suiteq));
-  TAILQ_INIT(&suites);
+  suites = malloc(sizeof(struct suiteq));
+  if (suites == NULL) {
+     perror("malloc failed");
+  }
+  memset(suites, 0, sizeof(struct suiteq));
+  TAILQ_INIT(suites);
 
   XML_UseParserAsHandlerArg(p);
   XML_SetElementHandler(p, start_handler, end_handler);
@@ -164,7 +171,9 @@ struct suiteq *parse_junit(FILE *f) {
               "Parse error at line %" XML_FMT_INT_MOD "u:\n%" XML_FMT_STR "\n",
               XML_GetCurrentLineNumber(p),
               XML_ErrorString(XML_GetErrorCode(p)));
-      /* FIXME: free tailq_suite, tailq_test */
+              free(test_item);
+              free(suite_item);
+              free_suites(suites);
       exit(-1);
     }
     if (done) {
@@ -173,5 +182,5 @@ struct suiteq *parse_junit(FILE *f) {
   }
   XML_ParserFree(p);
 
-  return &suites;
+  return suites;
 }

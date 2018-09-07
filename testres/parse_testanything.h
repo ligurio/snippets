@@ -61,4 +61,5 @@ ast_test(struct ast_test **head, enum ast_status status, const char *name);
 void
 print(FILE *f, const struct ast_test *tests);
 
+struct ast_test *parse_testanything_raw(FILE *f);
 struct suiteq *parse_testanything(FILE *f);

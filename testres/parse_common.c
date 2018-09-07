@@ -67,11 +67,9 @@ void free_reports(struct reportq *reports) {
 void free_suites(struct suiteq *suites) {
   tailq_suite *suite_item;
   while ((suite_item = TAILQ_FIRST(suites))) {
-      /*
       if (!TAILQ_EMPTY(suite_item->tests)) {
          free_tests(suite_item->tests);
       }
-      */
       TAILQ_REMOVE(suites, suite_item, entries);
       free(suite_item);
   }
@@ -107,7 +105,11 @@ void print_suites(struct suiteq *suites) {
 
   tailq_suite *suite_item;
   TAILQ_FOREACH(suite_item, suites, entries) {
-      printf("%10s ", suite_item->name);
+      if (suite_item->name == (char*)NULL) {
+         printf("%10s ", suite_item->name);
+      } else {
+         printf("%10s ", "noname");
+      }
       printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
       printf("%5f ", suite_item->time);
       if (suite_item->timestamp != (char*)NULL) {
@@ -117,11 +119,9 @@ void print_suites(struct suiteq *suites) {
          printf("%10s ", suite_item->hostname);
       }
       printf("\n");
-      /*
       if (!TAILQ_EMPTY(suite_item->tests)) {
          print_tests(suite_item->tests);
       }
-      */
   }
 }
 
@@ -129,16 +129,15 @@ void print_tests(struct testq *tests) {
 
   tailq_test *test_item;
   TAILQ_FOREACH(test_item, tests, entries) {
-      printf("\t%10s ", status_string(test_item->status));
-      printf("%10s ", test_item->name);
-      if (test_item->time != NULL) {
-         printf("(%5ss)\n", test_item->time);
-      } else {
-         printf("\n");
+      printf("\t%10s ", test_item->name);
+      printf("%10s ", status_string(test_item->status));
+      if (test_item->time != (char*)NULL) {
+         printf("(%5ss) ", test_item->time);
       }
       if (test_item->comment != NULL) {
-         printf("Comment: %5s\n", test_item->comment);
+         printf("Comment: %5s", test_item->comment);
       }
+      printf("\n");
   }
 }
 
@@ -225,7 +224,8 @@ tailq_report *process_file(char *path) {
     }
 
     tailq_report *report = NULL;
-    if (!(report = malloc(sizeof(tailq_report)))) {
+    report = malloc(sizeof(tailq_report));
+    if (report == NULL ) {
        perror("malloc failed");
     }
     memset(report, 0, sizeof(tailq_report));

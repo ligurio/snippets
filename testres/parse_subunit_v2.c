@@ -97,15 +97,27 @@ struct suiteq *parse_subunit_v2(FILE *stream) {
     memset(suite_item, 0, sizeof(tailq_suite));
     suite_item->n_errors = 0;
     suite_item->n_failures = 0;
+    /*
+    suite_item->tests = malloc(sizeof(struct testq));
+    if (suite_item->tests == NULL) {
+       perror("malloc failed");
+    }
+    memset(suite_item->tests, 0, sizeof(struct testq));
+    */
     TAILQ_INIT(suite_item->tests);
 
-    tailq_test *test_item;
+    tailq_test *test_item = NULL;
     while (!feof(stream)) {
         test_item = read_packet(stream);
 	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
     }
 
-    struct suiteq *suites;
+    struct suiteq *suites = NULL;
+    suites = malloc(sizeof(struct suiteq));
+    if (suites == NULL) {
+       perror("malloc failed");
+    }
+    memset(suites, 0, sizeof(struct suiteq));
     TAILQ_INIT(suites);
     TAILQ_INSERT_TAIL(suites, suite_item, entries);
 

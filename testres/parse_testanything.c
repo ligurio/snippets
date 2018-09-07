@@ -74,10 +74,8 @@ enum test_status test_status(enum ast_status status)
 	case AST_MISSING: return STATUS_MISSING;
 	case AST_TODO:    return STATUS_TODO;
 	case AST_SKIP:    return STATUS_SKIP;
-        /*
         default:
-            return STATUS_UNDEFINED;
-        */
+            return STATUS_MISSING;
 	}
 }
 
@@ -300,15 +298,11 @@ print(FILE *f, const struct ast_test *tests)
 	}
 }
 
-struct suiteq *
-parse_testanything(FILE *f)
-{
-	struct ast_test *tests;
+struct ast_test *
+parse_testanything_raw(FILE *f) {
+	struct ast_test *tests = NULL;
 	int a, b;
-	int fold;
-
-	fold = 0;
-	tests = NULL;
+	int fold = 0;
 
 	{
 		char *line, *comment;
@@ -380,25 +374,20 @@ parse_testanything(FILE *f)
 
 		for (test = tests; test != NULL; test = next) {
 			next = test->next;
-
 			if (next == NULL) {
 				continue;
 			}
-
 			if (0 != strcmp(test->name, next->name)) {
 				continue;
 			}
-
 			if (test->status != next->status) {
 				continue;
 			}
-
 			if (test->line != NULL || next->line != NULL) {
 				continue;
 			}
 
 			test->rep++;
-
 			test->next = next->next;
 			next = test;
 
@@ -407,39 +396,55 @@ parse_testanything(FILE *f)
 	}
 
 	/* TODO: warn about duplicate test names */
+        /* TODO: remove ast_test * tests here */
 
-        tailq_test *test_item;
-        tailq_suite *suite_item;
-        struct suiteq suites;
+        /* print(stdout, tests); */
+        return tests;
+}
 
-        memset(&suites, 0, sizeof(struct suiteq));
-        TAILQ_INIT(&suites);
-        suite_item = malloc(sizeof(tailq_suite));
-        if (suite_item == NULL) {
+struct suiteq *parse_testanything(FILE *f) {
+
+    tailq_suite *suite_item = NULL;
+    suite_item = malloc(sizeof(tailq_suite));
+    if (suite_item == NULL) {
+       perror("malloc failed");
+    }
+    memset(suite_item, 0, sizeof(tailq_suite));
+    suite_item->name = "default suite";
+    suite_item->n_errors = 0;
+    suite_item->n_failures = 0;
+
+    suite_item->tests = malloc(sizeof(struct testq));
+    if (suite_item->tests == NULL) {
+       perror("malloc failed");
+    }
+    memset(suite_item->tests, 0, sizeof(struct testq));
+    TAILQ_INIT(suite_item->tests);
+
+    struct ast_test *tests, *current;
+    tests = parse_testanything_raw(f);
+    tailq_test *test_item;
+    current = tests;
+    while (current != NULL) {
+        test_item = malloc(sizeof(tailq_test));
+        if (test_item == NULL) {
            perror("malloc failed");
         }
-        memset(suite_item, 0, sizeof(tailq_suite));
-        suite_item->name = "default suite";
-        suite_item->n_errors = 0;
-        suite_item->n_failures = 0;
-        //TAILQ_INIT(suite_item->tests);
+        memset(test_item, 0, sizeof(tailq_test));
+        test_item->name = current->name;
+        test_item->status = test_status(current->status);
+	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+        current = current->next;
+    }
 
-	struct ast_test * current;
-	current = tests;
-	while (current != NULL) {
-            test_item = malloc(sizeof(tailq_test));
-            memset(test_item, 0, sizeof(tailq_test));
-            if (test_item == NULL) {
-               perror("malloc failed");
-            }
-            test_item->name = current->name;
-            test_item->status = test_status(current->status);
-	    //TAILQ_INSERT_TAIL(&suite_item->tests, test_item, entries);
-            current = current->next;
-	}
+    struct suiteq *suites;
+    suites = malloc(sizeof(struct suiteq));
+    if (suites == NULL) {
+       perror("malloc failed");
+    }
+    memset(suites, 0, sizeof(struct suiteq));
+    TAILQ_INIT(suites);
+    TAILQ_INSERT_TAIL(suites, suite_item, entries);
 
-	// TODO: remove ast_test * tests here
-	TAILQ_INSERT_TAIL(&suites, suite_item, entries);
-
-        return &suites;
+    return suites;
 }

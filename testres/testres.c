@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
       }
       /* TODO: recursive search in directories */
       int path_len = strlen(path_dir) + strlen(basename) + 2;
-      path_file = malloc(path_len);
+      path_file = calloc(path_len, sizeof(char));
       snprintf(path_file, path_len, "%s/%s", path_dir, basename);
       report_item = process_file(path_file);
       TAILQ_INSERT_TAIL(&reports, report_item, entries);

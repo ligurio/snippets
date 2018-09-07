@@ -181,15 +181,6 @@ status_string(enum test_status status)
 	}
 }
 
-/*
-time_t *report_ctime(char *filename) {
-    struct stat sb;
-    stat(filename, &sb);
-
-    return &sb.st_ctime;
-}
-*/
-
 char *get_filename_ext(const char *filename) {
     char *dot = strrchr(filename, '.');
     if (!dot || dot == filename)
@@ -224,11 +215,10 @@ tailq_report *process_file(char *path) {
     }
 
     tailq_report *report = NULL;
-    report = malloc(sizeof(tailq_report));
+    report = calloc(1, sizeof(tailq_report));
     if (report == NULL ) {
        perror("malloc failed");
     }
-    memset(report, 0, sizeof(tailq_report));
 
     enum test_format format;
     format = detect_file_format(basename(path));
@@ -256,6 +246,10 @@ tailq_report *process_file(char *path) {
 
     struct stat sb;
     stat(path, &sb);
+    report->ctime = malloc(sizeof(const time_t));
+    if (report->ctime == NULL ) {
+       perror("malloc failed");
+    }
     report->ctime = &sb.st_ctime;
 
     return report;

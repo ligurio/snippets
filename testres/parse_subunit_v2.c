@@ -90,20 +90,15 @@ uint32_t read_field(FILE *stream) {
 struct suiteq *parse_subunit_v2(FILE *stream) {
 
     tailq_suite *suite_item;
-    suite_item = malloc(sizeof(suite_item));
+    suite_item = (tailq_suite*)malloc(sizeof(tailq_suite));
     if (suite_item == NULL) {
        perror("malloc failed");
     }
-    memset(suite_item, 0, sizeof(tailq_suite));
-    suite_item->n_errors = 0;
-    suite_item->n_failures = 0;
-    /*
-    suite_item->tests = malloc(sizeof(struct testq));
+    /* TODO: n_errors, n_failures */
+    suite_item->tests = (struct testq*)calloc(1, sizeof(struct testq));
     if (suite_item->tests == NULL) {
        perror("malloc failed");
     }
-    memset(suite_item->tests, 0, sizeof(struct testq));
-    */
     TAILQ_INIT(suite_item->tests);
 
     tailq_test *test_item = NULL;
@@ -113,11 +108,10 @@ struct suiteq *parse_subunit_v2(FILE *stream) {
     }
 
     struct suiteq *suites = NULL;
-    suites = malloc(sizeof(struct suiteq));
+    suites = calloc(1, sizeof(struct suiteq));
     if (suites == NULL) {
        perror("malloc failed");
     }
-    memset(suites, 0, sizeof(struct suiteq));
     TAILQ_INIT(suites);
     TAILQ_INSERT_TAIL(suites, suite_item, entries);
 
@@ -134,11 +128,10 @@ tailq_test *read_packet(FILE *stream) {
     }
 
     tailq_test *test_item;
-    test_item = malloc(sizeof(tailq_test));
+    test_item = calloc(1, sizeof(tailq_test));
     if (test_item == NULL) {
        perror("malloc failed");
     }
-    memset(test_item, 0, sizeof(tailq_test));
 
     uint16_t flags = htons(header.flags);
     printf("SIGNATURE: %02hhX\n", header.signature);

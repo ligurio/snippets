@@ -405,20 +405,18 @@ parse_testanything_raw(FILE *f) {
 struct suiteq *parse_testanything(FILE *f) {
 
     tailq_suite *suite_item = NULL;
-    suite_item = malloc(sizeof(tailq_suite));
+    suite_item = calloc(1, sizeof(tailq_suite));
     if (suite_item == NULL) {
        perror("malloc failed");
     }
-    memset(suite_item, 0, sizeof(tailq_suite));
     suite_item->name = "default suite";
     suite_item->n_errors = 0;
     suite_item->n_failures = 0;
 
-    suite_item->tests = malloc(sizeof(struct testq));
+    suite_item->tests = calloc(1, sizeof(struct testq));
     if (suite_item->tests == NULL) {
        perror("malloc failed");
     }
-    memset(suite_item->tests, 0, sizeof(struct testq));
     TAILQ_INIT(suite_item->tests);
 
     struct ast_test *tests, *current;
@@ -426,11 +424,10 @@ struct suiteq *parse_testanything(FILE *f) {
     tailq_test *test_item;
     current = tests;
     while (current != NULL) {
-        test_item = malloc(sizeof(tailq_test));
+        test_item = calloc(1, sizeof(tailq_test));
         if (test_item == NULL) {
            perror("malloc failed");
         }
-        memset(test_item, 0, sizeof(tailq_test));
         test_item->name = current->name;
         test_item->status = test_status(current->status);
 	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
@@ -438,11 +435,10 @@ struct suiteq *parse_testanything(FILE *f) {
     }
 
     struct suiteq *suites;
-    suites = malloc(sizeof(struct suiteq));
+    suites = calloc(1, sizeof(struct suiteq));
     if (suites == NULL) {
        perror("malloc failed");
     }
-    memset(suites, 0, sizeof(struct suiteq));
     TAILQ_INIT(suites);
     TAILQ_INSERT_TAIL(suites, suite_item, entries);
 

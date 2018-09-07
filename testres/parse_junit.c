@@ -82,29 +82,26 @@ start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
   (void)data;
 
   if (strcmp(elem, "testsuite") == 0) {
-     suite_item = malloc(sizeof(tailq_suite));
+     suite_item = calloc(1, sizeof(tailq_suite));
      if (suite_item == NULL) {
        perror("malloc failed");
      }
-     memset(suite_item, 0, sizeof(tailq_suite));
      suite_item->name = name_to_value(attr, "name");
      suite_item->hostname = name_to_value(attr, "hostname");
      suite_item->n_errors = atoi(name_to_value(attr, "errors"));
      suite_item->n_failures = atoi(name_to_value(attr, "failures"));
      suite_item->time = atof(name_to_value(attr, "time"));
      suite_item->timestamp = name_to_value(attr, "timestamp");
-     suite_item->tests = malloc(sizeof(struct testq));
+     suite_item->tests = calloc(1, sizeof(struct testq));
      if (suite_item->tests == NULL) {
         perror("malloc failed");
      }
-     memset(suite_item->tests, 0, sizeof(struct testq));
      TAILQ_INIT(suite_item->tests);
   } else if (strcmp(elem, "testcase") == 0) {
-     test_item = malloc(sizeof(tailq_test));
+     test_item = calloc(1, sizeof(tailq_test));
      if (test_item == NULL) {
         perror("malloc failed");
      };
-     memset(test_item, 0, sizeof(tailq_test));
      test_item->name = name_to_value(attr, "name");
      test_item->time = name_to_value(attr, "time");
      test_item->status = STATUS_PASS;
@@ -146,11 +143,10 @@ struct suiteq *parse_junit(FILE *f) {
     exit(-1);
   }
 
-  suites = malloc(sizeof(struct suiteq));
+  suites = calloc(1, sizeof(struct suiteq));
   if (suites == NULL) {
      perror("malloc failed");
   }
-  memset(suites, 0, sizeof(struct suiteq));
   TAILQ_INIT(suites);
 
   XML_UseParserAsHandlerArg(p);

@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
   if (path_file != NULL) {
      report_item = process_file(path_file);
      print_single_report(report_item);
+     free_single_report(report_item);
      return 0;
   }
 
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   print_headers();
   print_reports(&reports);
-  /* FIXME: Free the entire tail queue. */
+  free_reports(&reports);
 
   return 0;
 }

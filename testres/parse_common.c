@@ -46,14 +46,54 @@
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
 
+void free_single_report(tailq_report *report) {
+  if (!TAILQ_EMPTY(report->suites)) {
+     free_suites(report->suites);
+  }
+  free(report);
+}
+
+void free_reports(struct reportq *reports) {
+  tailq_report *report_item;
+  while ((report_item = TAILQ_FIRST(reports))) {
+      if (!TAILQ_EMPTY(report_item->suites)) {
+         free_suites(report_item->suites);
+      }
+      TAILQ_REMOVE(reports, report_item, entries);
+      free(report_item);
+  }
+}
+
+void free_suites(struct suiteq *suites) {
+  tailq_suite *suite_item;
+  while ((suite_item = TAILQ_FIRST(suites))) {
+      /*
+      if (!TAILQ_EMPTY(suite_item->tests)) {
+         free_tests(suite_item->tests);
+      }
+      */
+      TAILQ_REMOVE(suites, suite_item, entries);
+      free(suite_item);
+  }
+}
+
+void free_tests(struct testq *tests) {
+  tailq_test *test_item;
+  while ((test_item = TAILQ_FIRST(tests))) {
+      TAILQ_REMOVE(tests, test_item, entries);
+      free(test_item);
+  }
+}
+
 void print_single_report(struct tailq_report *report) {
   printf("\nTEST REPORT (%s)\n", format_string(report->format));
-
-  char buffer[80];
+  char buffer[80] = "";
   struct tm *info = localtime(report->ctime);
-  strftime(buffer, 1024, "%x - %I:%M%p", info);
-  printf("CREATED: %s\n", buffer);
-  print_suites(report->suites);
+  strftime(buffer, 80, "%x - %I:%M%p", info);
+  printf("CREATED ON: %s\n", buffer);
+  if (!TAILQ_EMPTY(report->suites)) {
+     print_suites(report->suites);
+  }
 }
 
 void print_reports(struct reportq *reports) {
@@ -77,7 +117,11 @@ void print_suites(struct suiteq *suites) {
          printf("%10s ", suite_item->hostname);
       }
       printf("\n");
-      // FIXME: print_tests(suite_item->tests);
+      /*
+      if (!TAILQ_EMPTY(suite_item->tests)) {
+         print_tests(suite_item->tests);
+      }
+      */
   }
 }
 
@@ -203,13 +247,13 @@ tailq_report *process_file(char *path) {
 	break;
       case FORMAT_SUBUNIT_V2:
         report->format = FORMAT_SUBUNIT_V2;
-        //report->suites = parse_subunit_v2(file);
+        report->suites = parse_subunit_v2(file);
 	break;
       case FORMAT_UNKNOWN:
 	break;
     }
-
     fclose(file);
+
     struct stat sb;
     stat(path, &sb);
     report->ctime = &sb.st_ctime;

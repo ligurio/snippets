@@ -50,4 +50,4 @@ enum TestStatus { Undefined,
 
 uint32_t read_field(FILE *stream);
 tailq_test *read_packet(FILE *stream);
-tailq_suite *parse_subunit_v2(FILE *stream);
+struct suiteq *parse_subunit_v2(FILE *stream);

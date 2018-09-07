@@ -37,9 +37,9 @@ test-unit: $(TEST_BIN) build_app
 	./$(TEST_BIN)
 
 test-module: build_app
-	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_TESTANYTHING)
-	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_SUBUNIT_V2)
-	@valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_JUNIT)
+	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_TESTANYTHING)
+	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_SUBUNIT_V2)
+	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_JUNIT)
 
 test-fuzz:
 	@make -C $(TOP_SRC_DIR) clean

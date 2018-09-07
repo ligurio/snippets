@@ -87,33 +87,29 @@ uint32_t read_field(FILE *stream) {
     return field_value;
 }
 
-tailq_suite *parse_subunit_v2(FILE *stream) {
-
-    tailq_test *test_item;
-    TAILQ_HEAD(, tailq_test) tests_head;
-    TAILQ_INIT(&tests_head);
-
-    while (!feof(stream)) {
-        test_item = read_packet(stream);
-	TAILQ_INSERT_TAIL(&tests_head, test_item, entries);
-    }
+struct suiteq *parse_subunit_v2(FILE *stream) {
 
     tailq_suite *suite_item;
-    TAILQ_HEAD(, tailq_suite) suites_head;
-    TAILQ_INIT(&suites_head);
     suite_item = malloc(sizeof(suite_item));
     if (suite_item == NULL) {
        perror("malloc failed");
     }
     memset(suite_item, 0, sizeof(tailq_suite));
-    suite_item->name = "default suite";
-    suite_item->hostname = "hostname";
     suite_item->n_errors = 0;
     suite_item->n_failures = 0;
-    //suite_item->tests = tests_head;
-    TAILQ_INSERT_TAIL(&suites_head, suite_item, entries);
+    TAILQ_INIT(suite_item->tests);
 
-    return NULL;
+    tailq_test *test_item;
+    while (!feof(stream)) {
+        test_item = read_packet(stream);
+	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+    }
+
+    struct suiteq *suites;
+    TAILQ_INIT(suites);
+    TAILQ_INSERT_TAIL(suites, suite_item, entries);
+
+    return suites;
 }
 
 tailq_test *read_packet(FILE *stream) {
@@ -127,10 +123,10 @@ tailq_test *read_packet(FILE *stream) {
 
     tailq_test *test_item;
     test_item = malloc(sizeof(tailq_test));
-    memset(test_item, 0, sizeof(tailq_test));
     if (test_item == NULL) {
        perror("malloc failed");
     }
+    memset(test_item, 0, sizeof(tailq_test));
 
     uint16_t flags = htons(header.flags);
     printf("SIGNATURE: %02hhX\n", header.signature);
@@ -145,6 +141,7 @@ tailq_test *read_packet(FILE *stream) {
     int8_t status;
     status = flags & 0x0007;
     printf("\tSTATUS: %u\n", status);
+    test_item->status = status;
     assert(status <= 0x0007);
 
     uint32_t field_value;
@@ -156,6 +153,7 @@ tailq_test *read_packet(FILE *stream) {
         printf("FLAG_TIMESTAMP ");
         field_value = read_field(stream);
         printf("%08X\n", field_value);
+        test_item->time = "12:14:44";
     };
     if (flags & FLAG_TEST_ID) {
         printf("FLAG_TEST_ID ");
@@ -193,9 +191,7 @@ tailq_test *read_packet(FILE *stream) {
     printf("%08X\n", field_value);
 
     /* FIXME */
-    test_item->status = STATUS_FAILED;
     test_item->name = "test";
-    test_item->time = "12:14:44";
 
     return test_item;
 }

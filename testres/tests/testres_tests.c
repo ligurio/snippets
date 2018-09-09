@@ -145,7 +145,7 @@ test_parse_subunit(void **state)
     {
         fail();
     }
-    tailq_suite *suites;
+    struct suiteq *suites;
     suites = parse_subunit_v2(file);
     // FIXME: assert(report->format == FORMAT_SUBUNIT_V2);
     fclose(file);
@@ -161,14 +161,13 @@ test_parse_subunit_common(void **state)
 
     FILE *file;
     char *name = SAMPLE_FILE_SUBUNIT_V2;
-    tailq_report *report;
-    tailq_suite *suites;
-
     file = fopen(name, "r");
     if (file == NULL)
     {
         fail();
     }
+    tailq_report *report;
+    struct suiteq *suites;
     suites = parse_subunit_v2(file);
     report  = process_file(name);
     fclose(file);

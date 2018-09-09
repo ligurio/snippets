@@ -32,6 +32,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <err.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
@@ -41,25 +43,21 @@
 #include "ui_common.h"
 
 void usage(char *name) {
-  fprintf(stderr, "Usage: %s [-d directory] [-f file] [-h]\n", name);
+  fprintf(stderr, "Usage: %s [-s file | directory] [-h]\n", name);
 }
 
 int main(int argc, char *argv[]) {
 
-  const char *path_dir = (char*)NULL;
-  char *path_file = (char*)NULL;
+  char *path = (char*)NULL;
   int opt = 0;
 
-  while ((opt = getopt(argc, argv, "hd:f:")) != -1) {
+  while ((opt = getopt(argc, argv, "hs:")) != -1) {
       switch (opt) {
       case 'h':
           usage(argv[0]);
           return(1);
-      case 'd':
-          path_dir = optarg;
-          break;
-      case 'f':
-          path_file = optarg;
+      case 's':
+          path = optarg;
           break;
       default: /* '?' */
           usage(argv[0]);
@@ -72,22 +70,32 @@ int main(int argc, char *argv[]) {
       return 1;
   }
 
+  struct stat path_st;
+  int fd;
+  fd = open(path, O_RDONLY);
+  if (fstat(fd, &path_st) != 0) {
+     printf("cannot open %s\n", path);
+     return 1;
+  }
+
   tailq_report *report_item;
-  if (path_file != NULL) {
-     report_item = process_file(path_file);
+  if (S_ISREG(path_st.st_mode)) {
+     report_item = process_file(path);
      print_single_report(report_item);
      free_single_report(report_item);
+     close(fd);
      return 0;
   }
 
   DIR *d;
   struct dirent *dir;
-  d = opendir(path_dir);
-  if (d == NULL) {
-     printf("failed to open dir %s\n", path_dir);
+  if ((d = fdopendir(fd))== NULL) {
+     printf("failed to open dir %s\n", path);
+     close(fd);
      return 1;
   }
 
+  char *path_file = (char*)NULL;
   struct reportq reports;
   TAILQ_INIT(&reports);
 
@@ -98,13 +106,14 @@ int main(int argc, char *argv[]) {
          continue;
       }
       /* TODO: recursive search in directories */
-      int path_len = strlen(path_dir) + strlen(basename) + 2;
+      int path_len = strlen(path) + strlen(basename) + 2;
       path_file = calloc(path_len, sizeof(char));
-      snprintf(path_file, path_len, "%s/%s", path_dir, basename);
+      snprintf(path_file, path_len, "%s/%s", path, basename);
       report_item = process_file(path_file);
       TAILQ_INSERT_TAIL(&reports, report_item, entries);
       free(path_file);
   }
+  close(fd);
   closedir(d);
 
   print_headers();

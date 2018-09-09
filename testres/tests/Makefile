@@ -37,9 +37,9 @@ test-unit: $(TEST_BIN) build_app
 	./$(TEST_BIN)
 
 test-module: build_app
-	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_TESTANYTHING)
-	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_SUBUNIT_V2)
-	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -f $(SAMPLE_FILE_JUNIT)
+	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -s $(SAMPLE_FILE_TESTANYTHING)
+	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -s $(SAMPLE_FILE_SUBUNIT_V2)
+	@-valgrind $(VALGRIND_OPT) $(TOP_SRC_DIR)/$(BIN) -s $(SAMPLE_FILE_JUNIT)
 
 test-fuzz:
 	@make -C $(TOP_SRC_DIR) clean
@@ -49,7 +49,7 @@ test-fuzz:
 	@cp $(SAMPLE_FILE_TESTANYTHING) $(AFL_IN)
 	@CC=afl-clang make -C $(TOP_SRC_DIR)
 	@AFL_USE_MSAN=1 AFL_USE_ASAN=1 AFL_EXIT_WHEN_DONE=1 \
-	afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -f @@
+	afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -s @@
 
 clean:
 	rm -rf $(OBJ) $(TEST_BIN) $(AFL_IN) $(AFL_OUT)

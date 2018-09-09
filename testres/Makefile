@@ -65,4 +65,8 @@ check: $(PLIST)
 		--suppress=incorrectStringBooleanError \
 		--std=c89 *.c *.h 2> cppcheck.log
 
+fmt:
+	@clang-format -i -style=file *.[ch]
+
+
 .PHONY: all clean check install tags test techdebt

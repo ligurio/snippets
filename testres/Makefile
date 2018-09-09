@@ -52,7 +52,7 @@ tags:
 
 clean:
 	@make -C tests clean
-	rm -f $(BIN) $(CGIBIN) $(OBJ) $(PLIST) cppcheck.log *.core tags
+	rm -f $(BIN) $(CGIBIN) $(OBJ) $(PLIST) *.{BAK,core} cppcheck.log tags
 
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"
@@ -66,7 +66,8 @@ check: $(PLIST)
 		--std=c89 *.c *.h 2> cppcheck.log
 
 fmt:
-	@clang-format -i -style=file *.[ch]
-
+.for SRC in ${SRCS}
+	@indent -ci4 -di1 -nlp $(SRC)
+.endfor
 
 .PHONY: all clean check install tags test techdebt

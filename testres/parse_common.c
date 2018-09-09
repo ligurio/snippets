@@ -40,118 +40,141 @@
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
+#endif				/* PARSE_COMMON_H */
 
 #include "parse_junit.h"
 #include "parse_testanything.h"
 #include "parse_subunit_v2.h"
 
-void free_single_report(tailq_report *report) {
-  if (!TAILQ_EMPTY(report->suites)) {
-     free_suites(report->suites);
-  }
-  free(report);
+void 
+free_single_report(tailq_report * report)
+{
+	if (!TAILQ_EMPTY(report->suites)) {
+		free_suites(report->suites);
+	}
+	free(report);
 }
 
-void free_reports(struct reportq *reports) {
-  tailq_report *report_item;
-  while ((report_item = TAILQ_FIRST(reports))) {
-      if (!TAILQ_EMPTY(report_item->suites)) {
-         free_suites(report_item->suites);
-      }
-      TAILQ_REMOVE(reports, report_item, entries);
-      free(report_item);
-  }
+void 
+free_reports(struct reportq * reports)
+{
+	tailq_report *report_item;
+	while ((report_item = TAILQ_FIRST(reports))) {
+		if (!TAILQ_EMPTY(report_item->suites)) {
+			free_suites(report_item->suites);
+		}
+		TAILQ_REMOVE(reports, report_item, entries);
+		free(report_item);
+	}
 }
 
-void free_suites(struct suiteq *suites) {
-  tailq_suite *suite_item;
-  while ((suite_item = TAILQ_FIRST(suites))) {
-      if (!TAILQ_EMPTY(suite_item->tests)) {
-         free_tests(suite_item->tests);
-      }
-      TAILQ_REMOVE(suites, suite_item, entries);
-      free(suite_item);
-  }
+void 
+free_suites(struct suiteq * suites)
+{
+	tailq_suite *suite_item;
+	while ((suite_item = TAILQ_FIRST(suites))) {
+		if (!TAILQ_EMPTY(suite_item->tests)) {
+			free_tests(suite_item->tests);
+		}
+		TAILQ_REMOVE(suites, suite_item, entries);
+		free(suite_item);
+	}
 }
 
-void free_tests(struct testq *tests) {
-  tailq_test *test_item;
-  while ((test_item = TAILQ_FIRST(tests))) {
-      TAILQ_REMOVE(tests, test_item, entries);
-      free(test_item);
-  }
+void 
+free_tests(struct testq * tests)
+{
+	tailq_test *test_item;
+	while ((test_item = TAILQ_FIRST(tests))) {
+		TAILQ_REMOVE(tests, test_item, entries);
+		free(test_item);
+	}
 }
 
-void print_single_report(struct tailq_report *report) {
-  printf("\nTEST REPORT (%s)\n", format_string(report->format));
-  char buffer[80] = "";
-  struct tm *info = localtime(&report->ctime);
-  strftime(buffer, 80, "%x - %I:%M%p", info);
-  printf("CREATED ON: %s\n", buffer);
-  if (!TAILQ_EMPTY(report->suites)) {
-     print_suites(report->suites);
-  }
+void 
+print_single_report(struct tailq_report * report)
+{
+	printf("\nTEST REPORT (%s)\n", format_string(report->format));
+	char buffer[80] = "";
+	struct tm *info = localtime(&report->ctime);
+	strftime(buffer, 80, "%x - %I:%M%p", info);
+	printf("CREATED ON: %s\n", buffer);
+	if (!TAILQ_EMPTY(report->suites)) {
+		print_suites(report->suites);
+	}
 }
 
-void print_reports(struct reportq *reports) {
-  tailq_report *report_item;
-  TAILQ_FOREACH(report_item, reports, entries) {
-      print_single_report(report_item);
-  }
+void 
+print_reports(struct reportq * reports)
+{
+	tailq_report *report_item;
+	TAILQ_FOREACH(report_item, reports, entries) {
+		print_single_report(report_item);
+	}
 }
 
-void print_suites(struct suiteq *suites) {
+void 
+print_suites(struct suiteq * suites)
+{
 
-  tailq_suite *suite_item;
-  TAILQ_FOREACH(suite_item, suites, entries) {
-      if (suite_item->name == (char*)NULL) {
-         printf("%10s ", suite_item->name);
-      } else {
-         printf("%10s ", "noname");
-      }
-      printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
-      printf("%5f ", suite_item->time);
-      if (suite_item->timestamp != (char*)NULL) {
-         printf("%10s ", suite_item->timestamp);
-      }
-      if (suite_item->hostname != (char*)NULL) {
-         printf("%10s ", suite_item->hostname);
-      }
-      printf("\n");
-      if (!TAILQ_EMPTY(suite_item->tests)) {
-         print_tests(suite_item->tests);
-      }
-  }
+	tailq_suite *suite_item;
+	TAILQ_FOREACH(suite_item, suites, entries) {
+		if (suite_item->name == (char *) NULL) {
+			printf("%10s ", suite_item->name);
+		} else {
+			printf("%10s ", "noname");
+		}
+		printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
+		printf("%5f ", suite_item->time);
+		if (suite_item->timestamp != (char *) NULL) {
+			printf("%10s ", suite_item->timestamp);
+		}
+		if (suite_item->hostname != (char *) NULL) {
+			printf("%10s ", suite_item->hostname);
+		}
+		printf("\n");
+		if (!TAILQ_EMPTY(suite_item->tests)) {
+			print_tests(suite_item->tests);
+		}
+	}
 }
 
-void print_tests(struct testq *tests) {
+void 
+print_tests(struct testq * tests)
+{
 
-  tailq_test *test_item;
-  TAILQ_FOREACH(test_item, tests, entries) {
-      printf("\t%10s ", test_item->name);
-      printf("%10s ", status_string(test_item->status));
-      if (test_item->time != (char*)NULL) {
-         printf("(%5ss) ", test_item->time);
-      }
-      if (test_item->comment != NULL) {
-         printf("Comment: %5s", test_item->comment);
-      }
-      printf("\n");
-  }
+	tailq_test *test_item;
+	TAILQ_FOREACH(test_item, tests, entries) {
+		printf("\t%10s ", test_item->name);
+		printf("%10s ", status_string(test_item->status));
+		if (test_item->time != (char *) NULL) {
+			printf("(%5ss) ", test_item->time);
+		}
+		if (test_item->comment != NULL) {
+			printf("Comment: %5s", test_item->comment);
+		}
+		printf("\n");
+	}
 }
 
-const char *format_string(enum test_format format) {
+const char *
+format_string(enum test_format format)
+{
 
 	switch (format) {
-	case FORMAT_TAP13:       return "FORMAT_TAP13";
-	case FORMAT_JUNIT:       return "FORMAT_JUNIT";
-	case FORMAT_SUBUNIT_V1:  return "FORMAT_SUBUNIT_V1";
-	case FORMAT_SUBUNIT_V2:  return "FORMAT_SUBUNIT_V2";
-	case FORMAT_UNKNOWN:     return "FORMAT_UNKNOWN";
+	case FORMAT_TAP13:
+		return "FORMAT_TAP13";
+	case FORMAT_JUNIT:
+		return "FORMAT_JUNIT";
+	case FORMAT_SUBUNIT_V1:
+		return "FORMAT_SUBUNIT_V1";
+	case FORMAT_SUBUNIT_V2:
+		return "FORMAT_SUBUNIT_V2";
+	case FORMAT_UNKNOWN:
+		return "FORMAT_UNKNOWN";
 
 	default:
-	    return "FORMAT_UNKNOWN";
+		return "FORMAT_UNKNOWN";
 	}
 }
 
@@ -159,96 +182,115 @@ const char *
 status_string(enum test_status status)
 {
 	switch (status) {
-	case STATUS_OK:          return "STATUS_OK";
-	case STATUS_NOTOK:       return "STATUS_NOTOK";
-	case STATUS_MISSING:     return "STATUS_MISSING";
-	case STATUS_TODO:        return "STATUS_TODO";
-	case STATUS_SKIP:        return "STATUS_SKIP";
-	case STATUS_UNDEFINED:   return "STATUS_UNDEFINED";
-	case STATUS_ENUMERATION: return "STATUS_ENUMERATION";
-	case STATUS_INPROGRESS:  return "STATUS_INPROGRESS";
-	case STATUS_SUCCESS:     return "STATUS_SUCCESS";
-	case STATUS_UXSUCCESS:   return "STATUS_UXSUCCESS";
-	case STATUS_SKIPPED:     return "STATUS_SKIPPED";
-	case STATUS_FAILED:      return "STATUS_FAILED";
-	case STATUS_XFAILURE:    return "STATUS_XFAILURE";
-	case STATUS_ERROR:       return "STATUS_ERROR";
-	case STATUS_FAILURE:     return "STATUS_FAILURE";
-	case STATUS_PASS:        return "STATUS_PASS";
+		case STATUS_OK:return "STATUS_OK";
+	case STATUS_NOTOK:
+		return "STATUS_NOTOK";
+	case STATUS_MISSING:
+		return "STATUS_MISSING";
+	case STATUS_TODO:
+		return "STATUS_TODO";
+	case STATUS_SKIP:
+		return "STATUS_SKIP";
+	case STATUS_UNDEFINED:
+		return "STATUS_UNDEFINED";
+	case STATUS_ENUMERATION:
+		return "STATUS_ENUMERATION";
+	case STATUS_INPROGRESS:
+		return "STATUS_INPROGRESS";
+	case STATUS_SUCCESS:
+		return "STATUS_SUCCESS";
+	case STATUS_UXSUCCESS:
+		return "STATUS_UXSUCCESS";
+	case STATUS_SKIPPED:
+		return "STATUS_SKIPPED";
+	case STATUS_FAILED:
+		return "STATUS_FAILED";
+	case STATUS_XFAILURE:
+		return "STATUS_XFAILURE";
+	case STATUS_ERROR:
+		return "STATUS_ERROR";
+	case STATUS_FAILURE:
+		return "STATUS_FAILURE";
+	case STATUS_PASS:
+		return "STATUS_PASS";
 
 	default:
-	    return "STATUS_UNKNOWN";
+		return "STATUS_UNKNOWN";
 	}
 }
 
-char *get_filename_ext(const char *filename) {
-    char *dot = strrchr(filename, '.');
-    if (!dot || dot == filename)
-        return (char *)NULL;
+char *
+get_filename_ext(const char *filename)
+{
+	char *dot = strrchr(filename, '.');
+	if (!dot || dot == filename)
+		return (char *) NULL;
 
-    return dot + 1;
+	return dot + 1;
 }
 
-enum test_format detect_file_format(const char *basename) {
+enum test_format 
+detect_file_format(const char *basename)
+{
 
-    char *file_ext;
-    file_ext = get_filename_ext(basename);
+	char *file_ext;
+	file_ext = get_filename_ext(basename);
 
-    if (strcasecmp("xml", file_ext) == 0) {
-       return FORMAT_JUNIT;
-    } else if (strcasecmp("tap", file_ext) == 0) {
-       return FORMAT_TAP13;
-    } else if (strcasecmp("subunit", file_ext) == 0) {
-       return FORMAT_SUBUNIT_V2;
-    } else {
-       return FORMAT_UNKNOWN;
-    }
+	if (strcasecmp("xml", file_ext) == 0) {
+		return FORMAT_JUNIT;
+	} else if (strcasecmp("tap", file_ext) == 0) {
+		return FORMAT_TAP13;
+	} else if (strcasecmp("subunit", file_ext) == 0) {
+		return FORMAT_SUBUNIT_V2;
+	} else {
+		return FORMAT_UNKNOWN;
+	}
 }
 
-tailq_report *process_file(char *path) {
+tailq_report *
+process_file(char *path)
+{
 
-    FILE *file;
-    file = fopen(path, "r");
-    if (file == NULL) {
-       printf("failed to open file %s\n", path);
-       return NULL;
-    }
+	FILE *file;
+	file = fopen(path, "r");
+	if (file == NULL) {
+		printf("failed to open file %s\n", path);
+		return NULL;
+	}
+	tailq_report *report = NULL;
+	report = calloc(1, sizeof(tailq_report));
+	if (report == NULL) {
+		perror("malloc failed");
+		fclose(file);
+		return NULL;
+	}
+	enum test_format format;
+	format = detect_file_format(basename(path));
+	switch (format) {
+	case FORMAT_JUNIT:
+		report->format = FORMAT_JUNIT;
+		report->suites = parse_junit(file);
+		break;
+	case FORMAT_TAP13:
+		report->format = FORMAT_TAP13;
+		report->suites = parse_testanything(file);
+		break;
+	case FORMAT_SUBUNIT_V1:
+		/* TODO */
+		report->format = FORMAT_SUBUNIT_V1;
+		break;
+	case FORMAT_SUBUNIT_V2:
+		report->format = FORMAT_SUBUNIT_V2;
+		report->suites = parse_subunit_v2(file);
+		break;
+	case FORMAT_UNKNOWN:
+		break;
+	}
+	fclose(file);
 
-    tailq_report *report = NULL;
-    report = calloc(1, sizeof(tailq_report));
-    if (report == NULL ) {
-       perror("malloc failed");
-       fclose(file);
-       return NULL;
-    }
+	struct stat sb;
+	stat(path, &sb);
+	report->ctime = sb.st_ctime;
 
-    enum test_format format;
-    format = detect_file_format(basename(path));
-    switch(format) {
-      case FORMAT_JUNIT:
-        report->format = FORMAT_JUNIT;
-        report->suites = parse_junit(file);
-	break;
-      case FORMAT_TAP13:
-        report->format = FORMAT_TAP13;
-        report->suites = parse_testanything(file);
-	break;
-      case FORMAT_SUBUNIT_V1:
-	/* TODO */
-        report->format = FORMAT_SUBUNIT_V1;
-	break;
-      case FORMAT_SUBUNIT_V2:
-        report->format = FORMAT_SUBUNIT_V2;
-        report->suites = parse_subunit_v2(file);
-	break;
-      case FORMAT_UNKNOWN:
-	break;
-    }
-    fclose(file);
-
-    struct stat sb;
-    stat(path, &sb);
-    report->ctime = sb.st_ctime;
-
-    return report;
+	return report;
 }

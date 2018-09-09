@@ -42,166 +42,169 @@
 #define HI(x)  ((x) >> 8)
 #define LO(x)  ((x) & 0xFF)
 
-uint32_t read_field(FILE *stream) {
+uint32_t read_field(FILE * stream)
+{
 
-    uint32_t field_value = 0;
-    uint8_t byte = 0, byte0 = 0;
-    uint16_t buf = 0;
-    uint8_t prefix = 0;
+	uint32_t field_value = 0;
+	uint8_t byte = 0, byte0 = 0;
+	uint16_t buf = 0;
+	uint8_t prefix = 0;
 
-    int n_bytes = 0;
+	int n_bytes = 0;
 
-    n_bytes = fread(&byte, 1, 1, stream);
-    if (n_bytes == 0) {
-       return 0;
-    }
-    prefix = byte >> 6;
-    byte0 = byte & 0x3f;
-    if (prefix == 0x00) {
-       field_value = byte0;
-    } else if (prefix == 0x40) {
-       n_bytes = fread(&byte, 1, 1, stream);
-       if (n_bytes == 0) {
-          return 0;
-       }
-       field_value = (byte0 << 8) | byte;
-    } else if (prefix == 0x80) {
-       n_bytes = fread(&buf, 2, 1, stream);
-       if (n_bytes == 0) {
-          return 0;
-       }
-       field_value = (byte << 16) | buf;
-    } else {
-       n_bytes = fread(&byte, 1, 2, stream);
-       if (n_bytes == 0) {
-          return 0;
-       }
-       field_value = (byte0 << 24) | byte << 8;
-       n_bytes = fread(&byte, 1, 1, stream);
-       if (n_bytes == 0) {
-          return 0;
-       }
-       field_value = field_value | byte;
-    };
+	n_bytes = fread(&byte, 1, 1, stream);
+	if (n_bytes == 0) {
+		return 0;
+	}
+	prefix = byte >> 6;
+	byte0 = byte & 0x3f;
+	if (prefix == 0x00) {
+		field_value = byte0;
+	} else if (prefix == 0x40) {
+		n_bytes = fread(&byte, 1, 1, stream);
+		if (n_bytes == 0) {
+			return 0;
+		}
+		field_value = (byte0 << 8) | byte;
+	} else if (prefix == 0x80) {
+		n_bytes = fread(&buf, 2, 1, stream);
+		if (n_bytes == 0) {
+			return 0;
+		}
+		field_value = (byte << 16) | buf;
+	} else {
+		n_bytes = fread(&byte, 1, 2, stream);
+		if (n_bytes == 0) {
+			return 0;
+		}
+		field_value = (byte0 << 24) | byte << 8;
+		n_bytes = fread(&byte, 1, 1, stream);
+		if (n_bytes == 0) {
+			return 0;
+		}
+		field_value = field_value | byte;
+	};
 
-    return field_value;
+	return field_value;
 }
 
-struct suiteq *parse_subunit_v2(FILE *stream) {
+struct suiteq *
+parse_subunit_v2(FILE * stream)
+{
 
-    tailq_suite *suite_item;
-    suite_item = (tailq_suite*)malloc(sizeof(tailq_suite));
-    if (suite_item == NULL) {
-       perror("malloc failed");
-       return NULL;
-    }
-    /* TODO: n_errors, n_failures */
-    suite_item->tests = calloc(1, sizeof(struct testq));
-    if (suite_item->tests == NULL) {
-       perror("malloc failed");
-       free(suite_item);
-       return NULL;
-    }
-    TAILQ_INIT(suite_item->tests);
+	tailq_suite *suite_item;
+	suite_item = (tailq_suite *) malloc(sizeof(tailq_suite));
+	if (suite_item == NULL) {
+		perror("malloc failed");
+		return NULL;
+	}
+	/* TODO: n_errors, n_failures */
+	suite_item->tests = calloc(1, sizeof(struct testq));
+	if (suite_item->tests == NULL) {
+		perror("malloc failed");
+		free(suite_item);
+		return NULL;
+	}
+	TAILQ_INIT(suite_item->tests);
 
-    tailq_test *test_item = NULL;
-    while (!feof(stream)) {
-        test_item = read_packet(stream);
-	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
-    }
+	tailq_test *test_item = NULL;
+	while (!feof(stream)) {
+		test_item = read_packet(stream);
+		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+	}
 
-    struct suiteq *suites = NULL;
-    suites = calloc(1, sizeof(struct suiteq));
-    if (suites == NULL) {
-       perror("malloc failed");
-    }
-    TAILQ_INIT(suites);
-    TAILQ_INSERT_TAIL(suites, suite_item, entries);
+	struct suiteq *suites = NULL;
+	suites = calloc(1, sizeof(struct suiteq));
+	if (suites == NULL) {
+		perror("malloc failed");
+	}
+	TAILQ_INIT(suites);
+	TAILQ_INSERT_TAIL(suites, suite_item, entries);
 
-    return suites;
+	return suites;
 }
 
-tailq_test *read_packet(FILE *stream) {
+tailq_test *
+read_packet(FILE * stream)
+{
 
-    subunit_header header;
-    int n_bytes = 0;
-    n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
-    if ((n_bytes == 0) || (n_bytes < sizeof(subunit_header))) {
-       return NULL;
-    }
+	subunit_header header;
+	int n_bytes = 0;
+	n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
+	if ((n_bytes == 0) || (n_bytes < sizeof(subunit_header))) {
+		return NULL;
+	}
+	tailq_test *test_item;
+	test_item = calloc(1, sizeof(tailq_test));
+	if (test_item == NULL) {
+		perror("malloc failed");
+	}
+	uint16_t flags = htons(header.flags);
+	printf("SIGNATURE: %02hhX\n", header.signature);
+	printf("FLAGS: %02hX\n", flags);
+	assert(header.signature == SIGNATURE);
 
-    tailq_test *test_item;
-    test_item = calloc(1, sizeof(tailq_test));
-    if (test_item == NULL) {
-       perror("malloc failed");
-    }
+	int8_t version;
+	version = HI(flags) >> 4;
+	printf("\tVERSION: %d\n", version);
+	assert(version == VERSION);
 
-    uint16_t flags = htons(header.flags);
-    printf("SIGNATURE: %02hhX\n", header.signature);
-    printf("FLAGS: %02hX\n", flags);
-    assert(header.signature == SIGNATURE);
+	int8_t status;
+	status = flags & 0x0007;
+	printf("\tSTATUS: %u\n", status);
+	test_item->status = status;
+	assert(status <= 0x0007);
 
-    int8_t version;
-    version = HI(flags) >> 4;
-    printf("\tVERSION: %d\n", version);
-    assert(version == VERSION);
+	uint32_t field_value;
+	field_value = read_field(stream);
+	printf("TOTAL LENGTH: %u\n", field_value);
+	assert(field_value < PACKET_MAX_LENGTH);
 
-    int8_t status;
-    status = flags & 0x0007;
-    printf("\tSTATUS: %u\n", status);
-    test_item->status = status;
-    assert(status <= 0x0007);
+	if (flags & FLAG_TIMESTAMP) {
+		printf("FLAG_TIMESTAMP ");
+		field_value = read_field(stream);
+		printf("%08X\n", field_value);
+		test_item->time = "12:14:44";
+	};
+	if (flags & FLAG_TEST_ID) {
+		printf("FLAG_TEST_ID ");
+		field_value = read_field(stream);
+		printf("%08X\n", field_value);
+	};
+	if (flags & FLAG_TAGS) {
+		printf("FLAG_TAGS ");
+		field_value = read_field(stream);
+		printf("%02X\n", field_value);
+	};
+	if (flags & FLAG_MIME_TYPE) {
+		printf("FLAG_MIME_TYPE ");
+		field_value = read_field(stream);
+		printf("%02X\n", field_value);
+	};
+	if (flags & FLAG_FILE_CONTENT) {
+		printf("FLAG_FILE_CONTENT ");
+		field_value = read_field(stream);
+		printf("%08X\n", field_value);
+	};
+	if (flags & FLAG_ROUTE_CODE) {
+		printf("FLAG_ROUTE_CODE ");
+		field_value = read_field(stream);
+		printf("%08X\n", field_value);
+	};
+	if (flags & FLAG_EOF) {
+		printf("FLAG_EOF\n");
+	};
+	if (flags & FLAG_RUNNABLE) {
+		printf("FLAG_RUNNABLE\n");
+	};
+	printf("CRC32: ");
+	field_value = read_field(stream);
+	printf("%08X\n", field_value);
 
-    uint32_t field_value;
-    field_value = read_field(stream);
-    printf("TOTAL LENGTH: %u\n", field_value);
-    assert(field_value < PACKET_MAX_LENGTH);
+	/* FIXME */
+	test_item->name = "test";
 
-    if (flags & FLAG_TIMESTAMP) {
-        printf("FLAG_TIMESTAMP ");
-        field_value = read_field(stream);
-        printf("%08X\n", field_value);
-        test_item->time = "12:14:44";
-    };
-    if (flags & FLAG_TEST_ID) {
-        printf("FLAG_TEST_ID ");
-        field_value = read_field(stream);
-        printf("%08X\n", field_value);
-    };
-    if (flags & FLAG_TAGS) {
-        printf("FLAG_TAGS ");
-        field_value = read_field(stream);
-        printf("%02X\n", field_value);
-    };
-    if (flags & FLAG_MIME_TYPE) {
-        printf("FLAG_MIME_TYPE ");
-        field_value = read_field(stream);
-        printf("%02X\n", field_value);
-    };
-    if (flags & FLAG_FILE_CONTENT) {
-        printf("FLAG_FILE_CONTENT ");
-        field_value = read_field(stream);
-        printf("%08X\n", field_value);
-    };
-    if (flags & FLAG_ROUTE_CODE) {
-        printf("FLAG_ROUTE_CODE ");
-        field_value = read_field(stream);
-        printf("%08X\n", field_value);
-    };
-    if (flags & FLAG_EOF) {
-        printf("FLAG_EOF\n");
-    };
-    if (flags & FLAG_RUNNABLE) {
-        printf("FLAG_RUNNABLE\n");
-    };
-    printf("CRC32: ");
-    field_value = read_field(stream);
-    printf("%08X\n", field_value);
-
-    /* FIXME */
-    test_item->name = "test";
-
-    return test_item;
+	return test_item;
 }
 
 

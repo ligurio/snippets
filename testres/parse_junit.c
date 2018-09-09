@@ -35,22 +35,22 @@
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
+#endif				/* PARSE_COMMON_H */
 
 #ifdef XML_LARGE_SIZE
-# if defined(XML_USE_MSC_EXTENSIONS) && _MSC_VER < 1400
-#  define XML_FMT_INT_MOD "I64"
-# else
-#  define XML_FMT_INT_MOD "ll"
-# endif
+#if defined(XML_USE_MSC_EXTENSIONS) && _MSC_VER < 1400
+#define XML_FMT_INT_MOD "I64"
 #else
-# define XML_FMT_INT_MOD "l"
+#define XML_FMT_INT_MOD "ll"
+#endif
+#else
+#define XML_FMT_INT_MOD "l"
 #endif
 
 #ifdef XML_UNICODE_WCHAR_T
-# define XML_FMT_STR "ls"
+#define XML_FMT_STR "ls"
 #else
-# define XML_FMT_STR "s"
+#define XML_FMT_STR "s"
 #endif
 
 #define BUFFSIZE        8192
@@ -63,73 +63,75 @@ tailq_test *test_item;
 tailq_suite *suite_item;
 struct suiteq *suites;
 
-const XML_Char *name_to_value(const XML_Char **attr, const char attr_name[]) {
-  XML_Char *attr_value = NULL;
-  int i;
-  for (i = 0; attr[i]; i += 2) {
-     if (strcmp(attr[i], attr_name) == 0) {
-        attr_value = calloc(strlen(attr[i + 1]) + 1, sizeof(XML_Char));
-        if (attr_value == NULL) {
-           perror("malloc failed");
-           return (char *)NULL;
-        }
-        strcpy(attr_value, attr[i + 1]);
-        break;
-     }
-  }
-  return attr_value;
+const XML_Char *
+name_to_value(const XML_Char ** attr, const char attr_name[])
+{
+	XML_Char *attr_value = NULL;
+	int i;
+	for (i = 0; attr[i]; i += 2) {
+		if (strcmp(attr[i], attr_name) == 0) {
+			attr_value = calloc(strlen(attr[i + 1]) + 1, sizeof(XML_Char));
+			if (attr_value == NULL) {
+				perror("malloc failed");
+				return (char *) NULL;
+			}
+			strcpy(attr_value, attr[i + 1]);
+			break;
+		}
+	}
+	return attr_value;
 }
 
 static void XMLCALL
-start_handler(void *data, const XML_Char *elem, const XML_Char **attr)
+start_handler(void *data, const XML_Char * elem, const XML_Char ** attr)
 {
-  (void)data;
+	(void) data;
 
-  if (strcmp(elem, "testsuite") == 0) {
-     suite_item = calloc(1, sizeof(tailq_suite));
-     if (suite_item == NULL) {
-       perror("malloc failed");
-     }
-     suite_item->name = name_to_value(attr, "name");
-     suite_item->hostname = name_to_value(attr, "hostname");
-     suite_item->n_errors = atoi(name_to_value(attr, "errors"));
-     suite_item->n_failures = atoi(name_to_value(attr, "failures"));
-     suite_item->time = atof(name_to_value(attr, "time"));
-     suite_item->timestamp = name_to_value(attr, "timestamp");
-     suite_item->tests = calloc(1, sizeof(struct testq));
-     if (suite_item->tests == NULL) {
-        perror("malloc failed");
-     }
-     TAILQ_INIT(suite_item->tests);
-  } else if (strcmp(elem, "testcase") == 0) {
-     test_item = calloc(1, sizeof(tailq_test));
-     if (test_item == NULL) {
-        perror("malloc failed");
-     };
-     test_item->name = name_to_value(attr, "name");
-     test_item->time = name_to_value(attr, "time");
-     test_item->status = STATUS_PASS;
-  } else if (strcmp(elem, "error") == 0) {
-     test_item->status = STATUS_ERROR;
-     test_item->comment = name_to_value(attr, "comment");
-  } else if (strcmp(elem, "failure") == 0) {
-     test_item->status = STATUS_FAILURE;
-     test_item->comment = name_to_value(attr, "comment");
-  }
+	if (strcmp(elem, "testsuite") == 0) {
+		suite_item = calloc(1, sizeof(tailq_suite));
+		if (suite_item == NULL) {
+			perror("malloc failed");
+		}
+		suite_item->name = name_to_value(attr, "name");
+		suite_item->hostname = name_to_value(attr, "hostname");
+		suite_item->n_errors = atoi(name_to_value(attr, "errors"));
+		suite_item->n_failures = atoi(name_to_value(attr, "failures"));
+		suite_item->time = atof(name_to_value(attr, "time"));
+		suite_item->timestamp = name_to_value(attr, "timestamp");
+		suite_item->tests = calloc(1, sizeof(struct testq));
+		if (suite_item->tests == NULL) {
+			perror("malloc failed");
+		}
+		TAILQ_INIT(suite_item->tests);
+	} else if (strcmp(elem, "testcase") == 0) {
+		test_item = calloc(1, sizeof(tailq_test));
+		if (test_item == NULL) {
+			perror("malloc failed");
+		};
+		test_item->name = name_to_value(attr, "name");
+		test_item->time = name_to_value(attr, "time");
+		test_item->status = STATUS_PASS;
+	} else if (strcmp(elem, "error") == 0) {
+		test_item->status = STATUS_ERROR;
+		test_item->comment = name_to_value(attr, "comment");
+	} else if (strcmp(elem, "failure") == 0) {
+		test_item->status = STATUS_FAILURE;
+		test_item->comment = name_to_value(attr, "comment");
+	}
 }
 
 static void XMLCALL
-end_handler(void *data, const XML_Char *elem)
+end_handler(void *data, const XML_Char * elem)
 {
-  (void)data;
-  (void)elem;
+	(void) data;
+	(void) elem;
 
-  if (strcmp(elem, "testsuite") == 0) {
-     /* TODO: check a number of failures and errors */
-     TAILQ_INSERT_TAIL(suites, suite_item, entries);
-  } else if (strcmp(elem, "testcase") == 0) {
-     TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
-  }
+	if (strcmp(elem, "testsuite") == 0) {
+		/* TODO: check a number of failures and errors */
+		TAILQ_INSERT_TAIL(suites, suite_item, entries);
+	} else if (strcmp(elem, "testcase") == 0) {
+		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+	}
 }
 
 /*
@@ -140,47 +142,48 @@ char_handler(void *data, const char *txt, int txtlen) {
 }
 */
 
-struct suiteq *parse_junit(FILE *f) {
-  XML_Parser p = XML_ParserCreate(NULL);
-  if (! p) {
-    fprintf(stderr, "Couldn't allocate memory for parser\n");
-    exit(-1);
-  }
+struct suiteq *
+parse_junit(FILE * f)
+{
+	XML_Parser p = XML_ParserCreate(NULL);
+	if (!p) {
+		fprintf(stderr, "Couldn't allocate memory for parser\n");
+		exit(-1);
+	}
+	suites = calloc(1, sizeof(struct suiteq));
+	if (suites == NULL) {
+		perror("malloc failed");
+	}
+	TAILQ_INIT(suites);
 
-  suites = calloc(1, sizeof(struct suiteq));
-  if (suites == NULL) {
-     perror("malloc failed");
-  }
-  TAILQ_INIT(suites);
+	XML_UseParserAsHandlerArg(p);
+	XML_SetElementHandler(p, start_handler, end_handler);
+	//XML_SetCharacterDataHandler(p, char_handler);
 
-  XML_UseParserAsHandlerArg(p);
-  XML_SetElementHandler(p, start_handler, end_handler);
-  //XML_SetCharacterDataHandler(p, char_handler);
+	for (;;) {
+		int len, done;
+		len = fread(buf, 1, BUFFSIZE, f);
+		if (ferror(f)) {
+			fprintf(stderr, "Read error\n");
+			exit(-1);
+		}
+		done = feof(f);
 
-  for (;;) {
-    int len, done;
-    len = fread(buf, 1, BUFFSIZE, f);
-    if (ferror(f)) {
-       fprintf(stderr, "Read error\n");
-       exit(-1);
-    }
-    done = feof(f);
+		if (XML_Parse(p, buf, len, done) == XML_STATUS_ERROR) {
+			fprintf(stderr,
+			    "Parse error at line %" XML_FMT_INT_MOD "u:\n%" XML_FMT_STR "\n",
+			    XML_GetCurrentLineNumber(p),
+			    XML_ErrorString(XML_GetErrorCode(p)));
+			free(test_item);
+			free(suite_item);
+			free_suites(suites);
+			exit(-1);
+		}
+		if (done) {
+			break;
+		}
+	}
+	XML_ParserFree(p);
 
-    if (XML_Parse(p, buf, len, done) == XML_STATUS_ERROR) {
-      fprintf(stderr,
-              "Parse error at line %" XML_FMT_INT_MOD "u:\n%" XML_FMT_STR "\n",
-              XML_GetCurrentLineNumber(p),
-              XML_ErrorString(XML_GetErrorCode(p)));
-              free(test_item);
-              free(suite_item);
-              free_suites(suites);
-      exit(-1);
-    }
-    if (done) {
-       break;
-    }
-  }
-  XML_ParserFree(p);
-
-  return suites;
+	return suites;
 }

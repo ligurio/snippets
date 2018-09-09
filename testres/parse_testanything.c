@@ -47,7 +47,7 @@
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
+#endif				/* PARSE_COMMON_H */
 
 #include "parse_testanything.h"
 
@@ -55,32 +55,41 @@ const char *
 ast_status(enum ast_status status)
 {
 	switch (status) {
-	case AST_OK:      return "ok";
-	case AST_NOTOK:   return "not ok";
-	case AST_MISSING: return "missing";
-	case AST_TODO:    return "todo";
-	case AST_SKIP:    return "skip";
+		case AST_OK:return "ok";
+	case AST_NOTOK:
+		return "not ok";
+	case AST_MISSING:
+		return "missing";
+	case AST_TODO:
+		return "todo";
+	case AST_SKIP:
+		return "skip";
 
 	default:
 		return "?";
 	}
 }
 
-enum test_status test_status(enum ast_status status)
+enum test_status 
+test_status(enum ast_status status)
 {
 	switch (status) {
-	case AST_OK:      return STATUS_OK;
-	case AST_NOTOK:   return STATUS_NOTOK;
-	case AST_MISSING: return STATUS_MISSING;
-	case AST_TODO:    return STATUS_TODO;
-	case AST_SKIP:    return STATUS_SKIP;
-        default:
-            return STATUS_MISSING;
+		case AST_OK:return STATUS_OK;
+	case AST_NOTOK:
+		return STATUS_NOTOK;
+	case AST_MISSING:
+		return STATUS_MISSING;
+	case AST_TODO:
+		return STATUS_TODO;
+	case AST_SKIP:
+		return STATUS_SKIP;
+	default:
+		return STATUS_MISSING;
 	}
 }
 
 struct ast_line *
-ast_line(struct ast_line **head, const char *text)
+ast_line(struct ast_line ** head, const char *text)
 {
 	struct ast_line **tail, *new;
 	size_t z;
@@ -94,11 +103,9 @@ ast_line(struct ast_line **head, const char *text)
 	if (new == NULL) {
 		return NULL;
 	}
-
 	new->text = strcpy((char *) new + sizeof *new, text);
 
-	for (tail = head; *tail != NULL; tail = &(*tail)->next)
-		;
+	for (tail = head; *tail != NULL; tail = &(*tail)->next);
 
 	new->next = *tail;
 	*tail = new;
@@ -107,30 +114,28 @@ ast_line(struct ast_line **head, const char *text)
 }
 
 struct ast_test *
-ast_test(struct ast_test **head, enum ast_status status, const char *name)
+ast_test(struct ast_test ** head, enum ast_status status, const char *name)
 {
 	struct ast_test **tail, *new;
 
 	assert(head != NULL);
 
 	new = malloc(sizeof *new +
-		(name == NULL ? 0 : strlen(name) + 1));
+	    (name == NULL ? 0 : strlen(name) + 1));
 	if (new == NULL) {
 		return NULL;
 	}
-
 	if (name == NULL) {
 		new->name = NULL;
 	} else {
 		new->name = strcpy((char *) new + sizeof *new, name);
 	}
 
-	new->rep    = 1;
-	new->line   = NULL;
+	new->rep = 1;
+	new->line = NULL;
 	new->status = status;
 
-	for (tail = head; *tail != NULL; tail = &(*tail)->next)
-		;
+	for (tail = head; *tail != NULL; tail = &(*tail)->next);
 
 	new->next = *tail;
 	*tail = new;
@@ -148,7 +153,6 @@ rtrim(char *s)
 	if (*s == '\0') {
 		return;
 	}
-
 	p = s + strlen(s) - 1;
 
 	assert(strlen(s) > 0);
@@ -169,12 +173,10 @@ plan(const char *line, int *a, int *b)
 		fprintf(stderr, "syntax error: duplicate plan: %s\n", line);
 		exit(1);
 	}
-
 	if (2 != sscanf(line, "%d..%d", a, b)) {
 		fprintf(stderr, "syntax error: missing a..b\n");
 		exit(1);
 	}
-
 	if (*a < 0 && *b < *a) {
 		fprintf(stderr, "error: invalid plan: %d..%d\n", *a, *b);
 		exit(1);
@@ -182,7 +184,7 @@ plan(const char *line, int *a, int *b)
 }
 
 static void
-yaml(struct ast_test *test, const char *line)
+yaml(struct ast_test * test, const char *line)
 {
 	assert(test != NULL);
 
@@ -196,7 +198,7 @@ yaml(struct ast_test *test, const char *line)
 }
 
 static void
-gap(struct ast_test **head, int *a, int b)
+gap(struct ast_test ** head, int *a, int b)
 {
 	struct ast_test *new;
 
@@ -210,13 +212,12 @@ gap(struct ast_test **head, int *a, int b)
 			perror("ast_test");
 			exit(1);
 		}
-
 		*a += 1;
 	}
 }
 
 static void
-starttest(struct ast_test **head, const char *line, int *a, int b)
+starttest(struct ast_test ** head, const char *line, int *a, int b)
 {
 	struct ast_test *new;
 	enum ast_status status;
@@ -239,14 +240,12 @@ starttest(struct ast_test **head, const char *line, int *a, int b)
 		fprintf(stderr, "syntax error: expected 'ok - ': %s\n", line);
 		exit(1);
 	}
-
 	line += n;
 
 	if (i < *a || (b != -1 && i > b)) {
 		fprintf(stderr, "error: test %d out of order; expected %d\n", i, *a);
 		exit(1);
 	}
-
 	gap(head, a, i);
 
 	new = ast_test(head, status, line);
@@ -254,12 +253,11 @@ starttest(struct ast_test **head, const char *line, int *a, int b)
 		perror("ast_test");
 		exit(1);
 	}
-
 	*a += 1;
 }
 
 void
-print(FILE *f, const struct ast_test *tests)
+print(FILE * f, const struct ast_test * tests)
 {
 	const struct ast_test *test;
 	const struct ast_line *line;
@@ -270,36 +268,34 @@ print(FILE *f, const struct ast_test *tests)
 
 	for (test = tests, n = 1; test != NULL; test = test->next, n++) {
 		fprintf(f, "\t<test status='%s'",
-			ast_status(test->status));
+		    ast_status(test->status));
 
 		fprintf(f, " n='%u'", n);
 
 		if (test->rep > 1) {
 			fprintf(f, " rep='%u'", test->rep);
 		}
-
 		if (test->name != NULL) {
 			fprintf(f, " name='");
 			fprintf(f, "%s", test->name);
 			fprintf(f, "'");
 		}
-
 		fprintf(f, "%s>\n", test->line != NULL ? "" : "/");
 
 		if (test->line == NULL) {
 			continue;
 		}
-
 		for (line = test->line; line != NULL; line = line->next) {
 			fprintf(f, "%s%s",
-				line->text,
-				line->next != NULL ? "\n" : "");
+			    line->text,
+			    line->next != NULL ? "\n" : "");
 		}
 	}
 }
 
 struct ast_test *
-parse_testanything_raw(FILE *f) {
+parse_testanything_raw(FILE * f)
+{
 	struct ast_test *tests = NULL;
 	int a, b;
 	int fold = 0;
@@ -309,8 +305,8 @@ parse_testanything_raw(FILE *f) {
 		size_t n;
 
 		line = NULL;
-		a =  1;
-		b = -1; /* no plan */
+		a = 1;
+		b = -1;		/* no plan */
 		n = 0;
 
 		while (-1 != getline(&line, &n, f)) {
@@ -320,32 +316,36 @@ parse_testanything_raw(FILE *f) {
 			if (comment != NULL) {
 				*comment++ = '\0';
 			}
-
 			rtrim(line);
 
 			if (comment != NULL) {
 				comment += strspn(comment, " \t");
 
-/* TODO: only if we're actually in a test */
+				/* TODO: only if we're actually in a test */
 
 				if (0 == strncasecmp(comment, "todo", 4)) {
 					tests->status = AST_TODO;
 				}
-
 				if (0 == strncasecmp(comment, "skip", 4)) {
 					tests->status = AST_SKIP;
 				}
-
 				/* TODO: add comment line anyway */
-/* TODO: add as yaml line
-				printf("\t<!-- %s -->\n", comment);
-*/
+				/*
+				 * TODO: add as yaml line printf("\t<!-- %s
+				 * -->\n", comment);
+				 */
 			}
-
 			switch (line[0]) {
-			case '0': case '1': case '2': case '3':
-			case '4': case '5': case '6': case '7':
-			case '8': case '9':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
 				plan(line, &a, &b);
 				continue;
 
@@ -354,13 +354,16 @@ parse_testanything_raw(FILE *f) {
 				starttest(&tests, line, &a, b);
 				continue;
 
-			case '\v': case '\t': case '\f':
-			case '\r': case '\n': case ' ':
+			case '\v':
+			case '\t':
+			case '\f':
+			case '\r':
+			case '\n':
+			case ' ':
 				if (tests == NULL) {
 					fprintf(stderr, "stray text: %s\n", line);
 					continue;
 				}
-
 				yaml(tests, line);
 				continue;
 			}
@@ -386,7 +389,6 @@ parse_testanything_raw(FILE *f) {
 			if (test->line != NULL || next->line != NULL) {
 				continue;
 			}
-
 			test->rep++;
 			test->next = next->next;
 			next = test;
@@ -394,65 +396,66 @@ parse_testanything_raw(FILE *f) {
 			/* TODO: free next */
 		}
 	}
-
 	/* TODO: warn about duplicate test names */
-        /* TODO: remove ast_test * tests here */
+	/* TODO: remove ast_test * tests here */
 
-        /* print(stdout, tests); */
-        return tests;
+	/* print(stdout, tests); */
+	return tests;
 }
 
-struct suiteq *parse_testanything(FILE *f) {
+struct suiteq *
+parse_testanything(FILE * f)
+{
 
-    tailq_suite *suite_item = NULL;
-    suite_item = calloc(1, sizeof(tailq_suite));
-    if (suite_item == NULL) {
-       perror("malloc failed");
-    }
-    suite_item->name = "default suite";
-    suite_item->n_errors = 0;
-    suite_item->n_failures = 0;
-    suite_item->tests = calloc(1, sizeof(struct testq));
-    if (suite_item->tests == NULL) {
-       perror("malloc failed");
-       free(suite_item);
-    }
-    TAILQ_INIT(suite_item->tests);
+	tailq_suite *suite_item = NULL;
+	suite_item = calloc(1, sizeof(tailq_suite));
+	if (suite_item == NULL) {
+		perror("malloc failed");
+	}
+	suite_item->name = "default suite";
+	suite_item->n_errors = 0;
+	suite_item->n_failures = 0;
+	suite_item->tests = calloc(1, sizeof(struct testq));
+	if (suite_item->tests == NULL) {
+		perror("malloc failed");
+		free(suite_item);
+	}
+	TAILQ_INIT(suite_item->tests);
 
-    struct ast_test *tests, *current;
-    tests = parse_testanything_raw(f);
-    tailq_test *test_item;
-    current = tests;
-    while (current != NULL) {
-        test_item = calloc(1, sizeof(tailq_test));
-        if (test_item == NULL) {
-           perror("malloc failed");
-           free(suite_item);
-           return NULL;
-        }
-        test_item->name = calloc(strlen(current->name), sizeof(char));
-        if (test_item->name == NULL) {
-           perror("malloc failed");
-           free(suite_item);
-           free(test_item);
-           return NULL;
-        }
-        strcpy(test_item->name, current->name);
-        test_item->status = test_status(current->status);
-	TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
-        current = current->next;
-        /* TODO: remove ast_test item */
-    }
+	struct ast_test *tests, *current;
+	tests = parse_testanything_raw(f);
+	tailq_test *test_item;
+	current = tests;
+	while (current != NULL) {
+		test_item = calloc(1, sizeof(tailq_test));
+		if (test_item == NULL) {
+			perror("malloc failed");
+			free(suite_item);
+			return NULL;
+		}
+		test_item->name = calloc(strlen(current->name), sizeof(char));
+		if (test_item->name == NULL) {
+			perror("malloc failed");
+			free(suite_item);
+			free(test_item);
+			return NULL;
+		}
+		strcpy(test_item->name, current->name);
+		test_item->status = test_status(current->status);
+		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+		current = current->next;
+		/* TODO: remove ast_test item */
+	}
 
-    struct suiteq *suites;
-    suites = calloc(1, sizeof(struct suiteq));
-    if (suites == NULL) {
-       perror("malloc failed");
-       free(suite_item);
-       return NULL;
-    }
-    TAILQ_INIT(suites);
-    TAILQ_INSERT_TAIL(suites, suite_item, entries);
+	struct suiteq *suites;
+	suites = calloc(1, sizeof(struct suiteq));
+	if (suites == NULL) {
+		perror("malloc failed");
+		free(suite_item);
+		return NULL;
+	}
+	TAILQ_INIT(suites);
+	TAILQ_INSERT_TAIL(suites, suite_item, entries);
 
-    return suites;
+	return suites;
 }

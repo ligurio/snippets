@@ -131,7 +131,7 @@ read_packet(FILE * stream)
 	subunit_header header;
 	int n_bytes = 0;
 	n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
-	if ((n_bytes == 0) || (n_bytes < sizeof(subunit_header))) {
+	if ((n_bytes == 0) || (n_bytes < (int)sizeof(subunit_header))) {
 		return NULL;
 	}
 	tailq_test *test_item;

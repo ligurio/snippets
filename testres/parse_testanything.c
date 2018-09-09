@@ -433,14 +433,14 @@ parse_testanything(FILE * f)
 			free(suite_item);
 			return NULL;
 		}
-		test_item->name = calloc(strlen(current->name), sizeof(char));
-		if (test_item->name == NULL) {
+		char *name = calloc(strlen(current->name), sizeof(char));
+		if (name == NULL) {
 			perror("malloc failed");
 			free(suite_item);
 			free(test_item);
 			return NULL;
 		}
-		strcpy(test_item->name, current->name);
+		test_item->name = strcpy(name, current->name);
 		test_item->status = test_status(current->status);
 		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
 		current = current->next;

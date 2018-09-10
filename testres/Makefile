@@ -1,12 +1,12 @@
 PREFIX	  ?= /usr/local
 
 CC        ?= gcc
-CFLAGS	  += -O1 -g3
+CFLAGS	  += -O1 -g
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
-LDFLAGS   += -lexpat
+LDFLAGS   += -lexpat -g
 
 SRCS	= testres.c parse_common.c \
 	parse_junit.c parse_subunit_v2.c parse_testanything.c \

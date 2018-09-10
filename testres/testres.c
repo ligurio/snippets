@@ -75,9 +75,13 @@ main(int argc, char *argv[])
 	}
 	struct stat path_st;
 	int fd;
+        if (path == (char*)NULL) {
+		perror("specified path is empty");
+		return 1;
+	}
 	fd = open(path, O_RDONLY);
 	if (fstat(fd, &path_st) != 0) {
-		printf("cannot open %s\n", path);
+		perror("cannot open specified path");
 		return 1;
 	}
 	tailq_report *report_item;

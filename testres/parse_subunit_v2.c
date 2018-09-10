@@ -73,11 +73,12 @@ uint32_t read_field(FILE * stream)
 		}
 		field_value = (byte << 16) | buf;
 	} else {
-		n_bytes = fread(&byte, 1, 2, stream);
+		n_bytes = fread(&buf, 1, 2, stream);
 		if (n_bytes == 0) {
 			return 0;
 		}
-		field_value = (byte0 << 24) | byte << 8;
+		field_value = (byte0 << 24) | buf << 8;
+
 		n_bytes = fread(&byte, 1, 1, stream);
 		if (n_bytes == 0) {
 			return 0;

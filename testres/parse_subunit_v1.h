@@ -20,11 +20,13 @@ enum directive {
 };
 
 struct testline {
-	enum directive dir;	
-	char* label;	
+	enum directive dir;
+	char* label;
 };
 
 struct testline* parse_line_subunit_v1(char* string);
 struct suiteq* parse_subunit_v1(FILE* stream);
-struct tm* parse_iso8601_time(char* string);
+struct tm* parse_iso8601_time(char* date_str, char* time_str);
 enum directive resolve_directive(char* string);
+const char* directive_string(enum directive dir);
+void read_tok();

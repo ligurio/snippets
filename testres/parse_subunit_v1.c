@@ -35,6 +35,35 @@
 
 #include "parse_subunit_v1.h"
 
+const char *
+directive_string(enum directive dir) {
+
+	switch (dir) {
+	case DIR_TEST:
+		return "DIR_TEST";
+	case DIR_SUCCESS:
+		return "DIR_SUCCESS";
+	case DIR_FAILURE:
+		return "DIR_FAILURE";
+	case DIR_ERROR:
+		return "DIR_ERROR";
+	case DIR_SKIP:
+		return "DIR_SKIP";
+	case DIR_XFAIL:
+		return "DIR_XFAIL";
+	case DIR_UXSUCCESS:
+		return "DIR_UXSUCCESS";
+	case DIR_PROGRESS:
+		return "DIR_PROGRESS";
+	case DIR_TAGS:
+		return "DIR_TAGS";
+	case DIR_TIME:
+		return "DIR_TIME";
+	default:
+		return "DIR_UNKNOWN";
+	}
+}
+
 enum directive
 resolve_directive(char * string) {
 
@@ -66,19 +95,20 @@ resolve_directive(char * string) {
 		return DIR_XFAIL;
 	} else if (strcasecmp(string, "uxsuccess") == 0) {
 		return DIR_UXSUCCESS;
-	} else if (strcasecmp(string, "progress") == 0) {
+	} else if (strcasecmp(string, "progress:") == 0) {
 		return DIR_PROGRESS;
-	} else if (strcasecmp(string, "tags") == 0) {
+	} else if (strcasecmp(string, "tags:") == 0) {
 		return DIR_TAGS;
-	} else if (strcasecmp(string, "time") == 0) {
+	} else if (strcasecmp(string, "time:") == 0) {
 		return DIR_TIME;
 	} else {
 		return DIR_UNKNOWN;
 	}
 };
 
-struct tm* parse_iso8601_time(char* string) {
-	assert(string != (char*)NULL);
+struct tm* parse_iso8601_time(char* date_str, char* time_str) {
+	assert(date_str != (char*)NULL);
+	assert(time_str != (char*)NULL);
 
 	struct tm * t;
 	t = malloc(sizeof(struct tm));
@@ -86,17 +116,24 @@ struct tm* parse_iso8601_time(char* string) {
 		perror("failed to malloc");
 		return NULL;
 	}
-	if (scanf("%d-%d-%d %d:%d:%dZ",
-		&t->tm_year, &t->tm_mon, &t->tm_mday, &t->tm_hour, &t->tm_min, &t->tm_sec) == 6) {
+	if (sscanf(date_str, "%d-%d-%d", &t->tm_year, &t->tm_mon, &t->tm_mday) == 3) {
 		assert(t->tm_year > 2000);
 		assert((t->tm_mon <= 12) && (t->tm_mon >= 0));
 		assert((t->tm_mday <= 31) && (t->tm_mday >= 0));
+	}
+
+	if (sscanf(time_str, "%d:%d:%dZ", &t->tm_hour, &t->tm_min, &t->tm_sec) == 3) {
 		assert((t->tm_hour <= 23) && (t->tm_hour >= 0));
 		assert((t->tm_min <= 60) && (t->tm_min >= 0));
 		assert((t->tm_sec <= 60) && (t->tm_sec >= 0));
 	}
 
 	return t;
+};
+
+void read_tok() {
+	char* token;
+	while (token != NULL) { token = strtok(NULL, " \t"); };
 };
 
 struct testline* parse_line_subunit_v1(char* string) {
@@ -119,97 +156,112 @@ struct testline* parse_line_subunit_v1(char* string) {
 	switch (d = resolve_directive(dir)) {
 	case DIR_TEST:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+
+		token = strtok(NULL, " \t");
+		assert(token == NULL);
+
 		break;
 	case DIR_SUCCESS:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+
+		token = strtok(NULL, " \t");
+		assert(token == NULL);
+
 		break;
 	case DIR_FAILURE:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+		read_tok();
+
 		break;
 	case DIR_ERROR:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+		read_tok();
 		break;
 	case DIR_SKIP:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+		read_tok();
 		break;
 	case DIR_XFAIL:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+		read_tok();
 		break;
 	case DIR_UXSUCCESS:
 		t->dir = d;
-		while(token != NULL)
-		{
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf ("%s\n", token);
-			}
-		}
+		token = strtok(NULL, " \t");
+		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+		token = strtok(NULL, " \t");
+		assert(token != NULL);
+		t->label = token;
+		read_tok();
 		break;
 	case DIR_PROGRESS:
-		/*
 		t->dir = d;
+		read_tok();
 		break;
-		*/
 	case DIR_TAGS:
-		/*
 		t->dir = d;
-		*/
+		while (token != NULL) {
+			token = strtok(NULL, " \t");
+			if (token != NULL) {
+				printf("%s ", token);
+			}
+		};
+		printf("\n");
 		break;
 	case DIR_TIME:
-		/*
 		t->dir = d;
-		parse_iso8601_time(strtok(string, " "));
-		*/
+		char *date, *time;
+		date = strtok(NULL, " \t");
+		time = strtok(NULL, " \t");
+		struct tm *t = parse_iso8601_time(date, time);
+		/* printf("Time: %s\n", asctime(t)); */
+		read_tok();
 		break;
 	default:
+		read_tok();
 		return NULL;
-
 	}
-		
 
-	return NULL;
+	return t;
 };
 
 struct suiteq* parse_subunit_v1(FILE *stream) {
@@ -292,18 +344,19 @@ int main() {
 	"progress: push",
 	"progress: pop",
 	"tags: -small +big",
-	"time: YYYY-MM-DD HH:MM:SSZ" };
+	"time: 2018-09-10 23:59:29Z" };
 
 	char** qq = test_sample;
 	struct testline* tl;
 	for (int i = 0; i <  sizeof(test_sample)/sizeof(char*); ++i) {
-		printf("SOURCE LINE: %s\n", *qq);
+		printf("(SOURCE LINE: %s) ", *qq);
 		tl = parse_line_subunit_v1(*qq);
 		if (tl != NULL) {
-			printf("PARSED: %d, %s\n\n", tl->dir, tl->label);
+			printf("DIRECTIVE: %s, LABEL: %s", directive_string(tl->dir), tl->label);
 		}
+		printf("\n");
 		++qq;
 	}
 
-    	return 0;
+	return 0;
 };

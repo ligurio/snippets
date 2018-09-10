@@ -17,6 +17,7 @@
 #include "parse_subunit_v2.h"
 
 #define SAMPLE_FILE_JUNIT "samples/junit/junit-sample-1.xml"
+#define SAMPLE_FILE_SUBUNIT_V1 "samples/subunit/subunit-sample-04.subunit"
 #define SAMPLE_FILE_SUBUNIT_V2 "samples/subunit/subunit-sample-02.subunit"
 #define SAMPLE_FILE_TESTANYTHING "samples/testanything/tap-sample-01.tap"
 
@@ -29,6 +30,7 @@
 static void test_parse_testanything_common(void **state);
 static void test_parse_testanything(void **state);
 
+static void test_subunit_version(void **state);
 static void test_parse_subunit_packet(void **state);
 static void test_parse_subunit_common(void **state);
 static void test_parse_subunit(void **state);
@@ -45,6 +47,7 @@ main(void)
 	{
 		cmocka_unit_test(test_parse_testanything_common),
 		cmocka_unit_test(test_parse_testanything),
+		cmocka_unit_test(test_subunit_version),
 		cmocka_unit_test(test_parse_subunit_packet),
 		cmocka_unit_test(test_parse_subunit_common),
 		cmocka_unit_test(test_parse_subunit),
@@ -122,6 +125,7 @@ test_parse_subunit_packet(void **state)
     fwrite(&sample_length, 1, sizeof(sample_length), stream);
     fwrite(&sample_testid, 1, sizeof(sample_testid), stream);
     fwrite(&sample_crc32, 1, sizeof(sample_crc32), stream);
+
     test = read_packet(stream);
     fclose(stream);
 
@@ -129,6 +133,17 @@ test_parse_subunit_packet(void **state)
 
     free(buf);
     free(test);
+}
+
+
+static void
+test_subunit_version(void **state)
+{
+    char *file_subunit_v1 = SAMPLE_FILE_SUBUNIT_V1;
+    char *file_subunit_v2 = SAMPLE_FILE_SUBUNIT_V2;
+
+    assert(is_subunit_v2(file_subunit_v1) == 1);
+    assert(is_subunit_v2(file_subunit_v2) == 2);
 }
 
 

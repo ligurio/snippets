@@ -42,6 +42,29 @@
 #define HI(x)  ((x) >> 8)
 #define LO(x)  ((x) & 0xFF)
 
+int is_subunit_v2(char* path)
+{
+	FILE *file;
+	file = fopen(path, "r");
+	if (file == NULL) {
+		printf("failed to open file %s\n", path);
+		return -1;
+	}
+
+	uint8_t signature = 0;
+	int n_bytes = 0;
+	n_bytes = fread(&signature, 1, 1, file);
+	if (n_bytes == 0) {
+		return -1;
+	}
+	fclose(file);
+	if (signature == SUBUNIT_SIGNATURE) {
+		return 2;
+	} else {
+		return 1;
+	}
+}
+
 uint32_t read_field(FILE * stream)
 {
 
@@ -143,12 +166,12 @@ read_packet(FILE * stream)
 	uint16_t flags = htons(header.flags);
 	printf("SIGNATURE: %02hhX\n", header.signature);
 	printf("FLAGS: %02hX\n", flags);
-	assert(header.signature == SIGNATURE);
+	assert(header.signature == SUBUNIT_SIGNATURE);
 
 	int8_t version;
 	version = HI(flags) >> 4;
 	printf("\tVERSION: %d\n", version);
-	assert(version == VERSION);
+	assert(version == SUBUNIT_VERSION);
 
 	int8_t status;
 	status = flags & 0x0007;

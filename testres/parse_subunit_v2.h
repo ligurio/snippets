@@ -5,8 +5,8 @@
 #include "parse_common.h"
 #endif /* PARSE_COMMON_H */
 
-#define SIGNATURE 		0xB3
-#define VERSION 		0x02
+#define SUBUNIT_SIGNATURE 	0xB3
+#define SUBUNIT_VERSION 	0x02
 #define PACKET_MAX_LENGTH 	4194303
 
 #define FLAG_TEST_ID		0x0800
@@ -51,3 +51,4 @@ enum TestStatus { Undefined,
 uint32_t read_field(FILE *stream);
 tailq_test *read_packet(FILE *stream);
 struct suiteq *parse_subunit_v2(FILE *stream);
+int is_subunit_v2(char* path);

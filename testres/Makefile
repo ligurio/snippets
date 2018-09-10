@@ -1,7 +1,7 @@
 PREFIX	  ?= /usr/local
 
 CC        ?= gcc
-CFLAGS	  += -O1 -g
+CFLAGS	  += -Og -g
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return

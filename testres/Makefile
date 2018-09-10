@@ -66,8 +66,6 @@ check: $(PLIST)
 		--std=c89 *.c *.h 2> cppcheck.log
 
 fmt:
-.for SRC in ${SRCS}
-	@indent -ci4 -di1 -nlp $(SRC)
-.endfor
+	@$(foreach SRC,$(SRCS),indent -ci4 -di1 -nlp $(SRC);)
 
 .PHONY: all clean check install tags test techdebt

@@ -14,6 +14,7 @@
 
 #include "parse_junit.h"
 #include "parse_testanything.h"
+#include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
 
 #define SAMPLE_FILE_JUNIT "samples/junit/junit-sample-1.xml"
@@ -31,9 +32,12 @@ static void test_parse_testanything_common(void **state);
 static void test_parse_testanything(void **state);
 
 static void test_subunit_version(void **state);
-static void test_parse_subunit_packet(void **state);
-static void test_parse_subunit_common(void **state);
-static void test_parse_subunit(void **state);
+
+static void test_parse_subunit_v1_line(void **state);
+
+static void test_parse_subunit_v2_packet(void **state);
+static void test_parse_subunit_v2_common(void **state);
+static void test_parse_subunit_v2(void **state);
 
 static void test_parse_junit_common(void **state);
 static void test_parse_junit(void **state);
@@ -48,9 +52,10 @@ main(void)
 		cmocka_unit_test(test_parse_testanything_common),
 		cmocka_unit_test(test_parse_testanything),
 		cmocka_unit_test(test_subunit_version),
-		cmocka_unit_test(test_parse_subunit_packet),
-		cmocka_unit_test(test_parse_subunit_common),
-		cmocka_unit_test(test_parse_subunit),
+		cmocka_unit_test(test_parse_subunit_v2_packet),
+		cmocka_unit_test(test_parse_subunit_v2_common),
+		cmocka_unit_test(test_parse_subunit_v2),
+		cmocka_unit_test(test_parse_subunit_v1_line),
 		cmocka_unit_test(test_parse_junit_common),
 		cmocka_unit_test(test_parse_junit),
 	};
@@ -102,7 +107,7 @@ test_parse_testanything_common(void **state)
 
 /* Basic SubUnit format support */
 static void
-test_parse_subunit_packet(void **state)
+test_parse_subunit_v2_packet(void **state)
 {
     // Packet sample, with test id, runnable set, status=enumeration.
     // Spaces below are to visually break up:
@@ -148,7 +153,7 @@ test_subunit_version(void **state)
 
 
 static void
-test_parse_subunit(void **state)
+test_parse_subunit_v2(void **state)
 {
     skip();
 
@@ -168,7 +173,7 @@ test_parse_subunit(void **state)
 }
 
 static void
-test_parse_subunit_common(void **state)
+test_parse_subunit_v2_common(void **state)
 {
     /* parse via parse() and parse_subunit_v2() and compare structs */
 
@@ -187,6 +192,25 @@ test_parse_subunit_common(void **state)
     report  = process_file(name);
     fclose(file);
 }
+
+static void
+test_parse_subunit_v1_line(void **state)
+{
+    char *name = SAMPLE_FILE_SUBUNIT_V1;
+    FILE *file;
+
+    file = fopen(name, "r");
+    if (file == NULL)
+    {
+        fail();
+    }
+    struct suiteq *suites;
+    suites = parse_subunit_v2(file);
+
+    fclose(file);
+    free(suites);
+}
+
 
 /* Basic JUnit format support */
 static void

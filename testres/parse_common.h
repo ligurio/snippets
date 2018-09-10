@@ -1,3 +1,4 @@
+#include <time.h>
 #include <sys/queue.h>
 
 enum test_format {

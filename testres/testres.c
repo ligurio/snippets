@@ -84,14 +84,22 @@ main(int argc, char *argv[])
 		perror("cannot open specified path");
 		return 1;
 	}
+
 	tailq_report *report_item;
+   	char *query_string = getenv("QUERY_STRING");
 	if (S_ISREG(path_st.st_mode)) {
-		report_item = process_file(path);
-		print_single_report(report_item);
-		free_single_report(report_item);
-		close(fd);
-		return 0;
+	   report_item = process_file(path);
+	   if (query_string != NULL) {
+	      print_html_headers();
+	      print_html_single_report(report_item);
+	   } else {
+	      print_single_report(report_item);
+ 	   }
+	   free_single_report(report_item);
+	   close(fd);
+	   return 0;
 	}
+
 	DIR *d;
 	struct dirent *dir;
 	if ((d = fdopendir(fd)) == NULL) {
@@ -120,9 +128,8 @@ main(int argc, char *argv[])
 	close(fd);
 	closedir(d);
 
-   	char *query_string = getenv("QUERY_STRING");
 	if (query_string != NULL) {
-	   print_headers();
+	   print_html_headers();
 	   print_reports(&reports);
 	} else {
 	   print_reports(&reports);

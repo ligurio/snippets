@@ -1,1 +1,9 @@
-void print_headers(void);
+#ifndef PARSE_COMMON_H
+#define PARSE_COMMON_H
+#include "parse_common.h"
+#endif				/* PARSE_COMMON_H */
+
+void print_html_headers(void);
+void print_html_single_report(struct tailq_report *report);
+void print_html_suites(struct suiteq * suites);
+void print_html_tests(struct testq * tests);

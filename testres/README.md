@@ -4,14 +4,13 @@ A hyperfast web frontend for software testing results written in C.
 
 ### Примеры CGI приложений
 
-https://git.zx2c4.com/cgit/
-https://github.com/kristapsdz/sblg
-https://man.openbsd.org/man.cgi.8
-https://man.openbsd.org/bgplg.8
+- https://git.zx2c4.com/cgit/
+- https://github.com/kristapsdz/sblg
+- https://man.openbsd.org/man.cgi.8
+- https://man.openbsd.org/bgplg.8
+- https://github.com/reyk/meta-data/
 
-- добавить pledge(), capsicum() (см. https://kristaps.bsd.lv/lowdown/)
-
-### Фильтры
+### Фичи
 
 https://git.zx2c4.com/cgit/tree/filters
 
@@ -23,6 +22,11 @@ https://git.zx2c4.com/cgit/tree/filters
 - фильтр для заведения бага
 - фильтр для построения графиков
 - скрипты для БД: flaky?, анализ логов в отчетах
+- прогноз по тестам и тестпланам
+
+- добавить pledge(), capsicum() (см. https://kristaps.bsd.lv/lowdown/)
+- сделать сортировку репортов
+- первая версия с выводом в HTML
 
 ### Графики
 

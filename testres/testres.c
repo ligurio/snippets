@@ -120,8 +120,14 @@ main(int argc, char *argv[])
 	close(fd);
 	closedir(d);
 
-	print_headers();
-	print_reports(&reports);
+   	char *query_string = getenv("QUERY_STRING");
+	if (query_string != NULL) {
+	   print_headers();
+	   print_reports(&reports);
+	} else {
+	   print_reports(&reports);
+	}
+
 	free_reports(&reports);
 
 	return 0;

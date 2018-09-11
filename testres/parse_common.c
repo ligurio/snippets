@@ -44,6 +44,7 @@
 
 #include "parse_junit.h"
 #include "parse_testanything.h"
+#include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
 
 void 
@@ -182,7 +183,8 @@ const char *
 status_string(enum test_status status)
 {
 	switch (status) {
-		case STATUS_OK:return "STATUS_OK";
+	case STATUS_OK:
+		return "STATUS_OK";
 	case STATUS_NOTOK:
 		return "STATUS_NOTOK";
 	case STATUS_MISSING:
@@ -230,18 +232,21 @@ get_filename_ext(const char *filename)
 }
 
 enum test_format 
-detect_file_format(const char *basename)
+detect_file_format(char *path)
 {
-
 	char *file_ext;
-	file_ext = get_filename_ext(basename);
+	file_ext = get_filename_ext(basename(path));
 
 	if (strcasecmp("xml", file_ext) == 0) {
 		return FORMAT_JUNIT;
 	} else if (strcasecmp("tap", file_ext) == 0) {
 		return FORMAT_TAP13;
 	} else if (strcasecmp("subunit", file_ext) == 0) {
-		return FORMAT_SUBUNIT_V2;
+		if (is_subunit_v2(path) == 0) {
+		   return FORMAT_SUBUNIT_V2;
+		} else {
+		   return FORMAT_SUBUNIT_V1;
+		}
 	} else {
 		return FORMAT_UNKNOWN;
 	}
@@ -250,7 +255,6 @@ detect_file_format(const char *basename)
 tailq_report *
 process_file(char *path)
 {
-
 	FILE *file;
 	file = fopen(path, "r");
 	if (file == NULL) {
@@ -265,7 +269,7 @@ process_file(char *path)
 		return NULL;
 	}
 	enum test_format format;
-	format = detect_file_format(basename(path));
+	format = detect_file_format(path);
 	switch (format) {
 	case FORMAT_JUNIT:
 		report->format = FORMAT_JUNIT;
@@ -276,8 +280,8 @@ process_file(char *path)
 		report->suites = parse_testanything(file);
 		break;
 	case FORMAT_SUBUNIT_V1:
-		/* TODO */
 		report->format = FORMAT_SUBUNIT_V1;
+		report->suites = parse_subunit_v1(file);
 		break;
 	case FORMAT_SUBUNIT_V2:
 		report->format = FORMAT_SUBUNIT_V2;

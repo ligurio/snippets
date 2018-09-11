@@ -69,21 +69,15 @@ resolve_directive(char * string) {
 
 	assert(string != (char*)NULL);
 
-	if (strcasecmp(string, "test") == 0) {
+	if ((strcasecmp(string, "test") == 0) ||
+	    (strcasecmp(string, "testing") == 0) ||
+	    (strcasecmp(string, "test:") == 0) ||
+	    (strcasecmp(string, "testing:") == 0)) {
 		return DIR_TEST;
-	} else if (strcasecmp(string, "testing") == 0) {
-		return DIR_TEST;
-	} else if (strcasecmp(string, "test:") == 0) {
-		return DIR_TEST;
-	} else if (strcasecmp(string, "testing:") == 0) {
-		return DIR_TEST;
-	} else if (strcasecmp(string, "success") == 0) {
-		return DIR_SUCCESS;
-	} else if (strcasecmp(string, "success:") == 0) {
-		return DIR_SUCCESS;
-	} else if (strcasecmp(string, "successful") == 0) {
-		return DIR_SUCCESS;
-	} else if (strcasecmp(string, "successful:") == 0) {
+	} else if ((strcasecmp(string, "success") == 0) ||
+		   (strcasecmp(string, "success:") == 0) ||
+		   (strcasecmp(string, "successful") == 0) ||
+		   (strcasecmp(string, "successful:") == 0)) {
 		return DIR_SUCCESS;
 	} else if (strcasecmp(string, "failure") == 0) {
 		return DIR_FAILURE;
@@ -102,8 +96,10 @@ resolve_directive(char * string) {
 	} else if (strcasecmp(string, "time:") == 0) {
 		return DIR_TIME;
 	} else {
-		return DIR_UNKNOWN;
+		/* unknown directive */
 	}
+
+	return DIR_TEST;
 };
 
 struct tm* parse_iso8601_time(char* date_str, char* time_str) {
@@ -132,128 +128,92 @@ struct tm* parse_iso8601_time(char* date_str, char* time_str) {
 };
 
 void read_tok() {
-	char* token;
+	char* token = (char*)NULL;
 	while (token != NULL) { token = strtok(NULL, " \t"); };
 };
 
-struct testline* parse_line_subunit_v1(char* string) {
+tailq_test* read_test() {
 
-	assert(string != (char*)NULL);
-
-	char *dir, *token;
-	struct testline *t;
-	t = calloc(1, sizeof(struct testline));
-	if (t == NULL) {
+	tailq_test *test_item = NULL;
+	test_item = calloc(1, sizeof(tailq_test));
+	if (test_item == NULL) {
 		perror("failed to malloc");
 		return NULL;
 	}
 
+	char *token;
+	token = strtok(NULL, " \t");
+	/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+
+	token = strtok(NULL, " \t");
+	assert(token != NULL);
+	test_item->name = token;
+
+	token = strtok(NULL, " \t");
+	assert(token == NULL);
+
+	return test_item;
+}
+
+tailq_test* parse_line_subunit_v1(char* string) {
+
+	assert(string != (char*)NULL);
+
+	char *dir;
 	char buffer[1024];
 	strcpy(buffer, string);
 	dir = strtok(buffer, " \t");
 
+	tailq_test *test_item = NULL;
 	enum directive d;
 	switch (d = resolve_directive(dir)) {
 	case DIR_TEST:
-		t->dir = d;
-
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-
-		token = strtok(NULL, " \t");
-		assert(token == NULL);
-
+		/* testline is useless, but we should check conformance to spec */
+		read_tok();
 		break;
 	case DIR_SUCCESS:
-		t->dir = d;
-
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-
-		token = strtok(NULL, " \t");
-		assert(token == NULL);
-
+		test_item = read_test();	
+		test_item->status = STATUS_SUCCESS;
 		break;
 	case DIR_FAILURE:
-		t->dir = d;
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-		read_tok();
-
+		test_item = read_test();	
+		test_item->status = STATUS_FAILURE;
 		break;
 	case DIR_ERROR:
-		t->dir = d;
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-		read_tok();
+		test_item = read_test();	
+		test_item->status = STATUS_FAILED;
 		break;
 	case DIR_SKIP:
-		t->dir = d;
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-		read_tok();
+		test_item = read_test();	
+		test_item->status = STATUS_SKIPPED;
 		break;
 	case DIR_XFAIL:
-		t->dir = d;
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-		read_tok();
+		test_item = read_test();	
+		test_item->status = STATUS_XFAILURE;
 		break;
 	case DIR_UXSUCCESS:
-		t->dir = d;
-		token = strtok(NULL, " \t");
-		/* FIXME: assert(memcmp(token, "test", 4) != 0); */
-
-		token = strtok(NULL, " \t");
-		assert(token != NULL);
-		t->label = token;
-		read_tok();
+		test_item = read_test();	
+		test_item->status = STATUS_UXSUCCESS;
 		break;
 	case DIR_PROGRESS:
-		t->dir = d;
+		/* testline is useless, but we should check conformance to spec */
 		read_tok();
 		break;
 	case DIR_TAGS:
-		t->dir = d;
-		while (token != NULL) {
-			token = strtok(NULL, " \t");
-			if (token != NULL) {
-				printf("%s ", token);
-			}
-		};
-		printf("\n");
+		/* testline is useless, but we should check conformance to spec */
+		read_tok();
 		break;
 	case DIR_TIME:
-		t->dir = d;
-		char *date, *time;
-		date = strtok(NULL, " \t");
-		time = strtok(NULL, " \t");
+		/* testline is useless, but we should check conformance to spec */
+		/*
+		char *date = strtok(NULL, " \t");
+		assert(date != (char*)NULL);
+		char *time = strtok(NULL, " \t");
+		assert(time != (char*)NULL);
 		struct tm *t = parse_iso8601_time(date, time);
-		/* printf("Time: %s\n", asctime(t)); */
+		printf("Time: %s\n", asctime(t));
+		*/
+
 		read_tok();
 		break;
 	default:
@@ -261,7 +221,7 @@ struct testline* parse_line_subunit_v1(char* string) {
 		return NULL;
 	}
 
-	return t;
+	return test_item;
 };
 
 struct suiteq* parse_subunit_v1(FILE *stream) {
@@ -281,11 +241,16 @@ struct suiteq* parse_subunit_v1(FILE *stream) {
 	};
 	TAILQ_INIT(suite_item->tests);
 
+    	char line[1024];
 	tailq_test *test_item = NULL;
-	while (!feof(stream)) {
-		test_item = NULL;
+    	while (fgets(line, sizeof(line), stream)) {
+            	printf("%s", line); 
+		test_item = parse_line_subunit_v1(line);
 		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
-	};
+		if (feof(stream)) {
+			break;
+		}
+    	}
 
 	struct suiteq *suites = NULL;
 	suites = calloc(1, sizeof(struct suiteq));
@@ -298,65 +263,19 @@ struct suiteq* parse_subunit_v1(FILE *stream) {
 	return suites;
 };
 
+/*
 int main() {
 
-	char *path = "tests/samples/subunit/subunit-sample-04.subunit";
+	const char *path = "tests/samples/subunit/subunit-sample-04.subunit";
 	FILE *file;
-	/*
-	file = fopen(path, O_RDONLY);
-    	char line[1024];
-    	while (fgets(line, sizeof(line), file)) {
-            	printf("%s", line); 
-		if (feof(file)) {
-			break;
-		}
-    	}
-    	fclose(file);
-	*/
-
-	char *test_sample[] = {
-	"test test LABEL",
-	"testing test LABEL",
-	"test: test LABEL",
-	"testing: test LABEL",
-	"success test LABEL",
-	"success: test LABEL",
-	"successful test LABEL",
-	"successful: test LABEL",
-	"failure: test LABEL",
-	"failure: test LABEL DETAILS",
-	"error: test LABEL",
-	"error: test LABEL DETAILS",
-	"skip test LABEL",
-	"skip: test LABEL",
-	"skip test LABEL DETAILS",
-	"skip: test LABEL DETAILS",
-	"xfail test LABEL",
-	"xfail: test LABEL",
-	"xfail test LABEL DETAILS",
-	"xfail: test LABEL DETAILS",
-	"uxsuccess test LABEL",
-	"uxsuccess: test LABEL",
-	"uxsuccess test LABEL DETAILS",
-	"uxsuccess: test LABEL DETAILS",
-	"progress: +10",
-	"progress: -14",
-	"progress: push",
-	"progress: pop",
-	"tags: -small +big",
-	"time: 2018-09-10 23:59:29Z" };
-
-	char** qq = test_sample;
-	struct testline* tl;
-	for (int i = 0; i <  sizeof(test_sample)/sizeof(char*); ++i) {
-		printf("(SOURCE LINE: %s) ", *qq);
-		tl = parse_line_subunit_v1(*qq);
-		if (tl != NULL) {
-			printf("DIRECTIVE: %s, LABEL: %s", directive_string(tl->dir), tl->label);
-		}
-		printf("\n");
-		++qq;
+	file = fopen(path, "r");
+	if (file == NULL) {
+		printf("failed to open file %s\n", path);
+		return 1;
 	}
+	parse_subunit_v1(file);
+	fclose(file);
 
 	return 0;
 };
+*/

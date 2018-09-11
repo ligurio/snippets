@@ -33,6 +33,7 @@ static void test_parse_testanything(void **state);
 
 static void test_subunit_version(void **state);
 
+static void test_parse_subunit_v1(void **state);
 static void test_parse_subunit_v1_line(void **state);
 
 static void test_parse_subunit_v2_packet(void **state);
@@ -56,6 +57,7 @@ main(void)
 		cmocka_unit_test(test_parse_subunit_v2_common),
 		cmocka_unit_test(test_parse_subunit_v2),
 		cmocka_unit_test(test_parse_subunit_v1_line),
+		cmocka_unit_test(test_parse_subunit_v1),
 		cmocka_unit_test(test_parse_junit_common),
 		cmocka_unit_test(test_parse_junit),
 	};
@@ -148,7 +150,7 @@ test_subunit_version(void **state)
     char *file_subunit_v2 = SAMPLE_FILE_SUBUNIT_V2;
 
     assert(is_subunit_v2(file_subunit_v1) == 1);
-    assert(is_subunit_v2(file_subunit_v2) == 2);
+    assert(is_subunit_v2(file_subunit_v2) == 0);
 }
 
 
@@ -194,7 +196,7 @@ test_parse_subunit_v2_common(void **state)
 }
 
 static void
-test_parse_subunit_v1_line(void **state)
+test_parse_subunit_v1(void **state)
 {
     char *name = SAMPLE_FILE_SUBUNIT_V1;
     FILE *file;
@@ -205,10 +207,56 @@ test_parse_subunit_v1_line(void **state)
         fail();
     }
     struct suiteq *suites;
-    suites = parse_subunit_v2(file);
+    suites = parse_subunit_v1(file);
 
     fclose(file);
     free(suites);
+}
+
+static void
+test_parse_subunit_v1_line(void **state)
+{
+	char *test_sample[] = {
+	"test test LABEL",
+	"testing test LABEL",
+	"test: test LABEL",
+	"testing: test LABEL",
+	"success test LABEL",
+	"success: test LABEL",
+	"successful test LABEL",
+	"successful: test LABEL",
+	"failure: test LABEL",
+	"failure: test LABEL DETAILS",
+	"error: test LABEL",
+	"error: test LABEL DETAILS",
+	"skip test LABEL",
+	"skip: test LABEL",
+	"skip test LABEL DETAILS",
+	"skip: test LABEL DETAILS",
+	"xfail test LABEL",
+	"xfail: test LABEL",
+	"xfail test LABEL DETAILS",
+	"xfail: test LABEL DETAILS",
+	"uxsuccess test LABEL",
+	"uxsuccess: test LABEL",
+	"uxsuccess test LABEL DETAILS",
+	"uxsuccess: test LABEL DETAILS",
+	"progress: +10",
+	"progress: -14",
+	"progress: push",
+	"progress: pop",
+	"tags: -small +big",
+	"time: 2018-09-10 23:59:29Z" };
+
+	char** qq = test_sample;
+	struct testline* tl;
+	for (int i = 0; i <  sizeof(test_sample)/sizeof(char*); ++i) {
+		tl = parse_line_subunit_v1(*qq);
+		if (tl == NULL) {
+			fail();	
+		}
+		++qq;
+	}
 }
 
 

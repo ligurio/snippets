@@ -59,7 +59,7 @@ int is_subunit_v2(char* path)
 	}
 	fclose(file);
 	if (signature == SUBUNIT_SIGNATURE) {
-		return 2;
+		return 0;
 	} else {
 		return 1;
 	}

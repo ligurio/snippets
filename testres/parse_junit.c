@@ -30,12 +30,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <expat.h>
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
-#include "parse_common.h"
-#endif				/* PARSE_COMMON_H */
+#include "parse_junit.h"
 
 #ifdef XML_LARGE_SIZE
 #if defined(XML_USE_MSC_EXTENSIONS) && _MSC_VER < 1400

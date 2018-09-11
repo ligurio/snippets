@@ -39,15 +39,6 @@ typedef struct subunit_header subunit_header;
 
 typedef uint32_t timestamp;
 
-enum TestStatus { Undefined,
-		  Enumeration,
-		  InProgress,
-          	  Success,
-          	  UnexpectedSuccess,
-		  Skipped,
-		  Failed,
-		  ExpectedFailure };
-
 uint32_t read_field(FILE *stream);
 tailq_test *read_packet(FILE *stream);
 struct suiteq *parse_subunit_v2(FILE *stream);

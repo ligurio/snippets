@@ -1,3 +1,5 @@
+#include <expat.h>
+
 #ifndef PARSE_COMMON_H
 #define PARSE_COMMON_H
 #include "parse_common.h"

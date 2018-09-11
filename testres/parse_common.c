@@ -59,7 +59,7 @@ free_single_report(tailq_report * report)
 void 
 free_reports(struct reportq * reports)
 {
-	tailq_report *report_item;
+	tailq_report *report_item = NULL;
 	while ((report_item = TAILQ_FIRST(reports))) {
 		if (!TAILQ_EMPTY(report_item->suites)) {
 			free_suites(report_item->suites);
@@ -72,7 +72,7 @@ free_reports(struct reportq * reports)
 void 
 free_suites(struct suiteq * suites)
 {
-	tailq_suite *suite_item;
+	tailq_suite *suite_item = NULL;
 	while ((suite_item = TAILQ_FIRST(suites))) {
 		if (!TAILQ_EMPTY(suite_item->tests)) {
 			free_tests(suite_item->tests);
@@ -108,7 +108,7 @@ print_single_report(struct tailq_report * report)
 void 
 print_reports(struct reportq * reports)
 {
-	tailq_report *report_item;
+	tailq_report *report_item = NULL;
 	TAILQ_FOREACH(report_item, reports, entries) {
 		print_single_report(report_item);
 	}
@@ -118,7 +118,7 @@ void
 print_suites(struct suiteq * suites)
 {
 
-	tailq_suite *suite_item;
+	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
 		if (suite_item->name == (char *) NULL) {
 			printf("%10s ", suite_item->name);
@@ -144,7 +144,7 @@ void
 print_tests(struct testq * tests)
 {
 
-	tailq_test *test_item;
+	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
 		printf("\t%10s ", test_item->name);
 		printf("%10s ", status_string(test_item->status));

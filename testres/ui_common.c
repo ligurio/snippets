@@ -25,7 +25,7 @@ void
 print_html_suites(struct suiteq * suites)
 {
 
-	tailq_suite *suite_item;
+	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
 		if (suite_item->name == (char *) NULL) {
 			printf("%10s ", suite_item->name);
@@ -50,7 +50,7 @@ print_html_suites(struct suiteq * suites)
 void 
 print_html_tests(struct testq * tests)
 {
-	tailq_test *test_item;
+	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
 		printf("\t%10s ", test_item->name);
 		printf("%10s ", status_string(test_item->status));

@@ -63,7 +63,7 @@ cppcheck: $(SRCS)
 		--suppress=redundantAssignment \
 		--suppress=uselessAssignmentPtrArg \
 		--suppress=incorrectStringBooleanError \
-		--std=c89 $(SRCS) 2> cppcheck.log
+		--std=c89 $(SRCS)
 fmt:
 	@$(foreach SRC,$(SRCS),indent -ci4 -di1 -nlp $(SRC);)
 

@@ -54,10 +54,10 @@ int is_subunit_v2(char* path)
 	uint8_t signature = 0;
 	int n_bytes = 0;
 	n_bytes = fread(&signature, 1, 1, file);
+	fclose(file);
 	if (n_bytes == 0) {
 		return -1;
 	}
-	fclose(file);
 	if (signature == SUBUNIT_SIGNATURE) {
 		return 0;
 	} else {
@@ -175,7 +175,7 @@ read_packet(FILE * stream)
 
 	int8_t status;
 	status = flags & 0x0007;
-	printf("\tSTATUS: %u\n", status);
+	printf("\tSTATUS: %d\n", status);
 	test_item->status = status;
 	assert(status <= 0x0007);
 

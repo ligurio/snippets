@@ -73,20 +73,22 @@ main(int argc, char *argv[])
 		usage(argv[0]);
 		return 1;
 	}
-	struct stat path_st;
-	int fd;
+
         if (path == (char*)NULL) {
 		perror("specified path is empty");
 		return 1;
 	}
+
+	int fd;
 	fd = open(path, O_RDONLY);
-	if (fstat(fd, &path_st) != 0) {
+	struct stat path_st;
+	if (fstat(fd, &path_st) == -1) {
 		perror("cannot open specified path");
 		return 1;
 	}
 
-	tailq_report *report_item;
    	char *query_string = getenv("QUERY_STRING");
+	tailq_report *report_item;
 	if (S_ISREG(path_st.st_mode)) {
 	   report_item = process_file(path);
 	   if (query_string != NULL) {

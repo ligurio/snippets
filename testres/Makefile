@@ -53,14 +53,19 @@ clean:
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"
 
-check: $(PLIST)
+check: cppcheck clang-analyzer
+
+clang-analyzer: $(PLIST)
+
+cppcheck: $(SRCS)
 	@cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \
 		--enable=warning,portability,performance \
 		--suppress=redundantAssignment \
 		--suppress=uselessAssignmentPtrArg \
 		--suppress=incorrectStringBooleanError \
-		--std=c89 *.c *.h 2> cppcheck.log
+		--std=c89 $(SRCS) 2> cppcheck.log
 fmt:
 	@$(foreach SRC,$(SRCS),indent -ci4 -di1 -nlp $(SRC);)
 
 .PHONY: all clean check install tags test techdebt
+.PHONY: cppcheck clang-analyzer

@@ -60,6 +60,6 @@ test-fuzz:
 	afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -s @@
 
 clean:
-	rm -rf $(OBJ) $(TEST_BIN) $(AFL_IN) $(AFL_OUT)
+	rm -rf $(OBJ) $(TEST_BIN) $(AFL_IN) $(AFL_OUT) *.core
 
 .PHONY: all test-unit test-module test-fuzz clean

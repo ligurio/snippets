@@ -17,10 +17,10 @@
 #include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
 
-#define SAMPLE_FILE_JUNIT "samples/junit/junit-sample-1.xml"
-#define SAMPLE_FILE_SUBUNIT_V1 "samples/subunit/subunit-sample-04.subunit"
-#define SAMPLE_FILE_SUBUNIT_V2 "samples/subunit/subunit-sample-02.subunit"
-#define SAMPLE_FILE_TESTANYTHING "samples/testanything/tap-sample-01.tap"
+#define SAMPLE_FILE_JUNIT "samples/junit.xml"
+#define SAMPLE_FILE_SUBUNIT_V1 "samples/subunit_v1.subunit"
+#define SAMPLE_FILE_SUBUNIT_V2 "samples/subunit_v2.subunit"
+#define SAMPLE_FILE_TESTANYTHING "samples/testanything.tap"
 
 /*
  * -----------------------
@@ -249,7 +249,7 @@ test_parse_subunit_v1_line(void **state)
 	"time: 2018-09-10 23:59:29Z" };
 
 	char** qq = test_sample;
-	struct testline* tl;
+	struct tailq_test* tl;
 	for (int i = 0; i <  sizeof(test_sample)/sizeof(char*); ++i) {
 		tl = parse_line_subunit_v1(*qq);
 		/* TODO: validate tl struct */

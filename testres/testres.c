@@ -40,7 +40,7 @@
 void 
 usage(char *name)
 {
-	fprintf(stderr, "Usage: %s [-s file | directory] [-h]\n", name);
+	fprintf(stderr, "Usage: %s [-s file | directory] [-h|-v]\n", name);
 }
 
 int 

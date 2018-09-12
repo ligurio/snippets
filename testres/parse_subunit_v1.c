@@ -79,15 +79,18 @@ resolve_directive(char * string) {
 		   (strcasecmp(string, "successful") == 0) ||
 		   (strcasecmp(string, "successful:") == 0)) {
 		return DIR_SUCCESS;
-	} else if (strcasecmp(string, "failure") == 0) {
+	} else if (strcasecmp(string, "failure:") == 0) {
 		return DIR_FAILURE;
-	} else if (strcasecmp(string, "error") == 0) {
+	} else if (strcasecmp(string, "error:") == 0) {
 		return DIR_ERROR;
-	} else if (strcasecmp(string, "skip") == 0) {
+	} else if ((strcasecmp(string, "skip") == 0) ||
+		   (strcasecmp(string, "skip:") == 0)) {
 		return DIR_SKIP;
-	} else if (strcasecmp(string, "xfail") == 0) {
+	} else if ((strcasecmp(string, "xfail") == 0) ||
+		   (strcasecmp(string, "xfail:") == 0)) {
 		return DIR_XFAIL;
-	} else if (strcasecmp(string, "uxsuccess") == 0) {
+	} else if ((strcasecmp(string, "uxsuccess") == 0) ||
+		   (strcasecmp(string, "uxsuccess:") == 0)) {
 		return DIR_UXSUCCESS;
 	} else if (strcasecmp(string, "progress:") == 0) {
 		return DIR_PROGRESS;
@@ -141,16 +144,17 @@ tailq_test* read_test() {
 		return NULL;
 	}
 
-	char *token;
+	char *token, *name;
 	token = strtok(NULL, " \t");
-	/* FIXME: assert(memcmp(token, "test", 4) != 0); */
+	if (strcmp(token, "test") == 0) {
+	   token = strtok(NULL, " \t");
+	   assert(token != NULL);
+	}
+	name = calloc(strlen(token), sizeof(token));
+	strcpy(name, token);
+	test_item->name = name;
 
-	token = strtok(NULL, " \t");
-	assert(token != NULL);
-	test_item->name = token;
-
-	token = strtok(NULL, " \t");
-	assert(token == NULL);
+	read_tok();
 
 	return test_item;
 }
@@ -172,27 +176,27 @@ tailq_test* parse_line_subunit_v1(char* string) {
 		read_tok();
 		break;
 	case DIR_SUCCESS:
-		test_item = read_test();	
+		test_item = read_test();
 		test_item->status = STATUS_SUCCESS;
 		break;
 	case DIR_FAILURE:
-		test_item = read_test();	
+		test_item = read_test();
 		test_item->status = STATUS_FAILURE;
 		break;
 	case DIR_ERROR:
-		test_item = read_test();	
+		test_item = read_test();
 		test_item->status = STATUS_FAILED;
 		break;
 	case DIR_SKIP:
-		test_item = read_test();	
+		test_item = read_test();
 		test_item->status = STATUS_SKIPPED;
 		break;
 	case DIR_XFAIL:
-		test_item = read_test();	
+		test_item = read_test();
 		test_item->status = STATUS_XFAILURE;
 		break;
 	case DIR_UXSUCCESS:
-		test_item = read_test();	
+		test_item = read_test();
 		test_item->status = STATUS_UXSUCCESS;
 		break;
 	case DIR_PROGRESS:
@@ -227,7 +231,7 @@ tailq_test* parse_line_subunit_v1(char* string) {
 struct suiteq* parse_subunit_v1(FILE *stream) {
 
 	tailq_suite *suite_item;
-	suite_item = (tailq_suite *) malloc(sizeof(tailq_suite));
+	suite_item = calloc(1, sizeof(tailq_suite));
 	if (suite_item == NULL) {
 		perror("malloc failed");
 		return NULL;
@@ -244,9 +248,10 @@ struct suiteq* parse_subunit_v1(FILE *stream) {
     	char line[1024];
 	tailq_test *test_item = NULL;
     	while (fgets(line, sizeof(line), stream)) {
-            	printf("%s", line); 
 		test_item = parse_line_subunit_v1(line);
-		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+		if (test_item != NULL) {
+		   TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+		}
 		if (feof(stream)) {
 			break;
 		}
@@ -262,20 +267,3 @@ struct suiteq* parse_subunit_v1(FILE *stream) {
 
 	return suites;
 };
-
-/*
-int main() {
-
-	const char *path = "tests/samples/subunit/subunit-sample-04.subunit";
-	FILE *file;
-	file = fopen(path, "r");
-	if (file == NULL) {
-		printf("failed to open file %s\n", path);
-		return 1;
-	}
-	parse_subunit_v1(file);
-	fclose(file);
-
-	return 0;
-};
-*/

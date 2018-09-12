@@ -1,3 +1,0 @@
-# TAP results for sub/subsub/test_bar.py
-ok 1 - sub/subsub/test_bar.py::test_event_fixture
-1..1

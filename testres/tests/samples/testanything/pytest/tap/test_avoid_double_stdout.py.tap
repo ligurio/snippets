@@ -1,3 +1,0 @@
-# TAP results for test_avoid_double_stdout.py
-ok 1 - test_avoid_double_stdout.py::test_function
-1..1

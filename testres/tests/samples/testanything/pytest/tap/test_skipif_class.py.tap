@@ -1,4 +1,0 @@
-# TAP results for test_skipif_class.py
-ok 1 - test_skipif_class.py::TestClass.test_that # SKIP condition: True
-ok 2 - test_skipif_class.py::TestClass.test_though # SKIP condition: True
-1..2

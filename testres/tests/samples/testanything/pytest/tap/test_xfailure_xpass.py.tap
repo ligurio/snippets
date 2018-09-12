@@ -1,3 +1,0 @@
-# TAP results for test_xfailure_xpass.py
-ok 1 - test_xfailure_xpass.py::test_xpass
-1..1

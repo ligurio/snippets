@@ -1,3 +1,0 @@
-# TAP results for test_teardown_fixture_error.py
-ok 1 - test_teardown_fixture_error.py::test_nada
-1..1

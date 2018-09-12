@@ -1,3 +1,0 @@
-# TAP results for test_fixture_marked_function_not_collected_as_test.py
-ok 1 - test_fixture_marked_function_not_collected_as_test.py::test_something
-1..1

@@ -1,4 +1,0 @@
-# TAP results for testing/test_argcomplete.py
-ok 1 - testing/test_argcomplete.py::TestArgComplete.test_compare_with_compgen
-ok 2 - testing/test_argcomplete.py::TestArgComplete.test_remove_dir_prefix
-1..2

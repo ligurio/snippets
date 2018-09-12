@@ -1,4 +1,0 @@
-# TAP results for unittest_ini_handle.py
-ok 1 - unittest_ini_handle.py::test
-ok 2 - unittest_ini_handle.py::test
-1..2

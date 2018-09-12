@@ -1,3 +1,0 @@
-# TAP results for test_fixture_excinfo_leak.py
-ok 1 - test_fixture_excinfo_leak.py::test_leak
-1..1

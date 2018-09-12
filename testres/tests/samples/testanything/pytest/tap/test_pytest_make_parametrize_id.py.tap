@@ -1,4 +1,0 @@
-# TAP results for test_pytest_make_parametrize_id.py
-ok 1 - test_pytest_make_parametrize_id.py::test_func[0]
-ok 2 - test_pytest_make_parametrize_id.py::test_func[2]
-1..2

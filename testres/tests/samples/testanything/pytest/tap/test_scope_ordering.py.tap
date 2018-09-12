@@ -1,3 +1,0 @@
-# TAP results for test_scope_ordering.py
-ok 1 - test_scope_ordering.py::TestHallo.test_method
-1..1

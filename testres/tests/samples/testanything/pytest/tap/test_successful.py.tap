@@ -1,4 +1,0 @@
-# TAP results for test_successful.py
-ok 1 - test_successful.py::test_success
-ok 2 - test_successful.py::test_success
-1..2

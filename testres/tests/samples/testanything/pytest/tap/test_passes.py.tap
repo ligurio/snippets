@@ -1,4 +1,0 @@
-# TAP results for test_passes.py
-ok 1 - test_passes.py::test_passes
-ok 2 - test_passes.py::TestClass.test_method
-1..2

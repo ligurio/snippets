@@ -1,4 +1,0 @@
-# TAP results for package/test_x.py
-ok 1 - package/test_x.py::test_x
-ok 2 - package/test_x.py::test_x
-1..2

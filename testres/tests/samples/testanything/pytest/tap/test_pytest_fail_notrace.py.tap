@@ -1,4 +1,0 @@
-# TAP results for test_pytest_fail_notrace.py
-not ok 1 - test_pytest_fail_notrace.py::test_hello
-# hello
-1..1

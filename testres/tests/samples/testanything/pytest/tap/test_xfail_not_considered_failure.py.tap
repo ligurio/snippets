@@ -1,3 +1,0 @@
-# TAP results for test_xfail_not_considered_failure.py
-ok 1 - test_xfail_not_considered_failure.py::test # SKIP 
-1..1

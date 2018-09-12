@@ -1,4 +1,0 @@
-# TAP results for test_extend_fixture_module_class.py
-ok 1 - test_extend_fixture_module_class.py::TestSpam.test_spam
-ok 2 - test_extend_fixture_module_class.py::TestSpam.test_spam
-1..2

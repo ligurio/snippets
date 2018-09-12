@@ -1,4 +1,0 @@
-# TAP results for test_imperativeskip_on_xfail_test.py
-ok 1 - test_imperativeskip_on_xfail_test.py::test_that_fails # SKIP abc
-ok 2 - test_imperativeskip_on_xfail_test.py::test_hello # SKIP condition: True
-1..2

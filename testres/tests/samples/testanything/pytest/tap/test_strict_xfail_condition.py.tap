@@ -1,4 +1,0 @@
-# TAP results for test_strict_xfail_condition.py
-ok 1 - test_strict_xfail_condition.py::test_foo
-ok 2 - test_strict_xfail_condition.py::test_foo
-1..2

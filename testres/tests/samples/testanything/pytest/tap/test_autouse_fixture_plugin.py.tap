@@ -1,3 +1,0 @@
-# TAP results for test_autouse_fixture_plugin.py
-ok 1 - test_autouse_fixture_plugin.py::test_foo
-1..1

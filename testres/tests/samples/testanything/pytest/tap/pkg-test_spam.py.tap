@@ -1,4 +1,0 @@
-# TAP results for pkg/test_spam.py
-ok 1 - pkg/test_spam.py::test_spam
-ok 2 - pkg/test_spam.py::test_spam
-1..2

@@ -1,4 +1,0 @@
-# TAP results for test_skipif.py
-ok 1 - test_skipif.py::test_func1 # SKIP True123
-ok 2 - test_skipif.py::test_func2
-1..2

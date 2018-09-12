@@ -1,4 +1,0 @@
-# TAP results for test_deselected.py
-ok 1 - test_deselected.py::test_two
-ok 2 - test_deselected.py::test_three
-1..2

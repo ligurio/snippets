@@ -1,3 +1,0 @@
-# TAP results for test_module_level_pytestmark.py
-ok 1 - test_module_level_pytestmark.py::MyTestCase.test_func1 # SKIP 
-1..1

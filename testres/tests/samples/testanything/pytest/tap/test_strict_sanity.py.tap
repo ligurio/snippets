@@ -1,3 +1,0 @@
-# TAP results for test_strict_sanity.py
-ok 1 - test_strict_sanity.py::test_foo # SKIP unsupported feature
-1..1

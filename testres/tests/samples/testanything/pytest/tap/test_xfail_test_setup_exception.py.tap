@@ -1,3 +1,0 @@
-# TAP results for test_xfail_test_setup_exception.py
-ok 1 - test_xfail_test_setup_exception.py::test_func # SKIP 
-1..1

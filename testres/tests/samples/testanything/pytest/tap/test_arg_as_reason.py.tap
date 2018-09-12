@@ -1,3 +1,0 @@
-# TAP results for test_arg_as_reason.py
-ok 1 - test_arg_as_reason.py::test_bar # SKIP testing stuff
-1..1

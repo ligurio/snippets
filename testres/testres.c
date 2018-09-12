@@ -35,12 +35,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
-#include "parse_common.h"
-#endif				/* PARSE_COMMON_H */
-
-#include "ui_common.h"
+#include "testres.h"
 
 void 
 usage(char *name)
@@ -51,15 +46,17 @@ usage(char *name)
 int 
 main(int argc, char *argv[])
 {
-
 	char *path = (char *) NULL;
 	int opt = 0;
 
-	while ((opt = getopt(argc, argv, "hs:")) != -1) {
+	while ((opt = getopt(argc, argv, "vhs:")) != -1) {
 		switch (opt) {
 		case 'h':
 			usage(argv[0]);
-			return (1);
+			return 0;
+		case 'v':
+			printf("Build-date: %s %s\n", __DATE__, __TIME__);
+			return 0;
 		case 's':
 			path = optarg;
 			break;

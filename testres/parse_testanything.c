@@ -412,7 +412,6 @@ parse_testanything(FILE * f)
 	if (suite_item == NULL) {
 		perror("malloc failed");
 	}
-	suite_item->name = "default suite";
 	suite_item->n_errors = 0;
 	suite_item->n_failures = 0;
 	suite_item->tests = calloc(1, sizeof(struct testq));
@@ -430,12 +429,14 @@ parse_testanything(FILE * f)
 		test_item = calloc(1, sizeof(tailq_test));
 		if (test_item == NULL) {
 			perror("malloc failed");
+			free_tests(suite_item->tests);
 			free(suite_item);
 			return NULL;
 		}
 		char *name = calloc(strlen(current->name), sizeof(char));
 		if (name == NULL) {
 			perror("malloc failed");
+			free_tests(suite_item->tests);
 			free(suite_item);
 			free(test_item);
 			return NULL;
@@ -450,8 +451,9 @@ parse_testanything(FILE * f)
 	struct suiteq *suites;
 	suites = calloc(1, sizeof(struct suiteq));
 	if (suites == NULL) {
-		perror("malloc failed");
+		free_tests(suite_item->tests);
 		free(suite_item);
+		perror("malloc failed");
 		return NULL;
 	}
 	TAILQ_INIT(suites);

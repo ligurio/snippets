@@ -13,7 +13,8 @@ SRCS	= testres.c parse_common.c parse_junit.c \
 	parse_testanything.c ui_common.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))
 PLIST	= $(patsubst %.c,%.plist,$(SRCS))
-BIN	= testres
+PROJECT = testres
+BIN	= $(PROJECT)
 CGIBIN	= $(BIN)-static
 CGIDIR	= /var/www/cgi-bin
 
@@ -49,6 +50,11 @@ tags:
 clean:
 	@make -C tests clean
 	rm -f $(BIN) $(CGIBIN) $(OBJ) $(PLIST) *.{BAK,core} cppcheck.log tags
+
+release: $(BIN) $(CGIBIN)
+	@strip --strip-all --verbose $(BIN)-static
+	@strip --strip-all --verbose $(BIN)
+	@tar cvzf $(PROJECT).tgz $(BIN)-static $(BIN) $(BIN).1
 
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"

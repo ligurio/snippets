@@ -9,7 +9,7 @@ print_html_headers(void)
 }
 
 void 
-print_html_single_report(struct tailq_report * report)
+print_html_report(struct tailq_report * report)
 {
 	printf("\nTEST REPORT (%s)\n", format_string(report->format));
 	char buffer[80] = "";

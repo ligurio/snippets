@@ -72,13 +72,15 @@ tailq_test *make_test(char *name, char *time, char *comment);
 const char *status_string(enum test_status status);
 const char *format_string(enum test_format format);
 
-void print_single_report(struct tailq_report *report);
+void print_report(struct tailq_report *report);
 void print_reports(struct reportq *reports_head);
 void print_suites(struct suiteq *suites_head);
 void print_tests(struct testq *tests_head);
 
-void free_single_report(struct tailq_report *report);
 void free_reports(struct reportq *reports);
 void free_suites(struct suiteq *suites);
 void free_tests(struct testq *tests);
+
+void free_report(tailq_report * report);
+void free_suite(tailq_suite * suite);
 void free_test(tailq_test * test);

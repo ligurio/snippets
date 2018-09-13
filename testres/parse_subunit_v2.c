@@ -115,9 +115,8 @@ uint32_t read_field(FILE * stream)
 struct suiteq *
 parse_subunit_v2(FILE * stream)
 {
-
 	tailq_suite *suite_item;
-	suite_item = (tailq_suite *) malloc(sizeof(tailq_suite));
+	suite_item = calloc(1, sizeof(tailq_suite));
 	if (suite_item == NULL) {
 		perror("malloc failed");
 		return NULL;
@@ -126,11 +125,11 @@ parse_subunit_v2(FILE * stream)
 	suite_item->tests = calloc(1, sizeof(struct testq));
 	if (suite_item->tests == NULL) {
 		perror("malloc failed");
-		free(suite_item);
+		free_suite(suite_item);
 		return NULL;
 	}
-	TAILQ_INIT(suite_item->tests);
 
+	TAILQ_INIT(suite_item->tests);
 	tailq_test *test_item = NULL;
 	while (!feof(stream)) {
 		test_item = read_packet(stream);
@@ -141,6 +140,7 @@ parse_subunit_v2(FILE * stream)
 	suites = calloc(1, sizeof(struct suiteq));
 	if (suites == NULL) {
 		perror("malloc failed");
+		free_suite(suite_item);
 	}
 	TAILQ_INIT(suites);
 	TAILQ_INSERT_TAIL(suites, suite_item, entries);
@@ -162,6 +162,7 @@ read_packet(FILE * stream)
 	test_item = calloc(1, sizeof(tailq_test));
 	if (test_item == NULL) {
 		perror("malloc failed");
+		return NULL;
 	}
 	uint16_t flags = htons(header.flags);
 	printf("SIGNATURE: %02hhX\n", header.signature);
@@ -188,7 +189,7 @@ read_packet(FILE * stream)
 		printf("FLAG_TIMESTAMP ");
 		field_value = read_field(stream);
 		printf("%08X\n", field_value);
-		test_item->time = "12:14:44";
+		/* FIXME: test_item->time = "12:14:44"; */
 	};
 	if (flags & FLAG_TEST_ID) {
 		printf("FLAG_TEST_ID ");
@@ -224,9 +225,6 @@ read_packet(FILE * stream)
 	printf("CRC32: ");
 	field_value = read_field(stream);
 	printf("%08X\n", field_value);
-
-	/* FIXME */
-	test_item->name = "test";
 
 	return test_item;
 }

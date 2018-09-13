@@ -90,11 +90,11 @@ main(int argc, char *argv[])
 	   report_item = process_file(path);
 	   if (query_string != NULL) {
 	      print_html_headers();
-	      print_html_single_report(report_item);
+	      print_html_report(report_item);
 	   } else {
-	      print_single_report(report_item);
+	      print_report(report_item);
  	   }
-	   free_single_report(report_item);
+	   free_report(report_item);
 	   close(fd);
 	   return 0;
 	}

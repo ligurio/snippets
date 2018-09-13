@@ -48,15 +48,6 @@
 #include "parse_subunit_v2.h"
 
 void 
-free_single_report(tailq_report * report)
-{
-	if (!TAILQ_EMPTY(report->suites)) {
-		free_suites(report->suites);
-	}
-	free(report);
-}
-
-void 
 free_reports(struct reportq * reports)
 {
 	tailq_report *report_item = NULL;
@@ -65,8 +56,17 @@ free_reports(struct reportq * reports)
 			free_suites(report_item->suites);
 		}
 		TAILQ_REMOVE(reports, report_item, entries);
-		free(report_item);
+		free_report(report_item);
 	}
+}
+
+void 
+free_report(tailq_report * report)
+{
+	if (!TAILQ_EMPTY(report->suites)) {
+		free_suites(report->suites);
+	}
+	free(report);
 }
 
 void 
@@ -74,12 +74,28 @@ free_suites(struct suiteq * suites)
 {
 	tailq_suite *suite_item = NULL;
 	while ((suite_item = TAILQ_FIRST(suites))) {
-		if (!TAILQ_EMPTY(suite_item->tests)) {
-			free_tests(suite_item->tests);
-		}
 		TAILQ_REMOVE(suites, suite_item, entries);
-		free(suite_item);
+		free_suite(suite_item);
 	}
+}
+
+void 
+free_suite(tailq_suite * suite)
+{
+	if (suite->name) {
+	   free((char*)suite->name);
+        }
+	if (suite->hostname) {
+	   free((char*)suite->hostname);
+        }
+	if (suite->timestamp) {
+	   free((char*)suite->timestamp);
+        }
+	if (!TAILQ_EMPTY(suite->tests)) {
+		free_tests(suite->tests);
+	}
+
+	free(suite);
 }
 
 void 
@@ -117,7 +133,7 @@ free_test(tailq_test * test)
 }
 
 void 
-print_single_report(struct tailq_report * report)
+print_report(struct tailq_report * report)
 {
 	printf("\nTEST REPORT (%s)\n", format_string(report->format));
 	char buffer[80] = "";
@@ -134,7 +150,7 @@ print_reports(struct reportq * reports)
 {
 	tailq_report *report_item = NULL;
 	TAILQ_FOREACH(report_item, reports, entries) {
-		print_single_report(report_item);
+		print_report(report_item);
 	}
 }
 

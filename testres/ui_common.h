@@ -4,6 +4,6 @@
 #endif				/* PARSE_COMMON_H */
 
 void print_html_headers(void);
-void print_html_single_report(struct tailq_report *report);
+void print_html_report(struct tailq_report *report);
 void print_html_suites(struct suiteq * suites);
 void print_html_tests(struct testq * tests);

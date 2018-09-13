@@ -59,6 +59,10 @@ tailq_test *test_item;
 tailq_suite *suite_item;
 struct suiteq *suites;
 
+int system_out_flag = 0;
+int system_err_flag = 0;
+int error_flag = 0;
+
 const XML_Char *
 name_to_value(const XML_Char ** attr, const char attr_name[])
 {
@@ -82,7 +86,6 @@ static void XMLCALL
 start_handler(void *data, const XML_Char * elem, const XML_Char ** attr)
 {
 	(void) data;
-
 	if (strcmp(elem, "testsuite") == 0) {
 		suite_item = calloc(1, sizeof(tailq_suite));
 		if (suite_item == NULL) {
@@ -108,11 +111,19 @@ start_handler(void *data, const XML_Char * elem, const XML_Char ** attr)
 		test_item->time = name_to_value(attr, "time");
 		test_item->status = STATUS_PASS;
 	} else if (strcmp(elem, "error") == 0) {
+		error_flag = 1;
 		test_item->status = STATUS_ERROR;
 		test_item->comment = name_to_value(attr, "comment");
 	} else if (strcmp(elem, "failure") == 0) {
 		test_item->status = STATUS_FAILURE;
 		test_item->comment = name_to_value(attr, "comment");
+	} else if (strcmp(elem, "skipped") == 0) {
+		test_item->status = STATUS_SKIPPED;
+		test_item->comment = name_to_value(attr, "comment");
+	} else if (strcmp(elem, "system-out") == 0) {
+		system_out_flag = 1;
+	} else if (strcmp(elem, "system-err") == 0) {
+		system_err_flag = 1;
 	}
 }
 
@@ -127,16 +138,32 @@ end_handler(void *data, const XML_Char * elem)
 		TAILQ_INSERT_TAIL(suites, suite_item, entries);
 	} else if (strcmp(elem, "testcase") == 0) {
 		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+	} else if (strcmp(elem, "error") == 0) {
+		error_flag = 0;
+	} else if (strcmp(elem, "system-out") == 0) {
+		system_out_flag = 0;
+	} else if (strcmp(elem, "system-err") == 0) {
+		system_err_flag = 0;
 	}
 }
 
-/*
 void
-char_handler(void *data, const char *txt, int txtlen) {
+data_handler(void *data, const char *txt, int txtlen) {
   (void)data;
-  fwrite(txt, txtlen, sizeof(char), stdout);
+  
+  if (error_flag == 1) {
+     /* TODO */
+     test_item->error = (char*)NULL;
+  };
+  if (system_out_flag == 1) {
+     /* TODO */
+     test_item->system_out = (char*)NULL;
+  };
+  if (system_err_flag == 1) {
+     /* TODO */
+     test_item->system_err = (char*)NULL;
+  };
 }
-*/
 
 struct suiteq *
 parse_junit(FILE * f)
@@ -144,7 +171,7 @@ parse_junit(FILE * f)
 	XML_Parser p = XML_ParserCreate(NULL);
 	if (!p) {
 		fprintf(stderr, "Couldn't allocate memory for parser\n");
-		exit(-1);
+		return NULL;
 	}
 	suites = calloc(1, sizeof(struct suiteq));
 	if (suites == NULL) {
@@ -154,7 +181,7 @@ parse_junit(FILE * f)
 
 	XML_UseParserAsHandlerArg(p);
 	XML_SetElementHandler(p, start_handler, end_handler);
-	//XML_SetCharacterDataHandler(p, char_handler);
+	XML_SetCharacterDataHandler(p, data_handler);
 
 	for (;;) {
 		int len, done;

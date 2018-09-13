@@ -34,6 +34,9 @@ typedef struct tailq_test {
     const char *name;
     const char *time;
     const char *comment;
+    const char *error;
+    const char *system_out;
+    const char *system_err;
     enum test_status status;
     TAILQ_ENTRY(tailq_test) entries;
 } tailq_test;
@@ -78,3 +81,4 @@ void free_single_report(struct tailq_report *report);
 void free_reports(struct reportq *reports);
 void free_suites(struct suiteq *suites);
 void free_tests(struct testq *tests);
+void free_test(tailq_test * test);

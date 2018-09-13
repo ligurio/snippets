@@ -88,8 +88,32 @@ free_tests(struct testq * tests)
 	tailq_test *test_item;
 	while ((test_item = TAILQ_FIRST(tests))) {
 		TAILQ_REMOVE(tests, test_item, entries);
-		free(test_item);
+		free_test(test_item);
 	}
+}
+
+void 
+free_test(tailq_test * test)
+{
+	if (test->name) {
+	   free((char*)test->name);
+        }
+	if (test->time) {
+	   free((char*)test->time);
+        }
+	if (test->comment) {
+	   free((char*)test->comment);
+        }
+	if (test->error) {
+	   free((char*)test->error);
+        }
+	if (test->system_out) {
+	   free((char*)test->system_out);
+        }
+	if (test->system_err) {
+	   free((char*)test->system_err);
+        }
+	free(test);
 }
 
 void 
@@ -117,20 +141,19 @@ print_reports(struct reportq * reports)
 void 
 print_suites(struct suiteq * suites)
 {
-
 	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
-		if (suite_item->name == (char *) NULL) {
-			printf("%10s ", suite_item->name);
+		if (suite_item->name != (char *)NULL) {
+			printf("SUITE: %10s ", suite_item->name);
 		} else {
-			printf("%10s ", "noname");
+			printf("SUITE: %10s ", "noname");
 		}
 		printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
 		printf("%5f ", suite_item->time);
-		if (suite_item->timestamp != (char *) NULL) {
+		if (suite_item->timestamp != (char *)NULL) {
 			printf("%10s ", suite_item->timestamp);
 		}
-		if (suite_item->hostname != (char *) NULL) {
+		if (suite_item->hostname != (char *)NULL) {
 			printf("%10s ", suite_item->hostname);
 		}
 		printf("\n");
@@ -143,15 +166,14 @@ print_suites(struct suiteq * suites)
 void 
 print_tests(struct testq * tests)
 {
-
 	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
-		printf("\t%10s ", test_item->name);
-		printf("%10s ", status_string(test_item->status));
-		if (test_item->time != (char *) NULL) {
+		printf("\tTEST: %10.50s ", test_item->name);
+		printf("%10.50s ", status_string(test_item->status));
+		if (test_item->time != (char *)NULL) {
 			printf("(%5ss) ", test_item->time);
 		}
-		if (test_item->comment != NULL) {
+		if (test_item->comment != (char *)NULL) {
 			printf("Comment: %5s", test_item->comment);
 		}
 		printf("\n");

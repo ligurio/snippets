@@ -34,9 +34,16 @@ to store and analyze software testing reports. The
 .Nm
 supports two modes: as console application and as CGI application.
 .Sh FORMATS
-Support of the most popular test results formats: TAP, SubUnit and JUnit.
+.Nm
+supports three the most popular test report formats: TAP
+(TestAnythingProtocol), SubUnit and JUnit.
 .Bl -tag -width Ds
-.It Pa JUnit
+.It Pa JUnit "   "
+The JUnit XML Report output comes from a build tool called Nant, as opposed to
+the JUnit project itself - thus it can be a little tricky to nail down an
+official spec for the format, even though it's widely adopted and used. There
+have been a number of attempts to codify the schema, first off there is an XSD
+for JUnit.
 .It Pa Test Anything Protocol
 TAP, the Test Anything Protocol, is a simple text-based interface between
 testing modules a test harness. TAP started life as part of the test harness

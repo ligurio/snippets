@@ -49,13 +49,14 @@ main(int argc, char *argv[])
 	char *path = (char *) NULL;
 	int opt = 0;
 
+	snprintf(version, sizeof(version), "%s %s", __DATE__, __TIME__);
 	while ((opt = getopt(argc, argv, "vhs:")) != -1) {
 		switch (opt) {
 		case 'h':
 			usage(argv[0]);
 			return 0;
 		case 'v':
-			printf("Build-date: %s %s\n", __DATE__, __TIME__);
+			printf("Build-date: %s\n", version);
 			return 0;
 		case 's':
 			path = optarg;
@@ -91,6 +92,7 @@ main(int argc, char *argv[])
 	   if (query_string != NULL) {
 	      print_html_headers();
 	      print_html_report(report_item);
+	      print_html_footer();
 	   } else {
 	      print_report(report_item);
  	   }
@@ -129,7 +131,8 @@ main(int argc, char *argv[])
 
 	if (query_string != NULL) {
 	   print_html_headers();
-	   print_reports(&reports);
+	   print_html_reports(&reports);
+	   print_html_footer();
 	} else {
 	   print_reports(&reports);
 	}

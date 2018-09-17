@@ -159,11 +159,13 @@ print_suites(struct suiteq * suites)
 {
 	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
+		const char* name = NULL;
 		if (suite_item->name != (char *)NULL) {
-			printf("SUITE: %10s ", suite_item->name);
+			name = suite_item->name;
 		} else {
-			printf("SUITE: %10s ", "noname");
+			name = "noname";
 		}
+		printf("SUITE: %10s ", name);
 		printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
 		printf("%5f ", suite_item->time);
 		if (suite_item->timestamp != (char *)NULL) {

@@ -131,7 +131,7 @@ main(int argc, char *argv[])
 
 	if (query_string != NULL) {
 	   print_html_headers();
-	   print_html_reports(&reports);
+	   print_html_reports_index(&reports);
 	   print_html_footer();
 	} else {
 	   print_reports(&reports);

@@ -27,6 +27,15 @@ print_html_footer(void)
 }
 
 void 
+print_html_reports_index(struct reportq * reports)
+{
+	tailq_report *report_item = NULL;
+	TAILQ_FOREACH(report_item, reports, entries) {
+		printf("<b>report %s</b><br>\n", format_string(report_item->format));
+	}
+}
+
+void 
 print_html_reports(struct reportq * reports)
 {
 	tailq_report *report_item = NULL;

@@ -433,7 +433,7 @@ parse_testanything(FILE * f)
 			free(suite_item);
 			return NULL;
 		}
-		char *name = calloc(strlen(current->name), sizeof(char));
+		char *name = calloc(strlen(current->name) + 1, sizeof(char));
 		if (name == NULL) {
 			perror("malloc failed");
 			free_tests(suite_item->tests);

@@ -17,10 +17,10 @@
 #include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
 
-#define SAMPLE_FILE_JUNIT "samples/junit.xml"
-#define SAMPLE_FILE_SUBUNIT_V1 "samples/subunit_v1.subunit"
-#define SAMPLE_FILE_SUBUNIT_V2 "samples/subunit_v2.subunit"
-#define SAMPLE_FILE_TESTANYTHING "samples/testanything.tap"
+#define SAMPLE_FILE_JUNIT "../samples/junit.xml"
+#define SAMPLE_FILE_SUBUNIT_V1 "../samples/subunit_v1.subunit"
+#define SAMPLE_FILE_SUBUNIT_V2 "../samples/subunit_v2.subunit"
+#define SAMPLE_FILE_TESTANYTHING "../samples/testanything.tap"
 
 /*
  * -----------------------

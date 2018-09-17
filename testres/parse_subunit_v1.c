@@ -150,7 +150,7 @@ tailq_test* read_test() {
 	   token = strtok(NULL, " \t");
 	   assert(token != NULL);
 	}
-	name = calloc(strlen(token), sizeof(token));
+	name = (char*)calloc(strlen(token) + 1, sizeof(char));
 	strcpy(name, token);
 	test_item->name = name;
 

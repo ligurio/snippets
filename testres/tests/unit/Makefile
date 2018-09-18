@@ -24,6 +24,6 @@ test-unit: $(TEST_BIN)
 	./$(TEST_BIN)
 
 clean:
-	$(RM) -rf $(OBJ) $(TEST_BIN) *.core
+	rm -f $(OBJ) $(TEST_BIN) *.core
 
 .PHONY: all test-unit clean

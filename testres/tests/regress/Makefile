@@ -32,6 +32,6 @@ $(T): build_app
 	@'$(SHELL_PATH_SQ)' $@
 
 clean:
-	$(RM) -rf *.core
+	rm -rf *.core
 
 .PHONY: all test-regress clean build_app $(T)

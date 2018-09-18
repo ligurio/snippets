@@ -24,6 +24,6 @@ test-afl:
 	afl-fuzz -i $(AFL_IN) -o $(AFL_OUT) -- $(TOP_SRC_DIR)/$(BIN) -s @@
 
 clean:
-	$(RM) -rf $(AFL_IN) $(AFL_OUT)
+	rm -rf $(AFL_IN) $(AFL_OUT)
 
 .PHONY: all test-afl clean

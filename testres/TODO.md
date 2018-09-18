@@ -16,7 +16,7 @@
 - скрипты для БД: flaky?, анализ логов в отчетах
 - прогноз по тестам и тестпланам
 - добавить pledge(), capsicum() (см. https://kristaps.bsd.lv/lowdown/)
-- сделать сортировку репортов
+- сделать сортировку репортов по времени
 - plotting:
 	- http://pages.cs.wisc.edu/~remzi/Zplot/Tcl/
 	- https://github.com/reddec/svg
@@ -28,6 +28,10 @@
 	- http://biolpc22.york.ac.uk/linux/plotutils/ascii_chart.c
 	- https://github.com/ravhed/libsvg
 	- https://www.gnu.org/software/plotutils/
+- User Defined Attributes
+	https://taskwarrior.org/docs/udas.html
+	https://taskwarrior.org/docs/terminology.html#uda
+- в список репортов добавить название файла и прогресс-бары (pass-rate) [#######     ] 51%
 
 ### Тесты
 

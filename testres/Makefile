@@ -9,14 +9,15 @@ CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
 LDFLAGS   += -lexpat -g
 
 SRCS	= testres.c parse_common.c parse_junit.c \
-	parse_subunit_v2.c parse_subunit_v1.c \
-	parse_testanything.c ui_common.c
+	parse_subunit_v2.c parse_subunit_v1.c parse_testanything.c \
+	ui_common.c ui_http.c ui_console.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))
 PLIST	= $(patsubst %.c,%.plist,$(SRCS))
 PROJECT = testres
 BIN	= $(PROJECT)
 CGIBIN	= $(BIN)-static
 CGIDIR	= /var/www/cgi-bin
+MAN	= $(PROJECT).1
 
 all: $(BIN) $(CGIBIN)
 
@@ -59,7 +60,10 @@ release: $(BIN) $(CGIBIN)
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"
 
-check: cppcheck clang-analyzer
+check: cppcheck clang-analyzer mandoc-lint
+
+mandoc-lint:
+	@mandoc -T lint $(MAN)
 
 clang-analyzer: $(PLIST)
 

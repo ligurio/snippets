@@ -16,11 +16,10 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install afl tidy; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install afl-fuzz tidy-html5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install afl tidy mandoc; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install afl-fuzz tidy-html5 mandoc; fi
 
 script:
   - make
   - make check
   - make test
-  - make -C tests test-fuzz

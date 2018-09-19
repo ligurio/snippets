@@ -14,12 +14,12 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate$
+.Dd $Mdocdate: September 19 2018 $
 .Dt TESTRES 1
 .Os
 .Sh NAME
 .Nm testres
-.Nd A hyperfast web frontend for software testing results written in C.
+.Nd A hyperfast web frontend for software testing results written in C
 .Sh SYNOPSIS
 .Nm
 .Op Fl h
@@ -29,8 +29,9 @@
 .Sh DESCRIPTION
 The
 .Nm
-utility knits together software testing reports. It helps
-to store and analyze software testing reports. The
+utility knits together software testing reports.
+It helps to store and analyze software testing reports.
+The
 .Nm
 supports two modes: as console application and as CGI application.
 .Sh USAGE
@@ -39,6 +40,7 @@ supports two modes: as console application and as CGI application.
 FIXME
 .It Pa CGI application
 FIXME
+.El
 .Sh FORMATS
 .Nm
 supports three the most popular test report formats: TAP
@@ -47,28 +49,35 @@ supports three the most popular test report formats: TAP
 .It Pa JUnit "   "
 The JUnit XML Report output comes from a build tool called Nant, as opposed to
 the JUnit project itself - thus it can be a little tricky to nail down an
-official spec for the format, even though it's widely adopted and used. There
-have been a number of attempts to codify the schema, first off there is an XSD
-for JUnit.
+official spec for the format, even though it's widely adopted and used.
+There have been a number of attempts to codify the schema, first off there is
+an XSD for JUnit.
 .It Pa Test Anything Protocol
 TAP, the Test Anything Protocol, is a simple text-based interface between
-testing modules a test harness. TAP started life as part of the test harness
-for Perl but now has implementations in C/C++, Python, PHP, Perl and probably
-others by the time you read this.
+testing modules a test harness.
+TAP started life as part of the test harness for Perl but now has
+implementations in C/C++, Python, PHP, Perl and probably others by the time you
+read this.
 .It Pa SubUnit
-SubUnit is a streaming protocol for test results. It allows communication
-between unit tests and a test harness. Originally developed for unit testing in
-2005 by Robert Collins. There are two major revisions of the protocol. Version
-1 was trivially human readable but had significant defects. Version 1.1 added
-encapsulation of binary streams which mitigated some of the issues but the core
-remained. Version 2 shares many of the good characteristics of Version 1 and
-it still models xUnit style test execution.
+SubUnit is a streaming protocol for test results.
+It allows communication between unit tests and a test harness.
+Originally developed for unit testing in 2005 by Robert Collins.
+There are two major revisions of the protocol.
+Version 1 was trivially human readable but had significant defects.
+Version 1.1 added encapsulation of binary streams which mitigated some of the
+issues but the core remained.
+Version 2 shares many of the good characteristics of Version 1 and it still
+models xUnit style test execution.
+.El
 .Sh FILES
 .Bl -tag -width "/var/www/conf/testres.css" -compact
 .It Pa /var/www/conf/testres.css
 Optional
 .Nm
 CSS style sheet.
+.El
+.Sh EXIT STATUS
+.Ex -std
 .Sh EXAMPLES
 .Bd -literal
 
@@ -77,11 +86,6 @@ CREATED ON: 09/12/18 - 10:58PM
     noname (0 failures, 0 errors) 47.482000
         test_bisect_serial_fail_detected STATUS_PASS
 .Ed
-.Sh EXIT STATUS
-.Ex -std
-.Sh SEE ALSO
-.Xr httpd 8
-.Xr slowcgi 8
 .Sh STANDARDS
 .Rs
 .%A M. G. Schwern, A. Lester, A. Armstrong
@@ -102,7 +106,8 @@ CREATED ON: 09/12/18 - 10:58PM
 .%T The Common Gateway Interface (CGI) Version 1.1
 .Re
 .Sh AUTHORS
+.An -nosplit
 The
 .Nm
 utility was written by
-.An Sergey Bronnikov.
+.An Sergey Bronnikov

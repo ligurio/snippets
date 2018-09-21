@@ -29,25 +29,28 @@
 The
 .Nm
 is a tool to detect anomalies which is robust, from a statistical standpoint,
-in the presence of seasonality and an underlying trend. The deviation tool can
-be used in wide variety of contexts. For example, detecting anomalies in system
-metrics after a new software release, user engagement post an A/B test, or for
-problems in software testing. In order to do this, anomaly needs to see a
-stream of numeric data, and apply one of its detection methods.  If an anomaly
-is detected, a response is made, chosen from one or more built in methods.
+in the presence of seasonality and an underlying trend.
+The deviation tool can be used in wide variety of contexts.
+For example, detecting anomalies in system metrics after a new software
+release, user engagement post an A/B test, or for problems in software testing.
+In order to do this, anomaly needs to see a stream of numeric data, and apply
+one of its detection methods.
+If an anomaly is detected, a response is made, chosen from one or more built in
+methods.
 .Sh USAGE
 .Bl -tag -width Ds
 .It Pa DETECTION TYPE - THRESHOLD
 The simplest detection method is threshold, which compares the data to an
-absolute value. This method can use a minimum and a maximum value for
-comparison. These alternatives are all valid, and make use of --min, --max or
-both.
+absolute value.
+This method can use a minimum and a maximum value for comparison.
+These alternatives are all valid, and make use of --min, --max or both.
 .It Pa DETECTION TYPE - STANDARD DEVIATION
 Standard deviation measures differences from the mean value of a sample of data,
-and is useful for detecting extraordinary values.  The sample size can be chosen
-such that there is enough data to determine a good mean value, but defaults to
-10.  The limited sample size means that a rolling window of data is used, and
-therefore the mean and standard deviation is updated for the current window.
+and is useful for detecting extraordinary values.
+The sample size can be chosen such that there is enough data to determine a
+good mean value, but defaults to 10. The limited sample size means that a
+rolling window of data is used, and therefore the mean and standard deviation
+is updated for the current window.
 This makes the monitoring somewhat adaptive.
 .El
 .Sh EXIT STATUS

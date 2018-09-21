@@ -26,19 +26,28 @@
  *
  */
 
-#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <libgen.h>
 #include <unistd.h>
-#include <err.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+
+#include "deviation.h"
 
 void
-usage(char *name)
+usage(char *path)
 {
-	fprintf(stderr, "Usage: %s [-t type] [-h|-v]\n", name);
+	char *name = basename(path);
+	fprintf(stderr, "Usage: %s [-h|-v|-t type]\n", name);
+}
+
+void 
+free_numbers(struct numq* series)
+{
+	tailq_num *num_item;
+	while ((num_item = TAILQ_FIRST(series))) {
+		TAILQ_REMOVE(series, num_item, entries);
+		free(num_item);
+	}
 }
 
 int
@@ -63,12 +72,43 @@ main(int argc, char *argv[])
 			return 1;
 		}
 	}
-
+	
+	/*
 	if (argc == 1) {
 		usage(argv[0]);
 		return 1;
 	}
+	*/
 
+	tailq_num* number;
+	struct numq* series = NULL;
+	series = calloc(1, sizeof(struct numq));
+	if (series == NULL) {
+		perror("malloc failed");
+		return 1;
+	}
+	TAILQ_INIT(series);
+
+	char line[1024], *p, *e;
+	long v;
+	while (fgets(line, sizeof(line), stdin)) {
+	    p = line;
+	    for (p = line; ; p = e) {
+		v = strtol(p, &e, 10);
+		if (p == e)
+		    break;
+		number = calloc(1, sizeof(tailq_num));
+		if (number == NULL) {
+			perror("malloc failed");
+			free_numbers(series);
+			return 1;
+		}
+		number->value = v;
+		TAILQ_INSERT_TAIL(series, number, entries);
+		printf("%ld\n", number->value);
+	    }
+	}
+	free_numbers(series);
 
 	return 0;
 }

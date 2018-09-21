@@ -1,0 +1,25 @@
+os:
+  - linux
+  - osx
+
+sudo: required
+dist: trusty
+
+language: c
+
+compiler:
+  - clang
+  - gcc
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install mandoc; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mandoc; fi
+
+script:
+  - make
+  - make check
+  - make test

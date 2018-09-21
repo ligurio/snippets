@@ -13,8 +13,9 @@ OBJ	= $(patsubst %.c,%.o,$(SRCS))
 PLIST	= $(patsubst %.c,%.plist,$(SRCS))
 PROJECT = deviation
 BIN	= $(PROJECT)
+MAN	= $(PROJECT).1
 
-all: $(BIN) $(CGIBIN)
+all: $(BIN)
 
 $(BIN): $(OBJ) $(SRCS)
 	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) $(LDFLAGS)
@@ -26,7 +27,6 @@ $(PLIST): %.plist: %.c
 	@clang --analyze $<
 
 install: all
-	@mkdir -p $(CGIDIR)
 	@install -m 0755 $(BIN) $(PREFIX)/bin
 
 uninstall:
@@ -44,9 +44,12 @@ clean:
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"
 
-check: cppcheck clang-analyzer
+check: cppcheck clang-analyzer mandoc-lint
 
 clang-analyzer: $(PLIST)
+
+mandoc-lint: $(MAN)
+	mandoc -T lint $(MAN)
 
 cppcheck: $(SRCS)
 	@cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

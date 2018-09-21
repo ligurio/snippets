@@ -27,6 +27,7 @@
  */
 
 #include <dirent.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,5 +36,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include "parse_common.h"
 #include "ui_http.h"
 #include "ui_console.h"

@@ -28,9 +28,12 @@
 
 #include "testres.h"
 
+char version[1024];
+
 void 
-usage(char *name)
+usage(char *path)
 {
+	char *name = basename(path);
 	fprintf(stderr, "Usage: %s [-s file | directory] [-h|-v]\n", name);
 }
 

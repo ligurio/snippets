@@ -16,8 +16,8 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install mandoc; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mandoc; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install mandoc libgsl-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mandoc gsl; fi
 
 script:
   - make

@@ -6,7 +6,7 @@ CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
-LDFLAGS   += -lexpat -g
+LDFLAGS   += -lgsl -g
 
 SRCS	= deviation.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))

@@ -41,7 +41,7 @@ usage(char *path)
 }
 
 void 
-free_numbers(struct numq* series)
+free_numq(struct numq* series)
 {
 	tailq_num *num_item;
 	while ((num_item = TAILQ_FIRST(series))) {
@@ -100,7 +100,7 @@ main(int argc, char *argv[])
 		number = calloc(1, sizeof(tailq_num));
 		if (number == NULL) {
 			perror("malloc failed");
-			free_numbers(series);
+			free_numq(series);
 			return 1;
 		}
 		number->value = v;
@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 		printf("%ld\n", number->value);
 	    }
 	}
-	free_numbers(series);
+	free_numq(series);
 
 	return 0;
 }

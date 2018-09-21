@@ -11,7 +11,7 @@ problems in software testing.
  $ DATA="http://www-personal.umich.edu/~mejn/cp/data/sunspots.txt"
  $ curl -s $DATA | cut -f2 -d' ' | deviation
  $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "plot '<cat'"
- $ echo "1\n2\n4\n8\n16" | gnuplot -e "plot '-' u 0:1 w linespoints" -persist
+ $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "set terminal dumb; plot '<cat'
 
 ### Benchmarks
 

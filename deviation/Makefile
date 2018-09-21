@@ -1,12 +1,12 @@
 PREFIX	  ?= /usr/local
 
 CC        ?= gcc
-CFLAGS	  += -Og -g
+CFLAGS	  += -Og -g -I/usr/include
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
-LDFLAGS   += -lgsl -g
+LDFLAGS   += -g -lgsl -lgslcblas -lm
 
 SRCS	= deviation.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))
@@ -18,7 +18,7 @@ MAN	= $(PROJECT).1
 all: $(BIN)
 
 $(BIN): $(OBJ) $(SRCS)
-	$(CC) -L/usr/local/lib $(SRCS) -o $(BIN) $(LDFLAGS)
+	$(CC) $(SRCS) -o $(BIN) $(LDFLAGS)
 
 $(OBJ): %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -49,7 +49,7 @@ check: cppcheck clang-analyzer mandoc-lint
 clang-analyzer: $(PLIST)
 
 mandoc-lint: $(MAN)
-	mandoc -T lint $(MAN)
+	@mandoc -T lint $(MAN)
 
 cppcheck: $(SRCS)
 	@cppcheck --template "{file} ({line}): {severity} ({id}): {message}" \

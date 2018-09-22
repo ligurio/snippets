@@ -26,12 +26,10 @@
  *
  */
 
-#include <stdint.h>
+#ifndef PARSE_SUBUNITV2_H
+#define PARSE_SUBUNITV2_H
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
 
 #define SUBUNIT_SIGNATURE 	0xB3
 #define SUBUNIT_VERSION 	0x02
@@ -71,3 +69,5 @@ uint32_t read_field(FILE *stream);
 tailq_test *read_packet(FILE *stream);
 struct suiteq *parse_subunit_v2(FILE *stream);
 int is_subunit_v2(char* path);
+
+#endif				/* PARSE_SUBUNITV2_H */

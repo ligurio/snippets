@@ -44,11 +44,7 @@
 #include <string.h>
 #include <strings.h>
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
 #include "parse_common.h"
-#endif				/* PARSE_COMMON_H */
-
 #include "parse_testanything.h"
 
 const char *

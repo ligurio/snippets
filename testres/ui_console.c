@@ -26,7 +26,9 @@
  *
  */
 
+#include "parse_common.h"
 #include "ui_console.h"
+#include "ui_common.h"
 
 void 
 print_report(struct tailq_report * report)

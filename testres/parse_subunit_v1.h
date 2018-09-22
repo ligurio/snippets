@@ -26,12 +26,10 @@
  *
  */
 
-#include <stdint.h>
+#ifndef PARSE_SUBUNITV1_H
+#define PARSE_SUBUNITV1_H
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
 
 enum directive {
 	DIR_TEST,
@@ -53,3 +51,5 @@ enum directive resolve_directive(char* string);
 const char* directive_string(enum directive dir);
 void read_tok();
 tailq_test* read_test();
+
+#endif				/* PARSE_SUBUNITV1_H */

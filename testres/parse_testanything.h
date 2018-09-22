@@ -27,6 +27,9 @@
  *
  */
 
+#ifndef PARSE_TESTANYTHING_H
+#define PARSE_TESTANYTHING_H
+
 enum ast_status {
 	AST_OK,
 	AST_NOTOK,
@@ -63,3 +66,5 @@ print(FILE *f, const struct ast_test *tests);
 
 struct ast_test *parse_testanything_raw(FILE *f);
 struct suiteq *parse_testanything(FILE *f);
+
+#endif				/* PARSE_TESTANYTHING_H */

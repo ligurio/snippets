@@ -3,7 +3,7 @@ PREFIX	  ?= /usr/local
 CC        ?= gcc
 CFLAGS	  += -Og -g
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
-CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
+CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow -pedantic
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
 LDFLAGS   += -lexpat -g

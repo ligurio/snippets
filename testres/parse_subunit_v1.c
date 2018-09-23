@@ -104,7 +104,7 @@ resolve_directive(char * string) {
 	}
 
 	return DIR_TEST;
-};
+}
 
 struct tm* parse_iso8601_time(char* date_str, char* time_str) {
 	assert(date_str != (char*)NULL);
@@ -129,12 +129,12 @@ struct tm* parse_iso8601_time(char* date_str, char* time_str) {
 	}
 
 	return t;
-};
+}
 
 void read_tok() {
 	char* token = (char*)NULL;
 	while (token != NULL) { token = strtok(NULL, " \t"); };
-};
+}
 
 tailq_test* read_test() {
 
@@ -227,7 +227,7 @@ tailq_test* parse_line_subunit_v1(char* string) {
 	}
 
 	return test_item;
-};
+}
 
 struct suiteq* parse_subunit_v1(FILE *stream) {
 
@@ -267,4 +267,4 @@ struct suiteq* parse_subunit_v1(FILE *stream) {
 	TAILQ_INSERT_TAIL(suites, suite_item, entries);
 
 	return suites;
-};
+}

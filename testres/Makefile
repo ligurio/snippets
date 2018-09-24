@@ -3,14 +3,14 @@ PREFIX	  ?= /usr/local
 CC        ?= gcc
 CFLAGS	  += -Og -g
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
-CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow
+CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow -pedantic
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
 LDFLAGS   += -lexpat -g
 
 SRCS	= testres.c parse_common.c parse_junit.c \
 	parse_subunit_v2.c parse_subunit_v1.c parse_testanything.c \
-	ui_common.c ui_http.c ui_console.c
+	ui_common.c ui_console.c ui_http.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))
 PLIST	= $(patsubst %.c,%.plist,$(SRCS))
 PROJECT = testres

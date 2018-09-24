@@ -26,12 +26,12 @@
  *
  */
 
-#ifndef UI_COMMON_H
-#define UI_COMMON_H
-#include "ui_common.h"
-#endif				/* UI_COMMON_H */
+#ifndef UI_CONSOLE_H
+#define UI_CONSOLE_H
 
 void print_report(struct tailq_report *report);
 void print_reports(struct reportq *reports_head);
 void print_suites(struct suiteq *suites_head);
 void print_tests(struct testq *tests_head);
+
+#endif				/* UI_CONSOLE_H */

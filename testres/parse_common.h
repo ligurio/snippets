@@ -26,6 +26,9 @@
  *
  */
 
+#ifndef PARSE_COMMON_H
+#define PARSE_COMMON_H
+
 #include <fcntl.h>
 #include <libgen.h>
 #include <stdio.h>
@@ -34,14 +37,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/queue.h>
-
-#include "parse_junit.h"
-#include "parse_testanything.h"
-#include "parse_subunit_v1.h"
-#include "parse_subunit_v2.h"
 
 enum test_format {
 	FORMAT_UNKNOWN,
@@ -72,7 +70,7 @@ enum test_status {
 	STATUS_PASS		/* JUnit */
 };
 
-typedef struct tailq_test {
+struct tailq_test {
     const char *name;
     const char *time;
     const char *comment;
@@ -81,11 +79,11 @@ typedef struct tailq_test {
     const char *system_err;
     enum test_status status;
     TAILQ_ENTRY(tailq_test) entries;
-} tailq_test;
+};
 
 TAILQ_HEAD(testq, tailq_test);
 
-typedef struct tailq_suite {
+struct tailq_suite {
     const char *name;
     const char *hostname;
     const char *timestamp;
@@ -94,18 +92,22 @@ typedef struct tailq_suite {
     double time;
     struct testq *tests;
     TAILQ_ENTRY(tailq_suite) entries;
-} tailq_suite;
+};
 
 TAILQ_HEAD(suiteq, tailq_suite);
 
-typedef struct tailq_report {
+struct tailq_report {
     enum test_format format;
     struct suiteq *suites;
     time_t ctime;
     TAILQ_ENTRY(tailq_report) entries;
-} tailq_report;
+};
 
 TAILQ_HEAD(reportq, tailq_report);
+
+typedef struct tailq_test tailq_test;
+typedef struct tailq_suite tailq_suite;
+typedef struct tailq_report tailq_report;
 
 char *get_filename_ext(const char *filename);
 enum format detect_format(const char *basename);
@@ -119,3 +121,5 @@ void free_tests(struct testq *tests);
 void free_report(tailq_report * report);
 void free_suite(tailq_suite * suite);
 void free_test(tailq_test * test);
+
+#endif				/* PARSE_COMMON_H */

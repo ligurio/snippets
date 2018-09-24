@@ -26,10 +26,7 @@
  *
  */
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
 
 const char *
 format_string(enum test_format format)
@@ -93,4 +90,3 @@ status_string(enum test_status status)
 		return "STATUS_UNKNOWN";
 	}
 }
-

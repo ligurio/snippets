@@ -26,12 +26,10 @@
  *
  */
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
-#include "parse_common.h"
-#endif /* PARSE_COMMON_H */
-
-char version[1024];
+#ifndef UI_COMMON_H
+#define UI_COMMON_H
 
 const char *status_string(enum test_status status);
 const char *format_string(enum test_format format);
+
+#endif				/* UI_COMMON_H */

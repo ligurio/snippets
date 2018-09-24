@@ -27,6 +27,10 @@
  */
 
 #include "parse_common.h"
+#include "parse_junit.h"
+#include "parse_subunit_v1.h"
+#include "parse_subunit_v2.h"
+#include "parse_testanything.h"
 
 void 
 free_reports(struct reportq * reports)

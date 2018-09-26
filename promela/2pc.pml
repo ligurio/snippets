@@ -4,6 +4,8 @@
 
   https://en.wikipedia.org/wiki/Two-phase_commit_protocol
   https://www.computer.org/csdl/proceedings/time/2012/2659/00/06311116.pdf
+  https://accelazh.github.io/transaction/Distributed-Transaction-ACID-Study
+  https://accelazh.github.io/images/distributed_transaction_explained_through_tla_plus.pdf
 
   2PC in PostgreSQL:
   https://postgrespro.ru/media/2017/02/10/mmtsslides-161110113542.pdf

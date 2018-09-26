@@ -1,12 +1,16 @@
 PREFIX	  ?= /usr/local
 
 CC        ?= gcc
-CFLAGS	  += -Og -g
+CFLAGS	  += -Og
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow -pedantic
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
-LDFLAGS   += -lexpat -g
+LDFLAGS   += -lexpat
+ifdef DEBUG
+CFLAGS	  += -g
+LDFLAGS   += -g
+endif
 
 SRCS	= testres.c parse_common.c parse_junit.c \
 	parse_subunit_v2.c parse_subunit_v1.c parse_testanything.c \
@@ -60,7 +64,7 @@ release: $(BIN) $(CGIBIN)
 techdebt:
 	@find . -name '*.[ch]' | xargs grep -E " TODO|FIXME"
 
-check: cppcheck clang-analyzer mandoc-lint
+syntax-check: cppcheck clang-analyzer mandoc-lint
 
 mandoc-lint:
 	@mandoc -T lint $(MAN)

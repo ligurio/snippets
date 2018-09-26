@@ -32,6 +32,30 @@
 	https://taskwarrior.org/docs/udas.html
 	https://taskwarrior.org/docs/terminology.html#uda
 - в список репортов добавить название файла и прогресс-бары (pass-rate) [#######     ] 51%
+- ML
+	- https://github.com/attractivechaos/kann
+	- https://github.com/tiny-dnn/tiny-dnn
+	- https://github.com/pjreddie/darknet 
+	- https://github.com/jppbsi/LibDEEP
+	- https://codeplea.com/genann
+	- http://leenissen.dk/fann/wp/
+	- https://100.github.io/Cranium/
+	- http://chasen.org/~taku/software/TinySVM/#source
+	- https://members.loria.fr/YGuermeur/
+	- https://leon.bottou.org/projects/sgd
+	- http://www.svms.org/software.html
+	- https://github.com/simonwalton/libqcat
+	- https://github.com/cvjena/libmaxdiv/tree/master/maxdiv/libmaxdiv
+	- https://seclab.cs.ucsb.edu/academic/projects/projects/libanomaly/
+	- http://dlib.net/ml.html
+	- https://pjreddie.com/darknet/
+	- https://github.com/siavashserver/neonrvm
+	- http://www.support-vector-machines.org/SVM_soft.html
+	- https://www.csie.ntu.edu.tw/~cjlin/libsvm/
+	- http://www-ai.cs.uni-dortmund.de/SOFTWARE/MYSVM/index.html
+	- http://svmlight.joachims.org/
+
+- используй strdup()
 
 ### Тесты
 

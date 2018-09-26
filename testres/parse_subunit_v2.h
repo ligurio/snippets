@@ -29,6 +29,8 @@
 #ifndef PARSE_SUBUNITV2_H
 #define PARSE_SUBUNITV2_H
 
+#include <stdint.h>
+
 #include "parse_common.h"
 
 #define SUBUNIT_SIGNATURE 	0xB3

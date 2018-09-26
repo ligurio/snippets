@@ -110,7 +110,7 @@ typedef struct tailq_suite tailq_suite;
 typedef struct tailq_report tailq_report;
 
 char *get_filename_ext(const char *filename);
-enum format detect_format(const char *basename);
+enum test_format detect_format(const char *basename);
 tailq_report *process_file(char *path);
 tailq_test *make_test(char *name, char *time, char *comment);
 

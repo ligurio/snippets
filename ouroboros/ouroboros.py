@@ -1,15 +1,5 @@
 #!/usr/bin/env python
 
-"""
-$ pip install cs paramiko
-$ cat $HOME/.cloudstack.ini
-[cloudstack]
-endpoint = https://api.exoscale.ch/compute
-key = mqqdAD39YWxUrNgIDOvxjEgI4TC-Y0dFkMKSMhCGosJh5o2MouFyR-1buIKLXSTERlW334OIYptfjMLaYs
-secret = CuAqaKhtdtwGIg1rGfK4CyrtcPb-0NEvl8LozG4nAYtymuJ2f6XU41Rdat_Zs1Ma1BRBaLXzrEXyZ
-$ python ouroboros.py
-"""
-
 import cs
 import io
 import os

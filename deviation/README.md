@@ -21,11 +21,12 @@ respective motivations and distinguish their advantages and disadvantages in a
 comparative review.
 
 ### Examples
-
+```
  $ DATA="http://www-personal.umich.edu/~mejn/cp/data/sunspots.txt"
  $ curl -s $DATA | cut -f2 -d' ' | deviation
  $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "plot '<cat'"
  $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "set terminal dumb; plot '<cat'
+```
 
 ### Benchmarks
 

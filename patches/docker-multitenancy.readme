@@ -1,0 +1,56 @@
+План:
+	+ graph driver для хостового докера
+	+ опция для включения режима прокси для гостевого докера
+	+ режим проксирования API функции ImagePull
+	- API функция ImageAttach для добавления loop файлов нужного образа к Вмке
+	- graph driver для гостевого докера
+	- поддержка "Parent" образов
+
+режим прокси для докера
+	sudo docker daemon -D --log-level=debug --storage-driver blklayer --host 10.0.2.15
+	sudo docker daemon -D --log-level=debug --proxy tcp://10.0.2.15  -g /var/lib/docker-local/ --pidfile=/var/run/docker-local.pid
+
+mapping "гость - VM UUID"
+	- извлечь IP адрес гостя и HTTP реквеста и найти этот IP адрес перебором ВМок с гостевыми тулзами )в таком случае Макс 	предложил вешать хостового демона на адрес 169.254.169.254 и настроить роутинг запросов из гостя в хост)
+	- хук на функцию LibVirt NWFilter чтобы "поймать" IP адрес гостя даже если тулзы не установлены
+	http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddresses
+	? http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainGetInterfaceParameters
+	http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddresses
+	http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterface
+	QEMU would require booting an OS with DHCP client
+	https://github.com/rgbkrk/libvirt-go/issues/50
+	
+добавление памяти в виртуальную машину
+	http://www.it-sobytie.ru/system/attachments/files/000/001/092/original/Linux_Pmem.pdf?1448973747
+	добавление памяти с помощью LibVirt https://lists.nongnu.org/archive/html/qemu-devel/2014-12/msg01443.html
+	подключение nvdimm online https://lists.gnu.org/archive/html/qemu-devel/2016-07/msg02248.html
+	https://github.com/xiaogr/qemu/blob/nvdimm-v7/docs/memory-hotplug.txt
+	https://www.ibm.com/support/knowledgecenter/SSZJY4_3.1.0/liabp/liabphotplugmemory.htm
+	NOTE: In order to be able to hotplug memory, QEMU has to be told how many
+	hotpluggable memory slots to create and what is the maximum amount of memory the guest can grow.
+	Только 32? (https://lwn.net/Articles/527987/)
+	
+	qemu-system-x86_64 -m 1G,slots=3,maxmem=16G -cpu qemu64 -hda centos-6.7.qcow2 --enable-kvm -monitor stdio
+	
+	In other words, in order to allow memory hotplug, versions must be libvirt >= 1.2.14 and qemu >= 2.1.
+
+	Line "<maxMemory slots='32' unit='KiB'>33554432</maxMemory>" in XML config should be present on start VM and at least one NUMA node:
+	<cpu>
+	<numa>
+	<cell id='0' cpus='0-127' memory='8388608' unit='KiB'/>
+	</numa>
+	</cpu>
+	
+	virsh qemu-monitor-command ...
+	
+	
+Graph driver для хоста
+	/var/lib/docker/overlay
+	Add DOCKER_OPTS="--storage-driver=overlay" at the end of '/etc/default/docker' 
+ 	https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/filesystems/overlayfs.txt	https://docs.docker.com/engine/userguide/storagedriver/overlayfs-driver/
+	https://docs.docker.com/engine/userguide/storagedriver/imagesandcontainers/
+	https://docs.docker.com/engine/userguide/storagedriver/selectadriver/
+ 	Edit /etc/modprobe.d/local-loop.conf and add the following line.
+	options loop max_loop=128
+	rmmod loop
+	modprobe loop max_loop=128

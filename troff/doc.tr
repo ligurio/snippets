@@ -1,0 +1,13 @@
+.\" heirloom troff
+.\" https://n-t-roff.github.io/heirloom/doctools/quickstart.pdf
+.\" https://n-t-roff.github.io/heirloom/doctools/fonts.pdf
+
+.\" neatroff
+.\" http://litcave.rudi.ir/neatstart.pdf
+
+.\" /usr/local/share/heirloom-doctools/font/devps/PTN57F.ttf
+
+.fp 1 R PTN57F ttf
+.ft R
+.\"Hello. Тест!
+Hello!

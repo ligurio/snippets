@@ -11,8 +11,15 @@ $ pip install apache-libcloud paramiko
 $ ssh-keygen
 $ export API_KEY='mqqdAD39YWxUrNgIDOvxjEgI4TC'
 $ export API_KEY_SECRET='CuAqaKhtdtwGIg1rGfK4CyrtcPb'
-$ python ouroboros.py
 ```
+
+- manual execution with specific job:
+```$ ouroboros -j "testme"```
+- execute on changes with [entr](http://entrproject.org/):
+```$ find . | entr -s 'ouroboros -j "testme"'```
+- execute per commit with [gitmon](https://github.com/spajus/gitmon) and [entr](http://entrproject.org/):
+```$ gitmon -c . | entr -s 'ouroboros -j "testme"'```
+
 
 ### License
 

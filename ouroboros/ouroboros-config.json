@@ -3,11 +3,7 @@
 	"smtp_to": [ "me@foo.org", "too@bar.org" ],
 	"smtp_every_failure": 0,
 	"smtp_server": "127.0.0.1",
-	"webroot": "/tmp/",
-	"web.index.show.latest": 15,
-	"web.index.show.latest.err": 5,
 	"wait.after.every.test": 3,
-	"whitelist": [ "*unable to connect a socket*" ],
 	"jobs": [
 		{
 		"name": "test always-ok",
@@ -20,13 +16,10 @@
 			"[ $[ $RANDOM % 2 ] == 0 ]" ]
 		},
 		{
-		"name": "test redis-2.2",
-		"cmd":	[ "cd /tmp/redis",
-			"git checkout 2.2",
-			"git pull origin 2.2",
-			"make clean",
-			"make",
-			"tclsh8.5 tests/test_helper.tcl --verbose" ]
+		"name": "test testres",
+		"cmd":	[ "cd /tmp/",
+			"git clone https://github.com/ligurio/snippets",
+			"cd /tmp/snippets/testres && make && make test" ]
 		}
 	]
 }

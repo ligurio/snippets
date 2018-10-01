@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import io
+import argparse
+import datetime
 import os
-import pickle
 import random
 import logging
 import socket
 import time
 import json
 
+from junit_xml import TestSuite, TestCase
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.deployment import ScriptDeployment
@@ -25,7 +26,7 @@ class Instance():
     DEF_SIZE = 'Micro'
 
     PUBLIC_KEY_FILE = os.path.expanduser('~/.ssh/id_rsa.pub')
-    PRIVATE_KEY_FILE = os.path.expanduser('~/.ssh/id_rsa_com')
+    PRIVATE_KEY_FILE = os.path.expanduser('~/.ssh/id_rsa')
 
     def __init__(self):
 
@@ -71,7 +72,7 @@ class Instance():
                                               ex_keyname=self.key_pair.name,
                                               ssh_key_file=self.PUBLIC_KEY_FILE)
         except Exception as e:
-            print e
+            logging.warning(e)
             self.driver.delete_key_pair(key_pair=self.key_pair)
             return e
 
@@ -79,7 +80,7 @@ class Instance():
 
         logger.info("Teardown instance")
         # TODO: self.key_pair.delete_key_pair()
-        self.node.destroy_node()
+        #self.node.destroy_node()
 
     def is_running():
 
@@ -113,14 +114,12 @@ class Instance():
         client = ParamikoSSHClient(hostname=self.hostname, port=self.port,
                                 username=self.username, password=self.password,
                                 key=[self.PRIVATE_KEY_FILE], timeout=self.timeout)
-        #if client.connect():
-        #    stdout, stderr, exit_status = client.run(cmd)
-        #    client.close()
-        #    return stdout, stderr, exit_status
-        #else:
-        #    return None, None, None
-        return None, None, None
-
+        if client.connect():
+            stdout, stderr, exit_status = client.run(cmd)
+            client.close()
+            return stdout, stderr, exit_status
+        else:
+            return None, None, None
 
 class Config():
 
@@ -136,6 +135,11 @@ class Config():
 
 def main():
 
+    parser = argparse.ArgumentParser(description='continuous integration')
+    parser.add_argument('-j', '--job-name', type=str, help='specify job name')
+    args = parser.parse_args()
+    print(args.jobname)
+
     c = Config('ouroboros-config.json').load()
     for j in c['jobs']:
         logger.info("Running job: %s", j['name'])
@@ -144,6 +148,13 @@ def main():
         stdout, stderr, exit_status = worker.exec_commands(j['cmd'])
         logger.info("Finished job %s, exit status %s", j['name'], str(exit_status))
         worker.teardown()
+
+        date = datetime.date.today().strftime('%Y%m%d%h%m')
+        suite = TestSuite('', [TestCase(j['name'], '', 123.345, stdout, stderr)])
+        name = "{}-{}-{}.xml".format("ouroboros-", date, str(random.randint(0, 100)))
+        with open(name, mode='a') as f:
+            TestSuite.to_file(f, [suite], prettyprint=False)
+            f.close()
 
 if __name__ == '__main__':
     main()

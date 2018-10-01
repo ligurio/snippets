@@ -7,12 +7,10 @@ is a simple continuous integration system written in Python.
 ### Usage
 
 ```
-$ pip install cs paramiko
-$ cat $HOME/.cloudstack.ini
-[cloudstack]
-endpoint = https://api.exoscale.ch/compute
-key = mqqdAD39YWxUrNgIDOvxjEgI4TC-Y0dFkMKSMhCGosJh5o2MouFyR-1buIKLXSTERlW334OIYptfjMLaYs
-secret = CuAqaKhtdtwGIg1rGfK4CyrtcPb-0NEvl8LozG4nAYtymuJ2f6XU41Rdat_Zs1Ma1BRBaLXzrEXyZ
+$ pip install apache-libcloud paramiko
+$ ssh-keygen
+$ export API_KEY='mqqdAD39YWxUrNgIDOvxjEgI4TC'
+$ export API_KEY_SECRET='CuAqaKhtdtwGIg1rGfK4CyrtcPb'
 $ python ouroboros.py
 ```
 
@@ -20,7 +18,7 @@ $ python ouroboros.py
 
 ```
 /*
- * Copyright (c) 2018 Sergey Bronnikov <sergeyb@bronevichok.ru>
+ * Copyright (c) 2016-2018 Sergey Bronnikov <sergeyb@bronevichok.ru>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

@@ -1,241 +1,149 @@
 #!/usr/bin/env python
 
-import cs
 import io
 import os
 import pickle
+import random
+import logging
 import socket
 import time
-from paramiko.client import SSHClient, AutoAddPolicy
-from paramiko.rsakey import RSAKey
+import json
 
-DEF_DISTRIBUTION = 'OpenBSD 6.2 64-bit'
-DEF_SIZE = 50
-DEF_ZONE = 'ch-dk-2'
-DEF_SERVICE_OFFERING = 'Small'
-DEF_SEC_NAME = 'sg-test'
-DEF_KEYPAIR = 'kp-test'
+from libcloud.compute.types import Provider
+from libcloud.compute.providers import get_driver
+from libcloud.compute.deployment import ScriptDeployment
+from libcloud.compute.ssh import ParamikoSSHClient
 
+FORMAT = '%(asctime)-15s %(message)s'
+logging.basicConfig(format=FORMAT)
+logger = logging.getLogger('ouroboros')
+logger.setLevel(logging.INFO)
 
-class Instance(distribution=DEF_DISTRIBUTION,
-               size=DEF_SIZE,
-               zone=DEF_ZONE,
-               service_offering=DEF_SERVICE_OFFERING,
-               security_group=DEF_SEC_NAME,
-               keypair=DEF_KEYPAIR):
+class Instance():
 
-    def __init__():
+    DEF_DISTRIBUTION = 'OpenBSD 6.3 64-bit'
+    DEF_SIZE = 'Micro'
 
-        self.cloudstack = cs.CloudStack(**cs.read_config())
-        self.distribution = distribution
-        self.zone_name = zone
-        self.service_offering_name = service_offering
-        self.security_group_name = security_group
-        self.keypair_name = keypair
-        self.instance = None
+    PUBLIC_KEY_FILE = os.path.expanduser('~/.ssh/id_rsa.pub')
+    PRIVATE_KEY_FILE = os.path.expanduser('~/.ssh/id_rsa_com')
 
-        with SSHClient() as client:
-            client.set_missing_host_key_policy(AutoAddPolicy())
+    def __init__(self):
 
-        service_offering = cloudstack.listServiceOfferings()[
-            'serviceoffering'][0]['id']
-        security_group = create_sec_group()
-        zoneid = get_zone_id()
-        keypair = create_keypair()
-        template = get_template()
+        self.API_KEY = os.getenv('API_KEY')
+        self.API_SECRET_KEY = os.getenv('API_SECRET_KEY')
 
-    def create_sec_group():
+        self.node = None
+        self.hostname = None
+        self.port = 22
+        self.username = 'root'
+        self.password = None
+        self.key_pair = None
+        self.timeout = 60
 
-        g = self.cloudstack.createSecurityGroup(name=name)['securitygroup']
-        self.cloudstack.authorizeSecurityGroupIngress(icmptype=8,
-                                                      icmpcode=0,
-                                                      protocol="ICMP",
-                                                      cidrlist="0.0.0.0/0",
-                                                      securitygroupid=g['id'])
-        self.cloudstack.authorizeSecurityGroupIngress(protocol="TCP",
-                                                      cidrlist="0.0.0.0/0",
-                                                      startport=22,
-                                                      endport=22,
-                                                      securitygroupid=g['id'])
+        self.conn = get_driver(Provider.EXOSCALE)
+        self.driver = self.conn(self.API_KEY, self.API_SECRET_KEY)
 
-        return g['id']
+    def create_key_pair(self):
 
-    def remove_sec_group(group_id):
+        # TODO: self.key_pair = self.conn.create_key_pair(name='ouroboros-key-pair')
+        if os.path.exists(self.PUBLIC_KEY_FILE):
+            self.key_pair = self.driver.import_key_pair_from_file(name='ouroboros-key-pair',
+                                                        key_file_path=self.PUBLIC_KEY_FILE)
 
-        return cloudstack.deleteSecurityGroup(id=group_id)
+    def create(self):
 
-    def create_keypair(name):
+        if not self.API_KEY or not self.API_SECRET_KEY:
+            logger.warning("API_SECRET_KEY and API_KEY are not found")
+            return None
 
-        keypair = cloudstack.createSSHKeyPair(name=name)['keypair']
-        return keypair
+        size = [size for size in self.driver.list_sizes() if size.name == self.DEF_SIZE][0]
+        logger.info("size %s" % size)
+        image = [image for image in self.driver.list_images() if self.DEF_DISTRIBUTION in image.name][0]
+        logger.info("image %s" % image)
 
-    def remove_keypair(name):
+        self.create_key_pair()
 
-        return cloudstack.deleteSSHKeyPair(name=name)
+        name = "{}-{}-{}".format("ouroboros-node", os.getpid(), str(random.randint(0, 100)))
+        logger.info("name %s" % name)
+        try:
+            logger.info("create instance")
+            self.node = self.driver.deploy_node(name=name, image=image, size=size,
+                                              ex_keyname=self.key_pair.name,
+                                              ssh_key_file=self.PUBLIC_KEY_FILE)
+        except Exception as e:
+            print e
+            self.driver.delete_key_pair(key_pair=self.key_pair)
+            return e
 
-    def get_zone_id(zone):
+    def teardown(self):
 
-        for z in cloudstack.listZones()['zone']:
-            if z['name'] == zone:
-                logger.info("Zone ID is {}".format(z['id']))
-                return z['id']
-
-    def get_template(distribution, size, zoneid):
-
-        templates = cloudstack.listTemplates(templatefilter='featured',
-                                             zoneid=zoneid)['template']
-        templates = [t for t in templates
-                     if t['name'] == distribution and
-                     int(t['size'] / 1024 / 1024 / 1024) == size]
-
-        return templates[0]['id']
-
-    def create(name="ouroboros"):
-        # keypair, serviceofferingid, securitygroupid, templateid, zoneid
-
-        return cloudstack.deployVirtualMachine(
-            serviceofferingid=serviceofferingid,
-            templateid=templateid,
-            zoneid=zoneid,
-            displayname="{}-{}".format(name, os.getpid()),
-            securitygroupids=[securitygroupid],
-            keypair=keypair['name'],
-            name="{}-{}".format(name, os.getpid()))
-
-    def remove():
-
-        # FIXME
-        return True
-
-    def spawn():
-
-        now = time.time()
-        while True:
-            j = cloudstack.queryAsyncJobResult(jobid=self.instance['jobid'])
-            if j['jobstatus'] != 0:
-                if j['jobresultcode'] != 0 or j['jobstatus'] != 1:
-                    raise RuntimeError(
-                        'VM was not spawned successfully: {}'.format(j))
-                if 'jobresult' not in j:
-                    raise RuntimeError(
-                        'No result after spawning the VM: {}'.format(j))
-                v = j['jobresult']['virtualmachine']
-                v['ipaddress'] = v['nic'][0]['ipaddress']
-                time.sleep(2)       # Let the VM settle
-                return v
-            time.sleep(1)
-            if time.time() - now > 60:
-                raise RuntimeError(
-                    'Unable to spawn VM due to timeout: {}'.format(j))
-
-        self.is_running()
-
-        return v
-        # teardown: cloudstack.destroyVirtualMachine(id=v['id'])
+        logger.info("Teardown instance")
+        # TODO: self.key_pair.delete_key_pair()
+        self.node.destroy_node()
 
     def is_running():
 
         now = time.time()
         while True:
             try:
-                socket.create_connection(
-                    (self.instance['ipaddress'], 22), timeout=10)
+                socket.create_connection((self.hostname, 22), timeout=self.timeout)
             except socket.error:
                 if time.time() - now < 120:
                     continue
                 raise
             break
 
-    def console():
+    def exec_commands(self, commands):
 
-        with SSHClient() as client:
-            client.set_missing_host_key_policy(AutoAddPolicy())
-            client.connect(self.instance['ipaddress'],
-                           username="root",
-                           timeout=10,
-                           password=self.instance['password'],
-                           allow_agent=False,
-                           look_for_keys=False)
-            return client
+        stdout_common = ""
+        stderr_common = ""
+        exit_status_common = 0
+        for c in commands:
+            stdout, stderr, exit_status = self.exec_command(c)
+            stdout_common += str(stdout)
+            stderr_common += str(stderr)
+            if exit_status != 0:
+                exit_status_common = exit_status
+                break
 
-    def test_connect_with_key():
+        return stdout_common, stderr_common, exit_status_common
 
-        sshclient.connect(self.instance['ipaddress'],
-                          username="root",
-                          timeout=10,
-                          pkey=RSAKey.from_private_key(
-                              io.StringIO(keypair['privatekey'])),
-                          allow_agent=False,
-                          look_for_keys=False)
-        stdin, stdout, stderr = console.exec_command('echo hello')
-        stdin.close()
-        assert stdout.read() == b"hello\n"
-        assert stderr.read() == b""
+    def exec_command(self, cmd):
 
-    def test_connect_with_password(sshvm):
-
-        stdin, stdout, stderr = console.exec_command('echo hello')
-        stdin.close()
-        assert stdout.read() == b"hello\n"
-        assert stderr.read() == b""
-
-    def exec_command(instance, cmd):
-
-        now = time.time()
-        stdin, stdout, stderr = self.instance.exec_command(cmd)
-        stdin.close()
-        logger.info(time.time() - now)
+        client = ParamikoSSHClient(hostname=self.hostname, port=self.port,
+                                username=self.username, password=self.password,
+                                key=[self.PRIVATE_KEY_FILE], timeout=self.timeout)
+        #if client.connect():
+        #    stdout, stderr, exit_status = client.run(cmd)
+        #    client.close()
+        #    return stdout, stderr, exit_status
+        #else:
+        #    return None, None, None
+        return None, None, None
 
 
-class Config(config_path):
+class Config():
 
-    def __init__():
+    def __init__(self, config_path):
 
         self.path = config_path
 
-    def load():
+    def load(self):
 
         with open(self.path, 'rb') as conf:
             config = json.load(conf)
             return config
 
-
-class History(history_file):
-
-    def __init__():
-
-        self.history_file = history_file
-
-    def load():
-
-        objects = []
-        with (open(self.history_file, "rb")) as h:
-            while True:
-                try:
-                    objects.append(pickle.load(h))
-                except EOFError:
-                    break
-
-    def save():
-
-        pass
-
-    def append():
-
-        pass
-
-
 def main():
 
-    c = Config('ouroboros-config.json')
-    h = History(c['history_file'])
+    c = Config('ouroboros-config.json').load()
     for j in c['jobs']:
+        logger.info("Running job: %s", j['name'])
         worker = Instance()
-        stdout, stderr = worker.exec_commands(j['cmd'])
-        h.append(j['name'], stdout, stderr)
+        worker.create()
+        stdout, stderr, exit_status = worker.exec_commands(j['cmd'])
+        logger.info("Finished job %s, exit status %s", j['name'], str(exit_status))
         worker.teardown()
-    h.save()
-
 
 if __name__ == '__main__':
     main()

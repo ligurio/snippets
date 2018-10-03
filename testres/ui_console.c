@@ -38,6 +38,8 @@ print_report(struct tailq_report * report)
 	struct tm *info = localtime(&report->ctime);
 	strftime(buffer, 80, "%x - %I:%M%p", info);
 	printf("CREATED ON: %s\n", buffer);
+	printf("FILE: %s\n", report->path);
+	printf("ID: %s\n", report->id);
 	if (!TAILQ_EMPTY(report->suites)) {
 		print_suites(report->suites);
 	}
@@ -61,16 +63,17 @@ print_suites(struct suiteq * suites)
 		if (suite_item->name != (char *)NULL) {
 			name = suite_item->name;
 		} else {
-			name = "noname";
+			/* FIXME	*/
+			name = "unknown name";
 		}
 		printf("SUITE: %10s ", name);
-		printf("(%d failures, %d errors) ", suite_item->n_failures, suite_item->n_errors);
-		printf("%5f ", suite_item->time);
+		printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
+		printf("TOTAL DURATION: %5f ", suite_item->time);
 		if (suite_item->timestamp != (char *)NULL) {
-			printf("%10s ", suite_item->timestamp);
+			printf("TIMESTAMP: %10s ", suite_item->timestamp);
 		}
 		if (suite_item->hostname != (char *)NULL) {
-			printf("%10s ", suite_item->hostname);
+			printf("HOSTNAME %10s ", suite_item->hostname);
 		}
 		printf("\n");
 		if (!TAILQ_EMPTY(suite_item->tests)) {

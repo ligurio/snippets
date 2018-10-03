@@ -31,6 +31,7 @@
 #include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
 #include "parse_testanything.h"
+#include "sha1.h"
 
 void 
 free_reports(struct reportq * reports)
@@ -46,11 +47,13 @@ free_reports(struct reportq * reports)
 }
 
 void 
-free_report(tailq_report * report)
+free_report(tailq_report *report)
 {
 	if (!TAILQ_EMPTY(report->suites)) {
 		free_suites(report->suites);
 	}
+	free(report->path);
+	free(report->id);
 	free(report);
 }
 
@@ -191,6 +194,14 @@ process_file(char *path)
 	struct stat sb;
 	stat(path, &sb);
 	report->ctime = sb.st_ctime;
+	report->path = strdup(path);
+
+	unsigned char digest[20];
+	SHA1_CTX ctx;
+	SHA1Init(&ctx);
+	SHA1Update(&ctx, path, strlen(path));
+	SHA1Final(digest, &ctx);
+	report->id = strndup(digest, strlen(digest));
 
 	return report;
 }

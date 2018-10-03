@@ -100,6 +100,8 @@ struct tailq_report {
     enum test_format format;
     struct suiteq *suites;
     time_t ctime;
+    char *id;
+    unsigned char *path;
     TAILQ_ENTRY(tailq_report) entries;
 };
 

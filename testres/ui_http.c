@@ -135,3 +135,13 @@ print_html_tests(struct testq * tests)
 		printf("\n");
 	}
 }
+
+void
+print_html_graph_summary(struct reportq *reports)
+{
+  	printf("<svg width=\"100%\" height=\"100%\">\n");
+  	printf("<g transform=\"translate(50,50)\"\n>");
+  	printf("<rect x=\"0\" y=\"0\" width=\"150\" height=\"50\" style=\"fill:red;\" />\n");
+  	printf("</g>\n");
+  	printf("</svg>\n");
+}

@@ -1,0 +1,56 @@
+From 66989b2b9e5aac6993d112386200d57807ba0e42 Mon Sep 17 00:00:00 2001
+From: Sergey Bronnikov <sergeyb@openvz.org>
+Date: Tue, 31 May 2016 15:31:00 +0100
+Subject: [PATCH 3/3] Fix compilation on OpenBSD
+
+Signed-off-by: Sergey Bronnikov <sergeyb@openvz.org>
+---
+ terminal/terminal.go        |  2 +-
+ util/fdset_openbsd_amd64.go | 11 +++++++++++
+ util/select.go              |  2 +-
+ 3 files changed, 13 insertions(+), 2 deletions(-)
+ create mode 100644 util/fdset_openbsd_amd64.go
+
+diff --git a/terminal/terminal.go b/terminal/terminal.go
+index bdddd31..b285444 100644
+--- a/terminal/terminal.go
++++ b/terminal/terminal.go
+@@ -8,7 +8,7 @@ import (
+ 	"syscall"
+ 	"time"
+ 
+-	"github.com/asciinema/asciinema/Godeps/_workspace/src/code.google.com/p/go.crypto/ssh/terminal"
++	"golang.org/x/crypto/ssh/terminal"
+ 	"github.com/asciinema/asciinema/Godeps/_workspace/src/github.com/creack/termios/raw"
+ 	"github.com/asciinema/asciinema/Godeps/_workspace/src/github.com/kr/pty"
+ 	"github.com/asciinema/asciinema/Godeps/_workspace/src/golang.org/x/text/encoding/unicode"
+diff --git a/util/fdset_openbsd_amd64.go b/util/fdset_openbsd_amd64.go
+new file mode 100644
+index 0000000..ec168d3
+--- /dev/null
++++ b/util/fdset_openbsd_amd64.go
+@@ -0,0 +1,11 @@
++package util
++
++import "syscall"
++
++func FD_SET(p *syscall.FdSet, fd int) {
++	p.Bits[fd/64] |= 1 << uint(fd) % 64
++}
++
++func FD_ISSET(p *syscall.FdSet, fd int) bool {
++	return (p.Bits[fd/64] & (1 << uint(fd) % 64)) != 0
++}
+diff --git a/util/select.go b/util/select.go
+index 2df0a45..75a930e 100644
+--- a/util/select.go
++++ b/util/select.go
+@@ -1,4 +1,4 @@
+-// +build darwin freebsd dragonfly
++// +build darwin freebsd dragonfly openbsd
+ 
+ package util
+ 
+-- 
+1.8.5.3
+

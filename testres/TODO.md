@@ -9,6 +9,19 @@
 - в список репортов добавить название файла и прогресс-бары (pass-rate) [#######     ] 51%
 - используй strdup()
 
-### Тесты
+- thttpd.conf:
+```
+host=127.0.0.1
+port=8080
+user=sergeyb
+dir=/home/sergeyb/sources/snippets/testres/
+cgipat=*
+```
+- testres.cgi:
+```
+#!/bin/sh
 
-https://github.com/mtreinish/junitxml2subunit/tree/master/tests/examples
+PWD=$(pwd)
+#exec $PWD/testres -s $PWD/web/junit.xml
+exec $PWD/testres -s $PWD/web/
+```

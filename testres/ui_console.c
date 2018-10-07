@@ -39,7 +39,7 @@ print_report(struct tailq_report * report)
 	strftime(buffer, 80, "%x - %I:%M%p", info);
 	printf("CREATED ON: %s\n", buffer);
 	printf("FILE: %s\n", report->path);
-	printf("ID: %s\n", report->id);
+	/* printf("ID: %s\n", report->id); */
 	if (!TAILQ_EMPTY(report->suites)) {
 		print_suites(report->suites);
 	}
@@ -67,6 +67,7 @@ print_suites(struct suiteq * suites)
 			name = "unknown name";
 		}
 		printf("SUITE: %10s ", name);
+		/* TODO: print testsuite summary  */
 		printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
 		printf("TOTAL DURATION: %5f ", suite_item->time);
 		if (suite_item->timestamp != (char *)NULL) {

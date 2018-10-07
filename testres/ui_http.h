@@ -37,4 +37,6 @@ void print_html_report(struct tailq_report *report);
 void print_html_suites(struct suiteq * suites);
 void print_html_tests(struct testq * tests);
 
+void print_html_graph_summary(struct reportq *reports);
+
 #endif				/* UI_HTTP_H */

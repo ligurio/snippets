@@ -1,0 +1,76 @@
+diff --git a/Makefile b/Makefile
+index f353c2f..9cbc5a8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -285,6 +285,7 @@ clean: clean-built
+ 	$(Q) $(RM) ./*.pyc
+ 	$(Q) $(RM) -r build
+ 	$(Q) $(RM) -r usr
++	$(Q) $(RM) ./test/*.tap
+ 
+ distclean: clean
+ 	$(E) "  DISTCLEAN"
+diff --git a/test/zdtm.py b/test/zdtm.py
+index a31d5cb..d4a48ca 100755
+--- a/test/zdtm.py
++++ b/test/zdtm.py
+@@ -18,9 +18,13 @@ import imp
+ import socket
+ import fcntl
+ import errno
++import datetime
+ 
+ os.chdir(os.path.dirname(os.path.abspath(__file__)))
+ 
++now = datetime.datetime.now()
++report = "testreport-" + now.strftime("%Y-%m-%d-%H-%M-%S") + ".tap"
++
+ prev_line = None
+ def traceit(f, e, a):
+ 	if e == "line":
+@@ -951,6 +955,7 @@ class launcher:
+ 		self.__max = int(opts['parallel'] or 1)
+ 		self.__subs = {}
+ 		self.__fail = False
++		init_tap(nr_tests)
+ 
+ 	def __show_progress(self):
+ 		perc = self.__nr * 16 / self.__total
+@@ -959,6 +964,7 @@ class launcher:
+ 	def skip(self, name, reason):
+ 		print "Skipping %s (%s)" % (name, reason)
+ 		self.__nr += 1
++		write_tap("not ok " + str(self.__nr) + " - " + str(name.split('/')[-1:][0]) + " # SKIP " + reason)
+ 
+ 	def run_test(self, name, desc, flavor):
+ 
+@@ -988,6 +994,11 @@ class launcher:
+ 				stdout = log, stderr = subprocess.STDOUT)
+ 		self.__subs[sub.pid] = { 'sub': sub, 'log': logf }
+ 
++		if sub:
++			write_tap("ok " + str(self.__nr) + " - " + str(name.split('/')[-1:][0]))
++		else:
++			write_tap("not ok " + str(self.__nr) + " - " + str(name.split('/')[-1:][0]))
++
+ 		if test_flag(desc, 'excl'):
+ 			self.wait()
+ 
+@@ -1073,6 +1084,17 @@ def print_fname(fname, typ):
+ def print_sep(title, sep = "=", width = 80):
+ 	print (" " + title + " ").center(width, sep)
+ 
++def init_tap(total):
++	f = open(report, 'a')
++	print >> f, "TAP version 13"
++	print >> f, "1.." + str(total)
++	f.close()
++
++def write_tap(tcase):
++	f = open(report, 'a')
++	print >> f, tcase
++	f.close()
++
+ def grep_errors(fname):
+ 	first = True
+ 	for l in open(fname):

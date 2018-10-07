@@ -137,12 +137,12 @@ main(int argc, char *argv[])
 
 	if (query_string != NULL) {
 	   print_html_headers(version);
+	   print_html_graph_summary(&reports);
 	   print_html_reports_index(&reports);
 	   print_html_footer(version);
 	} else {
 	   print_reports(&reports);
 	}
-
 	free_reports(&reports);
 
 	return 0;

@@ -1,0 +1,35 @@
+From 57a43ee34e2761afd865d7bc40d69eea70be1127 Mon Sep 17 00:00:00 2001
+From: Sergey Bronnikov <sergeyb@openvz.org>
+Date: Tue, 31 May 2016 14:15:57 +0100
+Subject: [PATCH 2/3] creack/termios: Allow to use termios struct and funcs in
+ OpenBSD
+
+Signed-off-by: Sergey Bronnikov <sergeyb@openvz.org>
+---
+ Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go | 2 +-
+ Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go b/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go
+index 66765f6..fb33c49 100644
+--- a/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go
++++ b/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go
+@@ -1,4 +1,4 @@
+-// +build linux freebsd dragonfly
++// +build linux freebsd dragonfly openbsd
+ 
+ package raw
+ 
+diff --git a/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go b/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go
+index aab7dc4..14869da 100644
+--- a/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go
++++ b/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go
+@@ -1,4 +1,4 @@
+-// +build darwin freebsd dragonfly
++// +build darwin freebsd dragonfly openbsd
+ 
+ package raw
+ 
+-- 
+1.8.5.3
+

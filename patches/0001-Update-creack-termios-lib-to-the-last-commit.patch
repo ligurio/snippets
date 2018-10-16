@@ -1,0 +1,56 @@
+From 2e4edfc35e6abdc2d27044817242e03854507807 Mon Sep 17 00:00:00 2001
+From: Sergey Bronnikov <sergeyb@openvz.org>
+Date: Tue, 31 May 2016 14:11:38 +0100
+Subject: [PATCH 1/3] Update creack/termios lib to the last commit.
+
+Signed-off-by: Sergey Bronnikov <sergeyb@openvz.org>
+---
+ Godeps/Godeps.json                                                | 2 +-
+ Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go | 4 ++--
+ Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go   | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Godeps/Godeps.json b/Godeps/Godeps.json
+index 48573cb..14fb840 100644
+--- a/Godeps/Godeps.json
++++ b/Godeps/Godeps.json
+@@ -13,7 +13,7 @@
+ 		},
+ 		{
+ 			"ImportPath": "github.com/creack/termios/raw",
+-			"Rev": "d60649a6c40aa68303e3d69e0423a1e7aedf4bbd"
++			"Rev": "01ff290e5c3730970334720b59eba42a7af7a765"
+ 		},
+ 		{
+ 			"ImportPath": "github.com/docopt/docopt-go",
+diff --git a/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go b/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go
+index c23abf7..66765f6 100644
+--- a/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go
++++ b/Godeps/_workspace/src/github.com/creack/termios/raw/termios_32.go
+@@ -1,11 +1,11 @@
+-// +build linux freebsd
++// +build linux freebsd dragonfly
+ 
+ package raw
+ 
+ // Termios holds the TTY attributes. See man termios(4).
+ // Tested on linux386, linux/arm, linux/amd64,
+ //           freebsd/386, freebsd/arm, freebsd/amd64.
+-// See tremios_64.go for darwin.
++// See termios_64.go for darwin.
+ type Termios struct {
+ 	Iflag  uint32
+ 	Oflag  uint32
+diff --git a/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go b/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go
+index ecac605..aab7dc4 100644
+--- a/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go
++++ b/Godeps/_workspace/src/github.com/creack/termios/raw/tioc_bsd.go
+@@ -1,4 +1,4 @@
+-// +build darwin freebsd
++// +build darwin freebsd dragonfly
+ 
+ package raw
+ 
+-- 
+1.8.5.3
+

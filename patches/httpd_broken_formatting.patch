@@ -1,0 +1,12 @@
+--- server_file.c_	2016-06-15 23:55:58.000000000 +0300
++++ server_file.c	2016-06-16 00:13:10.000000000 +0300
+@@ -508,6 +508,9 @@
+ 		localtime_r(&t, &tm);
+ 		strftime(tmstr, sizeof(tmstr), "%d-%h-%Y %R", &tm);
+ 		namewidth = 51 - strlen(dp->d_name);
++		if (namewidth < 0)
++			n = dp->d_name
++			dp->d_name = strncpy(dp->d_name, n, 51)
+ 
+ 		if ((escapeduri = url_encode(dp->d_name)) == NULL)
+ 			goto fail;

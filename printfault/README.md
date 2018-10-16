@@ -28,4 +28,4 @@ Backtrace: 0x55d40e78460d 0x7f71e63f4b97 0x55d40e78451a
 Segmentation fault (core dumped)
 ```
 
-Tested on Linux, OpenBSD.
+Tested on Linux, OpenBSD (since 6.4).

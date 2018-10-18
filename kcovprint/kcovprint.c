@@ -1,42 +1,51 @@
-#define _GNU_SOURCE
-#include <stdio.h>
+#include <sys/ioctl.h> 
+#include <sys/kcov.h> 
+#include <sys/mman.h> 
+ 
+#include <err.h> 
+#include <fcntl.h> 
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <unistd.h> 
 
-/* Trampoline for the real main() */
-static int (*main_orig)(int, char **, char **);
+static void __attribute__ ((constructor)) lib_init(void);
+static void __attribute__ ((destructor)) lib_finish(void);
 
-/* Our fake main() that gets called by __libc_start_main() */
-int main_hook(int argc, char **argv, char **envp)
-{
-	int i;
-    for (i = 0; i < argc; ++i) {
-        printf("argv[%d] = %s\n", i, argv[i]);
-    }
-    printf("--- Before main ---\n");
-    int ret = main_orig(argc, argv, envp);
-    printf("--- After main ----\n");
-    printf("main() returned %d\n", ret);
-    return ret;
+int fd; 
+unsigned long *cover; 
+unsigned long size = 1024; 
+
+static void lib_init(void) {
+	fd = open("/dev/kcov", O_RDWR); 
+	if (fd == -1) 
+		err(1, "open"); 
+ 
+	if (ioctl(fd, KIOSETBUFSIZE, &size) == -1) 
+		err(1, "ioctl: KIOSETBUFSIZE"); 
+	cover = mmap(NULL, size * sizeof(unsigned long), 
+	    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
+	if (cover == MAP_FAILED) 
+		err(1, "mmap"); 
+ 
+	if (ioctl(fd, KIOENABLE) == -1) 
+		err(1, "ioctl: KIOENABLE"); 
+	read(-1, NULL, 0); 
+
+	return;
 }
 
-/*
- * Wrapper for __libc_start_main() that replaces the real main
- * function with our hooked version.
- */
-int __libc_start_main(
-    int (*main)(int, char **, char **),
-    int argc,
-    char **argv,
-    int (*init)(int, char **, char **),
-    void (*fini)(void),
-    void (*rtld_fini)(void),
-    void *stack_end)
-{
-    /* Save the real main function address */
-    main_orig = main;
+static void lib_finish(void) {
+	unsigned long i; 
+ 
+	if (ioctl(fd, KIODISABLE) == -1) 
+		err(1, "ioctl: KIODISABLE"); 
+ 
+	for (i = 0; i < cover[0]; i++) 
+		printf("%p\n", (void *)cover[i + 1]); 
+ 
+	if (munmap(cover, size * sizeof(unsigned long)) == -1) 
+		err(1, "munmap"); 
+	close(fd); 
 
-    /* Find the real __libc_start_main()... */
-    typeof(&__libc_start_main) orig = dlsym(RTLD_NEXT, "__libc_start_main");
-
-    /* ... and call it with our custom main function */
-    return orig(main_hook, argc, argv, init, fini, rtld_fini, stack_end);
+	return;
 }

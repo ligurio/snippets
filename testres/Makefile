@@ -1,20 +1,17 @@
 PREFIX	  ?= /usr/local
 
 CC        ?= gcc
-CFLAGS	  += -Og
+CFLAGS	  += -O0 -g
 CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow -pedantic
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
-LDFLAGS   += -lexpat
-ifdef DEBUG
-CFLAGS	  += -g
-LDFLAGS   += -g
-endif
+LDFLAGS   += -lexpat -g
 
 SRCS	= testres.c parse_common.c parse_junit.c \
 	parse_subunit_v2.c parse_subunit_v1.c parse_testanything.c \
 	sha1.c ui_common.c ui_console.c ui_http.c
+TESTS	= test_cmp.c test_junit.c test_sha1.c test_subunit.c test_testanything.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))
 PLIST	= $(patsubst %.c,%.plist,$(SRCS))
 PROJECT = testres
@@ -39,8 +36,8 @@ $(PLIST): %.plist: %.c
 
 install: all
 	@mkdir -p $(CGIDIR)
-	@install -m 0755 $(CGIBIN) $(CGIDIR)/$(BIN).cgi
-	@install -m 0755 $(BIN) $(PREFIX)/bin
+	@install -o www -g www -m 0500 $(CGIBIN) $(CGIDIR)/$(BIN).cgi
+	@install -o www -g www -m 0500 $(BIN) $(PREFIX)/bin
 
 uninstall:
 	@rm -f $(CGIDIR)/$(CGIBIN)

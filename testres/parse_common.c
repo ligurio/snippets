@@ -151,6 +151,16 @@ detect_file_format(char *path)
 	}
 }
 
+unsigned char *digest_to_str(unsigned char *str, unsigned char digest[], unsigned int n) {
+	int r;
+	if (n == 0) return 0;
+	if (n == 1) r = sprintf((char*)str, "%x", digest[0]);
+	else        r = sprintf((char*)str, "%x", digest[0]);
+	digest_to_str(str + r, digest + 1, n - 1);
+
+	return str;
+}
+
 tailq_report *
 process_file(char *path)
 {
@@ -194,14 +204,29 @@ process_file(char *path)
 	struct stat sb;
 	stat(path, &sb);
 	report->ctime = sb.st_ctime;
-	report->path = strdup(path);
+	report->path = (unsigned char*)strdup(path);
 
-	unsigned char digest[20];
+	int length = 20;
+	unsigned char digest[length];
 	SHA1_CTX ctx;
 	SHA1Init(&ctx);
-	SHA1Update(&ctx, path, strlen(path));
+	SHA1Update(&ctx, report->path, strlen(path));
 	SHA1Final(digest, &ctx);
-	report->id = strndup(digest, strlen(digest));
+
+	report->id = calloc(length, sizeof(unsigned char*));
+	digest_to_str(report->id, digest, length);
 
 	return report;
+}
+
+struct tailq_report *is_report_exists(struct reportq *reports, const char* report_id) {
+
+	tailq_report *report_item = NULL;
+	TAILQ_FOREACH(report_item, reports, entries) {
+	    if (strcmp(report_id, (char*)report_item->id) == 0) {
+		break;
+	    }
+	}
+
+	return report_item;
 }

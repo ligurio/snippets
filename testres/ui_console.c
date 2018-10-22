@@ -39,7 +39,7 @@ print_report(struct tailq_report * report)
 	strftime(buffer, 80, "%x - %I:%M%p", info);
 	printf("CREATED ON: %s\n", buffer);
 	printf("FILE: %s\n", report->path);
-	/* printf("ID: %s\n", report->id); */
+	printf("ID: %s\n", report->id);
 	if (!TAILQ_EMPTY(report->suites)) {
 		print_suites(report->suites);
 	}

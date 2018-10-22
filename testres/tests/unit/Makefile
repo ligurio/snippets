@@ -9,7 +9,8 @@ SRCS	 = testres_tests.c \
 		$(TOP_SRC_DIR)/parse_junit.c \
 		$(TOP_SRC_DIR)/parse_subunit_v1.c \
 		$(TOP_SRC_DIR)/parse_subunit_v2.c \
-		$(TOP_SRC_DIR)/parse_common.c
+		$(TOP_SRC_DIR)/parse_common.c \
+		$(TOP_SRC_DIR)/sha1.c
 OBJ     = $(patsubst %.c,%.o,$(SRCS))
 
 all: test-unit

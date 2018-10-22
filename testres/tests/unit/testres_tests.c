@@ -7,15 +7,12 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
-#ifndef PARSE_COMMON_H
-#define PARSE_COMMON_H
 #include "parse_common.h"
-#endif /* PARSE_COMMON_H */
-
 #include "parse_junit.h"
 #include "parse_testanything.h"
 #include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
+#include "sha1.h"
 
 #define SAMPLE_FILE_JUNIT "../samples/junit.xml"
 #define SAMPLE_FILE_SUBUNIT_V1 "../samples/subunit_v1.subunit"
@@ -43,6 +40,8 @@ static void test_parse_subunit_v2(void **state);
 static void test_parse_junit_common(void **state);
 static void test_parse_junit(void **state);
 
+static void test_sha1(void **state);
+
 /* Entrypoint */
 int
 main(void)
@@ -60,6 +59,7 @@ main(void)
 		cmocka_unit_test(test_parse_subunit_v1),
 		cmocka_unit_test(test_parse_junit_common),
 		cmocka_unit_test(test_parse_junit),
+		cmocka_unit_test(test_sha1),
 	};
 
 	/* Run series of tests */
@@ -297,4 +297,34 @@ test_parse_junit_common(void **state)
     }
     report = process_file(name);
     fclose(file);
+}
+
+static void
+test_sha1(void **state)
+{
+
+    struct {
+      char *word;
+      char *digest;
+      } tests[] = {
+        /* Test Vectors (from FIPS PUB 180-1) */
+        { "abc", "a9993e364706816aba3e25717850c26c9cd0d89d" },
+        { "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq", "84983e441c3bd26ebaae4aa1f95129e5e54670f1" },
+        { NULL, NULL },
+    };
+
+    int i, length = 20;
+    unsigned char digest[length];
+    char *str = calloc(length, sizeof(unsigned char*));
+    for (i = 0; tests[i].word != NULL; i++) {
+	const char *word = tests[i].word;
+        SHA1_CTX ctx;
+        SHA1Init(&ctx);
+        SHA1Update(&ctx, word, strlen(word));
+        SHA1Final(digest, &ctx);
+        if (digest_to_str(str, digest, length) != tests[i].digest) {
+           fail();
+        }
+    }
+    free(str);
 }

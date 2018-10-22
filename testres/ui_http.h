@@ -29,14 +29,13 @@
 #ifndef UI_HTTP_H
 #define UI_HTTP_H
 
-void print_html_headers(char *version);
+void print_html_headers(char *version, const char *stylesheet);
 void print_html_footer(char *version);
-void print_html_reports_index(struct reportq * reports);
 void print_html_reports(struct reportq * reports);
 void print_html_report(struct tailq_report *report);
 void print_html_suites(struct suiteq * suites);
 void print_html_tests(struct testq * tests);
 
-void print_html_graph_summary(struct reportq *reports);
+void print_plot_aggregated(struct reportq *reports);
 
 #endif				/* UI_HTTP_H */

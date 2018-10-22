@@ -70,6 +70,11 @@ enum test_status {
 	STATUS_PASS		/* JUnit */
 };
 
+struct num_by_status {
+    enum test_status status;
+    int number;
+};
+
 struct tailq_test {
     const char *name;
     const char *time;
@@ -100,7 +105,7 @@ struct tailq_report {
     enum test_format format;
     struct suiteq *suites;
     time_t ctime;
-    char *id;
+    unsigned char *id;
     unsigned char *path;
     TAILQ_ENTRY(tailq_report) entries;
 };
@@ -115,6 +120,8 @@ char *get_filename_ext(const char *filename);
 enum test_format detect_format(const char *basename);
 tailq_report *process_file(char *path);
 tailq_test *make_test(char *name, char *time, char *comment);
+unsigned char *digest_to_str(unsigned char *str, unsigned char digest[], unsigned int n);
+struct tailq_report *is_report_exists(struct reportq *reports, const char* report_id);
 
 void free_reports(struct reportq *reports);
 void free_suites(struct suiteq *suites);

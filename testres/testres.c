@@ -39,6 +39,7 @@
 #include "parse_common.h"
 #include "ui_console.h"
 #include "ui_http.h"
+#include "debug.h"
 
 char version[1024];
 
@@ -53,6 +54,7 @@ int
 main(int argc, char *argv[])
 {
 	char *path = (char *) NULL;
+	const char *stylesheet = "/testres.css";
 	int opt = 0;
 
 	snprintf(version, sizeof(version), "%s %s", __DATE__, __TIME__);
@@ -96,7 +98,7 @@ main(int argc, char *argv[])
 	if (S_ISREG(path_st.st_mode)) {
 	   report_item = process_file(path);
 	   if (query_string != NULL) {
-	      print_html_headers(version);
+	      print_html_headers(version, stylesheet);
 	      print_html_report(report_item);
 	      print_html_footer(version);
 	   } else {
@@ -135,11 +137,21 @@ main(int argc, char *argv[])
 	close(fd);
 	closedir(d);
 
-	if (query_string != NULL) {
-	   print_html_headers(version);
-	   print_html_graph_summary(&reports);
-	   print_html_reports_index(&reports);
+	if (strcmp(query_string, "index") == 0) {
+	   print_html_headers(version, stylesheet);
+	   print_html_reports(&reports);
 	   print_html_footer(version);
+	} else if (strcmp(query_string, "show") == 0) {
+	   const char *report_id = "6d67b4c697ed9b5a88c429df85bec0c9fda9553a";	/* FIXME */
+	   struct tailq_report *report;
+	   if ((report = is_report_exists(&reports, report_id)) != NULL) {
+	      print_html_headers(version, stylesheet);
+	      print_html_report(report);
+	      print_html_footer(version);
+	   } else {
+	      print_html_headers(version, stylesheet);
+	      printf("not found\n");
+	   }
 	} else {
 	   print_reports(&reports);
 	}

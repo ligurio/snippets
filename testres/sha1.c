@@ -18,6 +18,9 @@ A million repetitions of "a"
 /* #define LITTLE_ENDIAN * This should be #define'd already, if true. */
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
 
+#if defined __x86_64__
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
 #define SHA1HANDSOFF
 
 #include <stdio.h>

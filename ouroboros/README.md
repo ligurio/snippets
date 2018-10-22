@@ -20,6 +20,10 @@ $ export API_KEY_SECRET='CuAqaKhtdtwGIg1rGfK4CyrtcPb'
 - execute per commit with [gitmon](https://github.com/spajus/gitmon) and [entr](http://entrproject.org/):
 ```$ gitmon -c . | entr -s 'ouroboros -j "testme"'```
 
+### See also
+
+* [crafty](https://github.com/vti/crafty)
+* [recidiv](https://github.com/antirez/recidiv)
 
 ### License
 

@@ -13,6 +13,7 @@
 #include "parse_subunit_v1.h"
 #include "parse_subunit_v2.h"
 #include "sha1.h"
+#include "cmp.h"
 
 #define SAMPLE_FILE_JUNIT "../samples/junit.xml"
 #define SAMPLE_FILE_SUBUNIT_V1 "../samples/subunit_v1.subunit"
@@ -41,6 +42,7 @@ static void test_parse_junit_common(void **state);
 static void test_parse_junit(void **state);
 
 static void test_sha1(void **state);
+static void test_cmp(void **state);
 
 /* Entrypoint */
 int
@@ -60,6 +62,7 @@ main(void)
 		cmocka_unit_test(test_parse_junit_common),
 		cmocka_unit_test(test_parse_junit),
 		cmocka_unit_test(test_sha1),
+		cmocka_unit_test(test_cmp),
 	};
 
 	/* Run series of tests */
@@ -327,4 +330,58 @@ test_sha1(void **state)
         }
     }
     free(str);
+}
+
+static void
+test_cmp(void **state)
+{
+
+    struct {
+          char *word1;
+          char *word2;
+          int distance;
+      } tests[] = {
+          /* It should work. */
+          { "", "a", 1 },
+          { "a", "", 1 },
+          { "", "", 0 },
+          { "levenshtein", "levenshtein", 0 },
+          { "sitting", "kitten", 3 },
+          { "gumbo", "gambol", 2 },
+          { "saturday", "sunday", 3 },
+              
+          /* It should match case sensitive. */
+          { "DwAyNE", "DUANE", 2 },
+          { "dwayne", "DuAnE", 5 },
+          
+          /* It not care about parameter ordering. */
+          { "aarrgh", "aargh", 1 },
+          { "aargh", "aarrgh", 1 },
+          
+          /* Some tests form `hiddentao/fast-levenshtein`. */
+          { "a", "b", 1 },
+          { "ab", "ac", 1 },
+          { "ac", "bc", 1 },
+          { "abc", "axc", 1 },
+          { "xabxcdxxefxgx", "1ab2cd34ef5g6", 6 },
+          { "xabxcdxxefxgx", "abcdefg", 6 },
+          { "javawasneat", "scalaisgreat", 7 },
+          { "example", "samples", 3 },
+          { "sturgeon", "urgently", 6 },
+          { "levenshtein", "frankenstein", 6 },
+          { "distance", "difference", 5 },
+          { NULL, NULL, 0 },
+    };
+
+    const char *word1;
+    const char *word2;
+
+    int i, d;
+    for (i = 0; tests[i].word1 != NULL; i++) {
+         /* printf("===> '%s' and '%s'\n", tests[i].word1, tests[i].word2); */
+         word1 = tests[i].word1;
+         word2 = tests[i].word2;
+         d = distance(word1, strlen(word1), word2, strlen(word2));
+         assert(d == tests[i].distance);
+    }
 }

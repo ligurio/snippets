@@ -70,11 +70,6 @@ enum test_status {
 	STATUS_PASS		/* JUnit */
 };
 
-struct num_by_status {
-    enum test_status status;
-    int number;
-};
-
 struct tailq_test {
     const char *name;
     const char *time;
@@ -123,6 +118,21 @@ tailq_test *make_test(char *name, char *time, char *comment);
 unsigned char *digest_to_str(unsigned char *str, unsigned char digest[], unsigned int n);
 struct tailq_report *is_report_exists(struct reportq *reports, const char* report_id);
 
+/* sort */
+/*
+static int cmp_date(const void *p1, const void *p2);
+struct reportq *sort_reports(struct reportq *reports);
+struct suiteq *sort_suites(struct suiteq *suites);
+struct testq *sort_tests(struct testq *tests);
+*/
+
+/* calc */
+int num_by_status(struct tailq_report *report, enum test_status status);
+int calc_passed(struct tailq_report *report);
+int calc_failed(struct tailq_report *report);
+int calc_skipped(struct tailq_report *report);
+
+/* cleanup */
 void free_reports(struct reportq *reports);
 void free_suites(struct suiteq *suites);
 void free_tests(struct testq *tests);

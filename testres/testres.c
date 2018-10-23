@@ -137,6 +137,7 @@ main(int argc, char *argv[])
 	close(fd);
 	closedir(d);
 
+	// https://cvsweb.openbsd.org/src/usr.bin/mandoc/cgi.c?rev=1.99&content-type=text/x-cvsweb-markup
 	if (strcmp(query_string, "index") == 0) {
 	   print_html_headers(version, stylesheet);
 	   print_html_reports(&reports);

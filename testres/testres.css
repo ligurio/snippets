@@ -1,5 +1,7 @@
 body {
     background-color: #f3f2f2;
+    font-size: 11pt;
+    font-family: Verdana, Arial, Helvetica, Sans-Serif;
 }
 
 table {
@@ -11,6 +13,8 @@ table {
 td, th {
     border: 1px solid #dddddd;
     text-align: left;
+    text-align: center;
+    vertical-align: middle;
     padding: 8px;
 }
 
@@ -19,7 +23,18 @@ tr:nth-child(even) {
 }
 
 .footer {
-   position: absolute;
-   left: 50%;
-   margin-left: -100px;
+    position: absolute;
+    left: 50%;
+    margin-left: -100px;
 }
+
+.label {
+    font-size: 12pt;
+    padding: 6px;
+    border-radius: 20%;
+    margin-right: 2px;
+}
+
+.passed {background-color: #4CAF50;}	/* green */
+.failed {background-color: #FF0000;}	/* red */
+.skipped {background-color: #6C6C6C;}	/* grey */

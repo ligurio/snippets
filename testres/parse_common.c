@@ -230,3 +230,72 @@ struct tailq_report *is_report_exists(struct reportq *reports, const char* repor
 
 	return report_item;
 }
+
+/*
+static int cmp_date(const void *p1, const void *p2) {
+   return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+
+struct reportq *sort_reports(struct reportq *reports) {
+   return reports;
+}
+
+struct suiteq *sort_suites(struct suiteq *suites) {
+   return suites;
+}
+
+struct testq *sort_tests(struct testq *tests) {
+   return tests;
+}
+*/
+
+int num_by_status(struct tailq_report *report, enum test_status status) {
+
+   int number = 0;
+   if (!TAILQ_EMPTY(report->suites)) {
+      tailq_suite *suite_item = NULL;
+      TAILQ_FOREACH(suite_item, report->suites, entries) {
+         if (!TAILQ_EMPTY(suite_item->tests)) {
+            if (!TAILQ_EMPTY(suite_item->tests)) {
+               tailq_test *test_item = NULL;
+               TAILQ_FOREACH(test_item, suite_item->tests, entries) {
+                  if (test_item->status == status) number++;
+               }
+            }
+         }
+      }
+   }
+
+   return number;
+}
+
+int calc_passed(struct tailq_report *report) {
+    int num;
+    num = num_by_status(report, STATUS_OK);		/* TestAnythingProtocol	*/
+    num += num_by_status(report, STATUS_PASS);      	/* JUnit */
+    num += num_by_status(report, STATUS_SUCCESS);   	/* Subunit */
+    return num;
+}
+
+int calc_failed(struct tailq_report *report) {
+    int num;
+    num = num_by_status(report, STATUS_NOTOK);		/* TestAnythingProtocol	*/
+    num += num_by_status(report, STATUS_ERROR);     	/* JUnit */
+    num += num_by_status(report, STATUS_FAILURE);   	/* JUnit */
+    num += num_by_status(report, STATUS_FAILED);    	/* Subunit */
+    num += num_by_status(report, STATUS_XFAILURE);  	/* Subunit */
+    num += num_by_status(report, STATUS_UXSUCCESS); 	/* Subunit */
+    return num;
+}
+
+int calc_skipped(struct tailq_report *report) {
+    int num;
+    num = num_by_status(report, STATUS_MISSING);	/* TestAnythingProtocol	*/
+    num += num_by_status(report, STATUS_TODO);         	/* TestAnythingProtocol	*/
+    num += num_by_status(report, STATUS_SKIP);         	/* TestAnythingProtocol	*/
+    num += num_by_status(report, STATUS_SKIPPED);      	/* Subunit */
+    num += num_by_status(report, STATUS_UNDEFINED);    	/* Subunit */
+    num += num_by_status(report, STATUS_ENUMERATION);  	/* Subunit */
+    num += num_by_status(report, STATUS_INPROGRESS);   	/* Subunit */
+    return num;
+}

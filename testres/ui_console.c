@@ -46,11 +46,27 @@ print_report(struct tailq_report * report)
 }
 
 void 
+print_report_summary(struct tailq_report * report)
+{
+	printf("\nTEST REPORT (%s)\n", format_string(report->format));
+	char buffer[80] = "";
+	struct tm *info = localtime(&report->ctime);
+	strftime(buffer, 80, "%x - %I:%M%p", info);
+	printf("CREATED ON: %s\n", buffer);
+	printf("FILE: %s\n", report->path);
+	printf("ID: %s\n", report->id);
+	printf("STATUS: %d PASSED, %d FAILED, %d SKIPPED\n",
+				calc_passed(report),
+				calc_failed(report),
+				calc_skipped(report));
+}
+
+void 
 print_reports(struct reportq * reports)
 {
 	tailq_report *report_item = NULL;
 	TAILQ_FOREACH(report_item, reports, entries) {
-		print_report(report_item);
+		print_report_summary(report_item);
 	}
 }
 

@@ -35,6 +35,7 @@ void print_html_reports(struct reportq * reports);
 void print_html_report(struct tailq_report *report);
 void print_html_suites(struct suiteq * suites);
 void print_html_tests(struct testq * tests);
+void print_html_env();
 
 void print_plot_aggregated(struct reportq *reports);
 

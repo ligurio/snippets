@@ -35,6 +35,8 @@
 #include "ui_common.h"
 #include "ui_http.h"
 
+extern char **environ;
+
 void print_html_headers(char *version, const char *stylesheet) {
     printf("Content-Type: text/html;charset=utf-8\n\n");
     printf("<!DOCTYPE html>\n");
@@ -47,6 +49,9 @@ void print_html_headers(char *version, const char *stylesheet) {
     printf("<link rel=\"shortcut icon\" href=\"/favicon.ico\"/>\n");
     printf("</head>\n");
     printf("<body>\n");
+#ifdef DEBUG
+    print_html_env();
+#endif /* DEBUG */
 }
 
 void print_html_footer(char *version) {
@@ -154,10 +159,20 @@ print_html_tests(struct testq * tests) {
 
 void
 print_plot_aggregated(struct reportq *reports) {
-  	printf("<svg width=\"100%%\" height=\"100%%\">\n");
-  	printf("<g transform=\"translate(50,50)\"\n>");
-  	printf("<rect x=\"0\" y=\"0\" width=\"150\" height=\"50\" style=\"fill:red;\" />\n");
-  	printf("</g>\n");
-  	printf("</svg>\n");
-	if (reports) printf("Hello!\n");
+    printf("<svg width=\"100%%\" height=\"100%%\">\n");
+    printf("<g transform=\"translate(50,50)\"\n>");
+    printf("<rect x=\"0\" y=\"0\" width=\"150\" height=\"50\" style=\"fill:red;\" />\n");
+    printf("</g>\n");
+    printf("</svg>\n");
+}
+
+void print_html_env() {
+    int i = 1;
+    char *s = *environ;
+    printf("<pre>\n");
+    for (; s; i++) {
+        printf("%s\n", s);
+        s = *(environ + i);
+    }
+    printf("</pre>\n");
 }

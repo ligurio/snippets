@@ -39,7 +39,6 @@
 #include "parse_common.h"
 #include "ui_console.h"
 #include "ui_http.h"
-#include "debug.h"
 
 char version[1024];
 

@@ -76,6 +76,7 @@ print_html_reports(struct reportq * reports) {
     printf("<table>\n");
     printf("<tr>\n");
     printf("<th>Report ID</th>\n");
+    printf("<th>Success %%</th>\n");
     printf("<th>Status</th>\n");
     printf("<th>Created On</th>\n");
     printf("</tr>\n");
@@ -86,6 +87,12 @@ print_html_reports(struct reportq * reports) {
         strftime(buffer, 80, "%x - %I:%M%p", info);
 	printf("<tr>\n");
 	printf("<td><a href=\"/?show=%s\">%s</a></td>\n", report_item->id, report_item->id);
+	double perc = calc_success_perc(report_item);
+	if (perc >= 50) {
+	   printf("<td><span class=\"label passed\">%0.0f</span></td>\n", perc);
+	} else {
+	   printf("<td><span class=\"label failed\">%0.0f</span></td>\n", perc);
+	}
 	printf("<td>\n");
 	printf("<span class=\"label passed\">%d</span>\n", calc_passed(report_item));
 	printf("<span class=\"label failed\">%d</span>\n", calc_failed(report_item));

@@ -131,6 +131,7 @@ int num_by_status(struct tailq_report *report, enum test_status status);
 int calc_passed(struct tailq_report *report);
 int calc_failed(struct tailq_report *report);
 int calc_skipped(struct tailq_report *report);
+double calc_success_perc(struct tailq_report *report);
 
 /* cleanup */
 void free_reports(struct reportq *reports);

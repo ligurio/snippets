@@ -26,6 +26,8 @@
  *
  */
 
+#include <math.h>
+
 #include "parse_common.h"
 #include "parse_junit.h"
 #include "parse_subunit_v1.h"
@@ -298,4 +300,18 @@ int calc_skipped(struct tailq_report *report) {
     num += num_by_status(report, STATUS_ENUMERATION);  	/* Subunit */
     num += num_by_status(report, STATUS_INPROGRESS);   	/* Subunit */
     return num;
+}
+
+/*
+ * passed, failed and skipped calculated twice.
+ * it makes sense to keep values in tailq_report struct
+ */
+double calc_success_perc(struct tailq_report *report) {
+    double num = 0;
+    int passed = calc_passed(report);
+    int failed = calc_failed(report);
+    int skipped = calc_skipped(report);
+    num = (double)passed / (double)(passed + failed + skipped) * 100;
+
+    return round(num);
 }

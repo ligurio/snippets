@@ -6,7 +6,7 @@ CFLAGS	  += -Wall -Wextra -Wfloat-equal -Wundef
 CFLAGS	  += -Wpointer-arith -Wcast-align -Wshadow -pedantic
 CFLAGS	  += -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return
 CFLAGS	  += -Wswitch-enum -Wunreachable-code -Winit-self
-LDFLAGS   += -lexpat -g
+LDFLAGS   += -lexpat -g -lm
 
 SRCS	= testres.c parse_common.c parse_junit.c \
 	parse_subunit_v2.c parse_subunit_v1.c parse_testanything.c \

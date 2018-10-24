@@ -177,6 +177,7 @@ segfault_init(void)
 	sigaction(SIGILL, &sa, NULL);
 	sigaction(SIGSEGV, &sa, NULL);
 	sigaction(SIGSYS, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 
 	return 0;
 }

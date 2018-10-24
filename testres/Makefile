@@ -10,7 +10,7 @@ LDFLAGS   += -lexpat -g
 
 SRCS	= testres.c parse_common.c parse_junit.c \
 	parse_subunit_v2.c parse_subunit_v1.c parse_testanything.c \
-	ui_common.c ui_console.c ui_http.c sha1.c
+	parse_query.c ui_common.c ui_console.c ui_http.c sha1.c
 OBJ	= $(patsubst %.c,%.o,$(SRCS))
 PLIST	= $(patsubst %.c,%.plist,$(SRCS))
 PROJECT = testres

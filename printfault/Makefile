@@ -1,7 +1,5 @@
 LIBNAME = printfault
 
-all: test
-	
 test: $(LIBNAME).so
 	@gcc test-sample.c -o test-sample
 	@-LD_PRELOAD=./$(LIBNAME).so ./test-sample

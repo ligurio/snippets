@@ -27,13 +27,13 @@
  */
 
 #include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <err.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 
 #include "parse_common.h"
@@ -55,6 +55,13 @@ main(int argc, char *argv[])
 	char *path = (char *) NULL;
 	const char *stylesheet = "/testres.css";
 	int opt = 0;
+
+#ifdef __OpenBSD__
+	if (pledge("stdio rpath", NULL) == -1) {
+	    warn("pledge");
+	    return EXIT_FAILURE;
+	}
+#endif /* __OpenBSD__ */
 
 	snprintf(version, sizeof(version), "%s %s", __DATE__, __TIME__);
 	while ((opt = getopt(argc, argv, "vhs:")) != -1) {
@@ -136,7 +143,6 @@ main(int argc, char *argv[])
 	close(fd);
 	closedir(d);
 
-	// https://cvsweb.openbsd.org/src/usr.bin/mandoc/cgi.c?rev=1.99&content-type=text/x-cvsweb-markup
 	if (strcmp(query_string, "index") == 0) {
 	   print_html_headers(version, stylesheet);
 	   print_html_reports(&reports);

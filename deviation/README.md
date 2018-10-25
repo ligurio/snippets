@@ -10,15 +10,12 @@ Outlier detection has been used for centuries to detect and, where appro-
 priate, remove anomalous observations from data. Outliers arise due to
 mechanical faults, changes in system behaviour, fraudulent behaviour, human
 error, instrument error or simply through  natural  deviations  in
-populations.  Their  detection  can identify system faults and fraud before
+populations. Their detection can identify system faults and fraud before
 they escalate with potentially catastrophic consequences. It can identify
 errors and remove their contaminating effect on the data set and as such to
 purify the data for processing. The original outlier detection methods were
 arbitrary but now, principled and systematic techniques are used, drawn from
-the full gamut of Computer Science and Statistics. In this paper, we introduce
-a survey of contemporary techniques for outlier detection. We identify their
-respective motivations and distinguish their advantages and disadvantages in a
-comparative review.
+the full gamut of Computer Science and Statistics.
 
 ### Examples
 ```
@@ -28,18 +25,21 @@ comparative review.
  $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "set terminal dumb; plot '<cat'
 ```
 
+TODO: identificate deviations in logs and similar logs
+
 ### Benchmarks
 
 - http://www.dbs.ifi.lmu.de/research/outlier-evaluation/
 - http://odds.cs.stonybrook.edu/
+- https://github.com/numenta/NAB
+- https://github.com/yui0/catseye/
+- https://github.com/attractivechaos/kann
+- https://github.com/attractivechaos/sann
 
 ### References
 
+- [Automatic Detection of Performance Deviations in the Load Testing of Large Scale Systems] -- Haroon Malik, Hadi Hemmati, Ahmed E. Hassan
 - https://github.com/yzhao062/Pyod
 - https://github.com/lytics/anomalyzer
 - https://github.com/blue-yonder/tsfresh
 - https://github.com/yzhao062/anomaly-detection-resources
-
-### TODO
-
-- GSL https://www.gnu.org/software/gsl/

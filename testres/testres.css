@@ -24,6 +24,11 @@ tr:nth-child(even) {
     background-color: #dddddd;
 }
 
+.td-date {
+    font-weight: 600;
+    font-size: 14pt;
+}
+
 .footer {
     position: absolute;
     left: 50%;

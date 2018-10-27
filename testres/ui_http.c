@@ -81,25 +81,30 @@ print_html_reports(struct reportq * reports) {
     printf("<th>Created On</th>\n");
     printf("</tr>\n");
     tailq_report *report_item = NULL;
+    char datestr[64], datestr_prev[64];
     TAILQ_FOREACH(report_item, reports, entries) {
-        char buffer[80] = "";
-        struct tm *info = localtime(&report_item->ctime);
-        strftime(buffer, 80, "%x - %I:%M%p", info);
-	printf("<tr>\n");
-	printf("<td><a href=\"/?show=%s\">%s</a></td>\n", report_item->id, report_item->id);
-	double perc = calc_success_perc(report_item);
-	if (perc >= 50) {
-	   printf("<td><span class=\"label passed\">%0.0f</span></td>\n", perc);
-	} else {
-	   printf("<td><span class=\"label failed\">%0.0f</span></td>\n", perc);
-	}
-	printf("<td>\n");
-	printf("<span class=\"label passed\">%d</span>\n", calc_passed(report_item));
-	printf("<span class=\"label failed\">%d</span>\n", calc_failed(report_item));
-	printf("<span class=\"label skipped\">%d</span>\n", calc_skipped(report_item));
-	printf("</td>\n");
-	printf("<td>%s</td>\n", buffer);
-	printf("</tr>\n");
+        struct tm *date = localtime(&report_item->ctime);
+        strftime(datestr, 64, "%B %d, %Y", date);
+        if (strcmp(datestr, datestr_prev) != 0) {
+           printf("<tr><td class=\"td-date\" colspan=\"4\">%s</td></tr>\n", datestr);
+           strcpy(datestr_prev, datestr);
+        }
+	    printf("<tr>\n");
+	    printf("<td><a href=\"/?show=%s\">%s</a></td>\n", report_item->id, report_item->id);
+	    double perc = calc_success_perc(report_item);
+	    if (perc >= 50) {
+	       printf("<td><span class=\"label passed\">%0.0f</span></td>\n", perc);
+	    } else {
+	       printf("<td><span class=\"label failed\">%0.0f</span></td>\n", perc);
+	    }
+	    printf("<td>\n");
+	    printf("<span class=\"label passed\">%d</span>\n", calc_passed(report_item));
+	    printf("<span class=\"label failed\">%d</span>\n", calc_failed(report_item));
+	    printf("<span class=\"label skipped\">%d</span>\n", calc_skipped(report_item));
+	    printf("</td>\n");
+        strftime(datestr, 64, "%I:%M%p", date);
+	    printf("<td>%s</td>\n", datestr);
+	    printf("</tr>\n");
     }
     printf("</table>\n");
 }

@@ -90,7 +90,8 @@ print_html_reports(struct reportq * reports) {
            strcpy(datestr_prev, datestr);
         }
 	    printf("<tr>\n");
-	    printf("<td><a href=\"/?show=%s\">%s</a></td>\n", report_item->id, report_item->id);
+	    /* FIXME */
+	    printf("<td><a href=\"/testres.cgi?show=%s\">%s</a></td>\n", report_item->id, report_item->id);
 	    double perc = calc_success_perc(report_item);
 	    if (perc >= 50) {
 	       printf("<td><span class=\"label passed\">%0.0f</span></td>\n", perc);
@@ -112,7 +113,7 @@ print_html_reports(struct reportq * reports) {
 void
 print_html_report(struct tailq_report * report) {
     print_html_search();
-    printf("<b>Software Test Report (%s)</b>\n", format_string(report->format));
+    printf("<b>Software Test Report (%s)</b><br>\n", format_string(report->format));
     char buffer[80] = "";
     struct tm *info = localtime(&report->ctime);
     strftime(buffer, 80, "%x - %I:%M%p", info);
@@ -126,9 +127,9 @@ print_html_report(struct tailq_report * report) {
 void
 print_html_suites(struct suiteq * suites) {
     tailq_suite *suite_item = NULL;
-    printf("<table style=\"width:100%%\">\n");
+    printf("<table>\n");
     printf("<tr>\n");
-    printf("<th>Name</th>\n");
+    printf("<th>Suite Name</th>\n");
     printf("<th>Status</th>\n");
     printf("<th>Created On</th>\n");
     printf("</tr>\n");
@@ -138,7 +139,7 @@ print_html_suites(struct suiteq * suites) {
 	if (suite_item->name == (char *) NULL) {
 		name = suite_item->name;
 	} else {
-		name = "noname";
+		name = "Unknown name";
 	}
 	printf("<td>%s</td>\n", name);
 	printf("<td>%s</td>\n", "FIXME");
@@ -153,20 +154,20 @@ print_html_suites(struct suiteq * suites) {
 
 void
 print_html_tests(struct testq * tests) {
-	tailq_test *test_item = NULL;
-	TAILQ_FOREACH(test_item, tests, entries) {
-		printf("<div>");
-		printf("%10s ", test_item->name);
-		printf("%10s ", status_string(test_item->status));
-		printf("</div>\n");
-		if (test_item->time != (char *) NULL) {
-			printf("(%5ss) ", test_item->time);
-		}
-		if (test_item->comment != NULL) {
-			printf("Comment: %5s", test_item->comment);
-		}
-		printf("\n");
+    tailq_test *test_item = NULL;
+    TAILQ_FOREACH(test_item, tests, entries) {
+	printf("<tr>\n");
+	const char *name = NULL;
+	if (test_item->name == (char *) NULL) {
+		name = test_item->name;
+	} else {
+		name = "Unknown name";
 	}
+	printf("<td>%s</td>\n", name);
+	printf("<td>%s</td>\n", status_string(test_item->status));
+	printf("<td>%s</td>\n", test_item->time);
+	printf("</tr>\n");
+    }
 }
 
 void

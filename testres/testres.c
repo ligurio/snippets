@@ -147,21 +147,23 @@ main(int argc, char *argv[])
 	   print_html_headers(version, stylesheet);
 	   print_html_reports(&reports);
 	   print_html_footer(version);
-	} else if (strcmp(query_string, "show") == 0) {
-	   const char *report_id = "6d67b4c697ed9b5a88c429df85bec0c9fda9553a";	/* FIXME */
+	   free_reports(&reports);
+	   return 0;
+	}
+
+        if (strcmp(strtok(query_string, "="), "show") == 0) {
+	   const char *report_id = strtok(NULL, "=");
 	   struct tailq_report *report;
 	   if ((report = is_report_exists(&reports, report_id)) != NULL) {
 	      print_html_headers(version, stylesheet);
 	      print_html_report(report);
 	      print_html_footer(version);
+	      free_report(report);
+	      free_reports(&reports);
 	   } else {
 	      print_html_headers(version, stylesheet);
 	      printf("not found\n");
 	   }
-	} else {
-	   print_reports(&reports);
 	}
-	free_reports(&reports);
-
 	return 0;
 }

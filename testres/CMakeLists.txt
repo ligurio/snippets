@@ -1,9 +1,5 @@
-# https://github.com/lperkov/cmocka-hello/
-# cmakelint
-
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(testres)
-# enable_testing()
 SET(SOURCES testres.c
 parse_common.c
 parse_junit.c
@@ -14,66 +10,31 @@ ui_common.c
 ui_console.c
 ui_http.c
 sha1.c)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wfloat-equal")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundef -Wpointer-arith -Wcast-align -Wshadow")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wswitch-enum -Wunreachable-code -Winit-self")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Werror -O3 -pedantic -std=c++11 ")
+
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0 -g")
+
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/../)
-# SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../build/modules")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+SET_SOURCE_FILES_PROPERTIES(tags PROPERTIES GENERATED true)
+ADD_CUSTOM_TARGET(tags
+    COMMAND ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-# add_subdirectory(src)
-# add_subdirectory(test)
+INCLUDE(FindEXPAT)
+FIND_PACKAGE(EXPAT REQUIRED)
+INCLUDE_DIRECTORIES(${EXPAT_INCLUDE_DIRS})
 
-#INCLUDE(FindEXPAT)
-#FIND_PACKAGE(EXPAT REQUIRED)
-#INCLUDE_DIRECTORIES(${EXPAT_INCLUDE_DIRS})
-#TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${EXPAT_LIBRARIES})
-
-#INCLUDE(FindCMocka)
-#FIND_PACKAGE(CMOCKA REQUIRED)
-#INCLUDE_DIRECTORIES(${LIBCMOCKA_INCLUDE_DIR})
-#TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${LIBCMOCKA_LIBRARIES})
-
-ADD_DEFINITIONS(-Wall -Werror --std=gnu99 -Wmissing-declarations)
 ADD_EXECUTABLE(${PROJECT_NAME} ${SOURCES})
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${EXPAT_LIBRARIES} m)
+
+ADD_DEPENDENCIES(${PROJECT_NAME} tags)
+
 FILE(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 INSTALL(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-
-
-FIND_PROGRAM(LEX flex)
-IF(LEX STREQUAL "LEX-NOTFOUND")
-    MESSAGE(FATAL_ERROR "lex is not found")
-ENDIF()
-
-FIND_PROGRAM(YACC yacc)
-IF(YACC STREQUAL "YACC-NOTFOUND")
-    MESSAGE(FATAL_ERROR "yacc is not found")
-ENDIF()
-
-MACRO(YACC_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-                ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.h
-        COMMAND ${YACC_EXE} -d
-                --output=${_basename}.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        DEPENDS ${_filename}
-    )
-ENDMACRO()
-
-MACRO(LEX_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-        COMMAND ${LEX_EXE}
-                -o${_basename}.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        DEPENDS ${_filename}
-    )
-ENDMACRO()
-
-# YACC_FILE(config_yacc.y)
-# LEX_FILE(config_lex.l)
-
-# add_executable(my_parsing_exe
-#     config_yacc.c
-#     config_lex.c
-# )

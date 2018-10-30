@@ -47,6 +47,7 @@ void print_html_headers(char *version, const char *stylesheet) {
     printf("<meta name=\"robots\" content=\"index, nofollow\"/>\n");
     printf("<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" media=\"all\"/>\n", stylesheet);
     printf("<link rel=\"shortcut icon\" href=\"/favicon.ico\"/>\n");
+    printf("<link rel=\"icon\" href=\"/favicon.ico\" type=\"image/x-icon\">");
     printf("</head>\n");
     printf("<body>\n");
 #ifdef DEBUG
@@ -113,12 +114,15 @@ print_html_reports(struct reportq * reports) {
 void
 print_html_report(struct tailq_report * report) {
     print_html_search();
-    printf("<b>Software Test Report (%s)</b><br>\n", format_string(report->format));
     char buffer[80] = "";
     struct tm *info = localtime(&report->ctime);
     strftime(buffer, 80, "%x - %I:%M%p", info);
-    printf("<b>Created On: %s</b><br>\n", buffer);
-    printf("<b>Report ID: %s</b><br>\n", report->id);
+    printf("<table>\n");
+    printf("<tr><td>Report ID:</td><td>%s</td></tr>\n", report->id);
+    printf("<tr><td>Created On:</td><td>%s</td></tr>\n", buffer);
+    printf("<tr><td>Format:</td><td>%s</td></tr>\n", format_string(report->format));
+    printf("</table>\n");
+    printf("<br>\n");	/* FIXME */
     if (!TAILQ_EMPTY(report->suites)) {
        print_html_suites(report->suites);
     }
@@ -131,7 +135,8 @@ print_html_suites(struct suiteq * suites) {
     printf("<tr>\n");
     printf("<th>Suite Name</th>\n");
     printf("<th>Status</th>\n");
-    printf("<th>Created On</th>\n");
+    printf("<th>Time Duration</th>\n");
+    printf("<th>Time</th>\n");
     printf("</tr>\n");
     TAILQ_FOREACH(suite_item, suites, entries) {
 	printf("<tr>\n");
@@ -144,6 +149,7 @@ print_html_suites(struct suiteq * suites) {
 	printf("<td>%s</td>\n", name);
 	printf("<td>%s</td>\n", "FIXME");
 	printf("<td>%s</td>\n", suite_item->timestamp);
+	printf("<td>%f</td>\n", suite_item->time);
 	printf("</tr>\n");
 	if (!TAILQ_EMPTY(suite_item->tests)) {
 		print_html_tests(suite_item->tests);
@@ -166,6 +172,7 @@ print_html_tests(struct testq * tests) {
 	printf("<td>%s</td>\n", name);
 	printf("<td>%s</td>\n", status_string(test_item->status));
 	printf("<td>%s</td>\n", test_item->time);
+	printf("<td></td>\n");	/* FIXME */
 	printf("</tr>\n");
     }
 }

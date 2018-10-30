@@ -164,7 +164,7 @@ print_html_tests(struct testq * tests) {
     TAILQ_FOREACH(test_item, tests, entries) {
 	printf("<tr>\n");
 	const char *name = NULL;
-	if (test_item->name == (char *) NULL) {
+	if (test_item->name != NULL) {
 		name = test_item->name;
 	} else {
 		name = "Unknown name";

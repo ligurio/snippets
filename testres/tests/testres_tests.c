@@ -15,14 +15,6 @@
 #define SAMPLE_FILE_SUBUNIT_V2 "../samples/subunit_v2.subunit"
 #define SAMPLE_FILE_TESTANYTHING "../samples/testanything.tap"
 
-void testFPRINTF(void)
-{
-}
-
-void testFREAD(void)
-{
-}
-
 static void test_parse_testanything()
 {
     char *name = SAMPLE_FILE_TESTANYTHING;

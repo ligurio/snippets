@@ -9,6 +9,7 @@ parse_testanything.c
 ui_common.c
 ui_console.c
 ui_http.c
+cmp.c
 sha1.c)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wfloat-equal")

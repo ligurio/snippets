@@ -1,12 +1,13 @@
+PARSE = parse_query
 
-all: lex.yy.c y.tab.c y.tab.h
-	gcc lex.yy.c y.tab.c -o q
+all: ${PARSE}.tab.c ${PARSE}.tab.h lex.${PARSE}.c
+	gcc ${PARSE}.tab.c lex.${PARSE}.c -o q -lfl 
 
-lex.yy.c:
-	lex parse_query.l
+lex.${PARSE}.c:
+	lex -P${PARSE} ${PARSE}.l
 
-y.tab.c:
-	yacc -d parse_query.y
+${PARSE}.tab.c:
+	yacc -b ${PARSE} -d ${PARSE}.y
 
 clean:
-	rm -f y.tab.c y.tab.h lex.yy.c
+	rm -f ${PARSE}.tab.c ${PARSE}.tab.h lex.${PARSE}.c

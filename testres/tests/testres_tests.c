@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
+
 #include "CUnit/Basic.h"
 
 #include "../parse_common.h"
@@ -139,9 +141,8 @@ static void test_parse_subunit_v1_line()
 	"time: 2018-09-10 23:59:29Z" };
 
 	char** qq = test_sample;
-	struct tailq_test* tl;
 	for (int i = 0; i <  (int)(sizeof(test_sample)/sizeof(char*)); ++i) {
-		tl = parse_line_subunit_v1(*qq);
+		parse_line_subunit_v1(*qq);
 		++qq;
 	}
 }
@@ -150,14 +151,14 @@ static void test_parse_junit()
 {
     FILE *file;
     char *name = SAMPLE_FILE_JUNIT;
-    struct suiteq *suites;
 
     file = fopen(name, "r");
     if (file == NULL)
     {
         CU_get_error();
     }
-    suites = parse_junit(file);
+
+    parse_junit(file);
     fclose(file);
 }
 

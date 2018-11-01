@@ -6,6 +6,9 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+
+void yyerror(char *);
+int yylex(void);
 %}
 
 %debug
@@ -72,6 +75,14 @@ struct tailq_entry {
 
 TAILQ_HEAD(, tailq_entry) report_head;
 
+void yyerror( char *s )
+{
+#ifdef DEBUG
+  fprintf( stderr, "Oops: %s in line %d\n", s, yylineno);
+  exit(-1);
+#endif
+}
+
 int main( int argc, char **argv ) {
 
   progname = argv[0];
@@ -111,12 +122,4 @@ int main( int argc, char **argv ) {
   printf("\n");
 
   return 0;
-}
-
-int yyerror( char *s )
-{
-#ifdef DEBUG
-  fprintf( stderr, "Oops: %s in line %d\n", s, yylineno);
-  exit(-1);
-#endif
 }

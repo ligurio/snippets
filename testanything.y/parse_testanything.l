@@ -5,7 +5,7 @@
 
 %{
 #include <stdio.h>
-#include "y.tab.h"
+#include "parse_testanything.tab.h"
 extern YYSTYPE yylval;
 %}
 

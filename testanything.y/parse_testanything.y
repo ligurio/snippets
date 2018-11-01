@@ -72,7 +72,7 @@ struct tailq_entry {
 
 TAILQ_HEAD(, tailq_entry) report_head;
 
-main( int argc, char **argv ) {
+int main( int argc, char **argv ) {
 
   progname = argv[0];
 

@@ -1,31 +1,30 @@
-YFLAGS        = -d
-PROGRAM       = tossil
-OBJS          = y.tab.o lex.yy.o
-SRCS          = y.tab.c lex.yy.c
-CC            = gcc
-CCFLAGS		  = -ggdb
+PROGRAM	= parse_testanything
 
-REGRESS		  = t1 t2 t3 t4 t5 t6 t7
+OBJS	= $(PROGRAM).tab.o $(PROGRAM).o
+SRCS	= $(PROGRAM).tab.c $(PROGRAM).c
+CC	= gcc
+CFLAGS	= -O3
 
-all:            $(PROGRAM)
+REGRESS	= t1 t2 t3 t4 t5 t6 t7
 
-${OBJS}:    	$(SRCS)
-				$(CC) $(CCFLAGS) -c $*.c -o $@ -O
+all: $(PROGRAM)
 
-y.tab.c:		parse.y
-				yacc $(YFLAGS) parse.y
+$(OBJS): $(SRCS)
+	$(CC) $(CFLAGS) -c $*.c -o $@ -O
 
-lex.yy.c:		parse.l
-				lex parse.l
+$(PROGRAM).tab.c: $(PROGRAM).y
+	yacc -b $(PROGRAM) -d $(PROGRAM).y
 
-tossil:			$(OBJS)
-				$(CC) $(CCFLAGS) $(OBJS)  -o $@
+$(PROGRAM).c: $(PROGRAM).l
+	lex -o$@ $<
 
-regress:		all
-				@for t in $(REGRESS); do echo "==== t/$$t"; ./${PROGRAM} t/$$t; done
+$(PROGRAM): $(OBJS)
+	$(CC) $(OBJS) -o $@
+
+regress: all
+	@for t in $(REGRESS); do echo "==== t/$$t"; ./${PROGRAM} t/$$t; done
 
 clean:			
-				rm -f $(OBJS) core *~ \#* *.o $(PROGRAM) \
-				y.* lex.yy.* parse.tab.*
+	rm -f $(OBJS) $(PROGRAM) $(PROGRAM).c $(PROGRAM).tab.c $(PROGRAM).tab.h core
 
-.PHONY:			regress
+.PHONY:	regress clean

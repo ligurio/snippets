@@ -1,13 +1,30 @@
-PARSE = parse_query
+PROGRAM	= parse_query
 
-all: ${PARSE}.tab.c ${PARSE}.tab.h lex.${PARSE}.c
-	gcc ${PARSE}.tab.c lex.${PARSE}.c -o q -lfl 
+OBJS	= $(PROGRAM).tab.o $(PROGRAM).o
+SRCS	= $(PROGRAM).tab.c $(PROGRAM).c
+CC	= gcc
+CFLAGS	= -O3
 
-lex.${PARSE}.c:
-	lex -P${PARSE} ${PARSE}.l
+REGRESS	= t1 t2 t3 t4 t5
 
-${PARSE}.tab.c:
-	yacc -b ${PARSE} -d ${PARSE}.y
+all: $(PROGRAM)
+
+$(OBJS): $(SRCS)
+	$(CC) $(CFLAGS) -c $*.c -o $@ -O
+
+$(PROGRAM).tab.c: $(PROGRAM).y
+	yacc -b $(PROGRAM) -d $(PROGRAM).y
+
+$(PROGRAM).c: $(PROGRAM).l
+	lex -o$@ $<
+
+$(PROGRAM): $(OBJS)
+	$(CC) $(OBJS) -o $@
+
+regress: all
+	@for t in $(REGRESS); do echo "==== t/$$t"; ./${PROGRAM} t/$$t; done
 
 clean:
-	rm -f ${PARSE}.tab.c ${PARSE}.tab.h lex.${PARSE}.c
+	rm -f $(OBJS) $(PROGRAM) $(PROGRAM).c $(PROGRAM).tab.c $(PROGRAM).tab.h core
+
+.PHONY:	regress clean

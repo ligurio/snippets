@@ -1,0 +1,3 @@
+passrate >= 10
+passrate = 3
+passrate < 99

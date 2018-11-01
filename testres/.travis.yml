@@ -20,6 +20,7 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install afl-fuzz tidy-html5 mandoc; fi
 
 script:
+  - mkdir build
+  - cd build && cmake ..
   - make
-  - make syntax-check
-  - make test
+  - make unit-test

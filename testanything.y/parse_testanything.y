@@ -11,8 +11,7 @@ void yyerror(char *);
 int yylex(void);
 %}
 
-%debug
-%token TC_FAIL TC_PASS TC_BAIL TC_SKIP TC_TODO STRING NUMBER VERSION EOLN 
+%token TC_FAIL TC_PASS TC_BAIL TC_SKIP TC_TODO STRING NUMBER VERSION EOLN
 %token COMMENT DASH PLAN YAML_START YAML_END
 
 %%
@@ -32,7 +31,7 @@ YAML:	/* empty */
 		;
 
 TC_STATUS: TC_PASS { }
-		| TC_FAIL { }	
+		| TC_FAIL { }
 		| TC_BAIL { }
 		;
 

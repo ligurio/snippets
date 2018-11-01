@@ -10,7 +10,7 @@ REGRESS	= t1 t2 t3 t4 t5 t6 t7
 all: $(PROGRAM)
 
 $(OBJS): $(SRCS)
-	$(CC) $(CFLAGS) -c $*.c -o $@ -O
+	$(CC) $(CFLAGS) -c $*.c -o $@
 
 $(PROGRAM).tab.c: $(PROGRAM).y
 	yacc -b $(PROGRAM) -d $(PROGRAM).y
@@ -24,7 +24,7 @@ $(PROGRAM): $(OBJS)
 regress: all
 	@for t in $(REGRESS); do echo "==== t/$$t"; ./${PROGRAM} t/$$t; done
 
-clean:			
+clean:
 	rm -f $(OBJS) $(PROGRAM) $(PROGRAM).c $(PROGRAM).tab.c $(PROGRAM).tab.h core
 
 .PHONY:	regress clean

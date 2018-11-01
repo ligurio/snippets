@@ -6,12 +6,13 @@
 %{
 #include <stdio.h>
 #include "parse_testanything.tab.h"
-extern YYSTYPE yylval;
+/* extern YYSTYPE yylval; */
+int yylval;
 %}
 
 %option yylineno
 %option noyywrap
- 
+
 %%
 "#"				return COMMENT;
 "not ok"			return TC_FAIL;

@@ -1,8 +1,3 @@
-/*
- * Written by Sergey Bronnikov <estetus@gmail.com>.
- * Public domain.
- */
-
 %{
 #include <stdio.h>
 #include "parse_testanything.tab.h"
@@ -14,19 +9,19 @@ int yylval;
 %option noyywrap
 
 %%
-"#"				return COMMENT;
-"not ok"			return TC_FAIL;
-"ok"				return TC_PASS;
-"Bail out!"			return TC_BAIL;
-"SKIP"				return TC_SKIP;
-"TODO"				return TC_TODO;
+"ok"			return PASS;
+"not"			return NE;
+"Bail out!"		return BAILOUT;
+[(?i:"skip")|(?i:"skipped")]	return SKIP;
+"TODO"			return TODO;
 "-"				return DASH;
-"..."				return YAML_START;
-"---"				return YAML_END;
-[a-zA-Z';,.!@#$%^&*()_+{}\/-]+	return STRING;
-[0-9]+				{ yylval = atoi(yytext); return NUMBER; }
-[0-9]+..[0-9]+			return PLAN;
-"TAP version"			return VERSION;
-"\n"				return EOLN;
-[ \t]				;
+".."			return DOTS;
+"#"				return HASH;
+^"..."$			return YAML_START;
+^"---"$			return YAML_END;
+[0-9]+			{ yylval = atoi(yytext); return NUMBER; }
+[-a-zA-Z0-9\-\"\_/\.\!\*\+\<\>\}\[\]]+		return WORD;
+"TAP version"	return VERSION;
+"\n"			return NL;
+[ \t]+			 /* skip whitespace */
 %%

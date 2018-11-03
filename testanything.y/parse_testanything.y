@@ -1,8 +1,3 @@
-/*
- * Written by Sergey Bronnikov <estetus@gmail.com>.
- * Public domain.
- */
-
 %{
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,48 +6,92 @@ void yyerror(char *);
 int yylex(void);
 %}
 
-%token TC_FAIL TC_PASS TC_BAIL TC_SKIP TC_TODO STRING NUMBER VERSION EOLN
-%token COMMENT DASH PLAN YAML_START YAML_END
+%token PASS NE BAILOUT SKIP TODO
+%token HASH DASH DOTS YAML_START YAML_END
+%token VERSION WORD NUMBER NL 
 
 %%
-line:	/* empty */
-		| line expr
-		| line expr EOLN
-		| line EOLN
-
-strings: /* empty */
-		| STRING
-		| strings NUMBER
-		| strings STRING
+program:
+		program test_line NL
+		|
+		| error NL { yyerrok; }
 		;
 
-YAML:	/* empty */
-		| YAML_START EOLN YAML_END EOLN
+test_line:
+		VERSION NUMBER { printf("TAP version is %d\n", $2); }
+		| plan { printf("Plan\n"); }
+		| status test_number desc { printf("Testcase %d\n", $2); }
+		| comment { printf("Comment\n"); }
+		| BAILOUT string { printf("Bail out!\n"); }
+		| YAML_START string YAML_END { /* ignore */ }
 		;
 
-TC_STATUS: TC_PASS { }
-		| TC_FAIL { }
-		| TC_BAIL { }
+string:
+		| WORD
+		|
 		;
 
-expr:	error { yyclearin; yyerrok; }
-		| TC_STATUS strings YAML { printf("Testcase\n"); }
-		| TC_STATUS DASH strings YAML { printf("Testcase\n"); }
-		| TC_STATUS NUMBER strings YAML { printf("Testcase %d\n", $2); }
-		| TC_STATUS NUMBER DASH strings YAML { printf("Testcase %d. Comment \n", $2); }
-		| TC_STATUS NUMBER DASH COMMENT TC_SKIP strings YAML { printf("Testcase SKIP. Comment\n"); }
-		| TC_STATUS NUMBER DASH strings COMMENT TC_SKIP strings YAML { printf("Testcase TODO. Comment\n"); }
-		| TC_STATUS NUMBER DASH COMMENT TC_TODO strings YAML { printf("Testcase TODO. Comment\n"); }
-		| TC_STATUS NUMBER DASH strings COMMENT TC_TODO strings YAML { printf("Testcase TODO. Comment\n"); }
-		| PLAN { printf("Plan \n"); }
-		| PLAN COMMENT strings { printf("Plan \n"); }
-		| VERSION NUMBER { printf("Version is %d\n", $2); }
-		| COMMENT strings { printf("Comment \n"); }
+status:
+		PASS
+		| NE PASS
+		;
+
+comment: /* empty */
+		| HASH
+		| HASH string
+		;
+
+test_number: /* empty */
+		| NUMBER
+		;
+
+/*
+Example:
+
+1..10
+1..0 # Skipped: WWW::Mechanize not installed
+
+- is optional
+- if there is a plan before the test points it must be the first non-diagnostic
+line output by the test file
+- plan cannot appear in the middle of the output, nor can it appear more than once
+*/
+
+plan:	/* empty */
+		| NUMBER DOTS NUMBER { printf("Max number of tests is %d\n", $3); }
+		; 
+
+/*
+
+Example:
+
+ok 42 this is the description of the test
+
+Any text after the test number but before a # is the description of
+the test point.
+
+Descriptions should not begin with a digit so that they are not confused with
+the test point number. The harness may do whatever it wants with the
+description.
+
+The test point may include a directive, following a hash on the test
+line. There are currently two directives allowed: TODO and SKIP.
+
+*/
+
+desc:	/* empty */
+		| string DASH
+		| string
+		;
+
+directive:	/* empty */
+		| HASH SKIP
+		| HASH TODO
 		;
 %%
 
-#include <stdlib.h>
-#include <stdio.h>
+//#include <stdlib.h>
+//#include <stdio.h>
 #include <ctype.h>
 #include <sys/queue.h>
 
@@ -61,9 +100,6 @@ extern int yylex();
 extern int yyparse();
 extern int yylineno;
 extern FILE *yyin;
-FILE *in;
-
-enum tc_status { PASS, FAIL, BAIL };
 
 struct tailq_entry {
 	int tc_number;
@@ -74,12 +110,9 @@ struct tailq_entry {
 
 TAILQ_HEAD(, tailq_entry) report_head;
 
-void yyerror( char *s )
+void yyerror(char *s)
 {
-#ifdef DEBUG
-  fprintf( stderr, "Oops: %s in line %d\n", s, yylineno);
-  exit(-1);
-#endif
+    fprintf( stderr, "Warning: %s, line %d\n", s, yylineno);
 }
 
 int main( int argc, char **argv ) {
@@ -98,6 +131,7 @@ int main( int argc, char **argv ) {
 
   yyparse();
 
+/*
   struct tailq_entry *item;
   struct tailq_entry *tmp_item;
   int i;
@@ -118,7 +152,8 @@ int main( int argc, char **argv ) {
   TAILQ_FOREACH(item, &report_head, entries) {
 	printf("%d ", item->tc_number);
   }
-  printf("\n");
+*/
 
+  close(yyin);
   return 0;
 }

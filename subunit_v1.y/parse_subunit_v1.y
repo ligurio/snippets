@@ -8,7 +8,8 @@ int yylex(void);
 
 %token TEST SUCCESS FAILURE ERROR SKIP XFAIL UXSUCCESS
 %token PROGRESS TAGS TIME DATE_VALUE TIME_VALUE NL
-%token DETAILS NUMBER NAME PLUS MINUS PUSH POP
+%token NUMBER NAME PLUS MINUS PUSH POP PART_TYPE
+%token OPEN_BRACKET CLOSE_BRACKET MULTIPART_BRACKET
 
 %%
 program:
@@ -19,11 +20,37 @@ program:
 
 test_line:
 		TEST NAME { printf("TEST\n"); }
-		| status NAME { printf("STATUS\n"); }
+		| status NAME details { printf("STATUS\n"); }
 		| PROGRESS progress_action { printf("PROGRESS push/pop\n"); }
 		| PROGRESS progress_sign NUMBER { printf("PROGRESS\n"); }
 		| TAGS tags { printf("TAGS\n"); }
 		| TIME DATE_VALUE TIME_VALUE { printf("TIME\n"); }
+		;
+
+details:
+		|
+		| bracketed
+		| multipart
+		;
+
+bracketed:
+		| OPEN_BRACKET lines CLOSE_BRACKET
+		;
+
+multipart:
+		| MULTIPART_BRACKET lines CLOSE_BRACKET
+
+part:
+		| PART_TYPE NL NAME NL part_bytes NL
+		;
+
+part_bytes:
+		| /* FIXME */
+		;
+
+lines:
+		| lines NAME
+		|
 		;
 
 tags:

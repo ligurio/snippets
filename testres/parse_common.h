@@ -70,6 +70,12 @@ enum test_status {
 	STATUS_PASS		/* JUnit */
 };
 
+enum test_status_class {
+	STATUS_CLASS_PASS,
+	STATUS_CLASS_FAIL,
+	STATUS_CLASS_SKIP
+};
+
 struct tailq_test {
     const char *name;
     const char *time;
@@ -126,11 +132,8 @@ struct suiteq *sort_suites(struct suiteq *suites);
 struct testq *sort_tests(struct testq *tests);
 */
 
-/* calc */
-int num_by_status(struct tailq_report *report, enum test_status status);
-int calc_passed(struct tailq_report *report);
-int calc_failed(struct tailq_report *report);
-int calc_skipped(struct tailq_report *report);
+int num_by_status_class(struct tailq_report *report, enum test_status_class c);
+enum test_status_class class_by_status(enum test_status status);
 double calc_success_perc(struct tailq_report *report);
 
 /* cleanup */

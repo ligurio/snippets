@@ -45,7 +45,7 @@ print_report(struct tailq_report * report)
 	}
 }
 
-void 
+void
 print_report_summary(struct tailq_report * report)
 {
 	printf("\nTEST REPORT (%s)\n", format_string(report->format));
@@ -56,12 +56,12 @@ print_report_summary(struct tailq_report * report)
 	printf("FILE: %s\n", report->path);
 	printf("ID: %s\n", report->id);
 	printf("STATUS: %d PASSED, %d FAILED, %d SKIPPED\n",
-				calc_passed(report),
-				calc_failed(report),
-				calc_skipped(report));
+				num_by_status_class(report, STATUS_CLASS_PASS),
+				num_by_status_class(report, STATUS_CLASS_FAIL),
+				num_by_status_class(report, STATUS_CLASS_SKIP));
 }
 
-void 
+void
 print_reports(struct reportq * reports)
 {
 	tailq_report *report_item = NULL;

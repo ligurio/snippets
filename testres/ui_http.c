@@ -100,9 +100,12 @@ print_html_reports(struct reportq * reports) {
 	       printf("<td><span class=\"label failed\">%0.0f</span></td>\n", perc);
 	    }
 	    printf("<td>\n");
-	    printf("<span class=\"label passed\">%d</span>\n", calc_passed(report_item));
-	    printf("<span class=\"label failed\">%d</span>\n", calc_failed(report_item));
-	    printf("<span class=\"label skipped\">%d</span>\n", calc_skipped(report_item));
+	    printf("<span class=\"label passed\">%d</span>\n",
+			num_by_status_class(report_item, STATUS_CLASS_PASS));
+	    printf("<span class=\"label failed\">%d</span>\n",
+			num_by_status_class(report_item, STATUS_CLASS_FAIL));
+	    printf("<span class=\"label skipped\">%d</span>\n",
+			num_by_status_class(report_item, STATUS_CLASS_SKIP));
 	    printf("</td>\n");
         strftime(datestr, 64, "%I:%M%p", date);
 	    printf("<td>%s</td>\n", datestr);

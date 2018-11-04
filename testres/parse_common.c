@@ -251,7 +251,7 @@ struct testq *sort_tests(struct testq *tests) {
 }
 */
 
-int num_by_status(struct tailq_report *report, enum test_status status) {
+int num_by_status_class(struct tailq_report *report, enum test_status_class c) {
 
    int number = 0;
    if (!TAILQ_EMPTY(report->suites)) {
@@ -261,7 +261,7 @@ int num_by_status(struct tailq_report *report, enum test_status status) {
             if (!TAILQ_EMPTY(suite_item->tests)) {
                tailq_test *test_item = NULL;
                TAILQ_FOREACH(test_item, suite_item->tests, entries) {
-                  if (test_item->status == status) number++;
+                  if (class_by_status(test_item->status) == c) number++;
                }
             }
          }
@@ -271,35 +271,60 @@ int num_by_status(struct tailq_report *report, enum test_status status) {
    return number;
 }
 
-int calc_passed(struct tailq_report *report) {
-    int num;
-    num = num_by_status(report, STATUS_OK);		/* TestAnythingProtocol	*/
-    num += num_by_status(report, STATUS_PASS);      	/* JUnit */
-    num += num_by_status(report, STATUS_SUCCESS);   	/* Subunit */
-    return num;
-}
+enum test_status_class class_by_status(enum test_status status) {
 
-int calc_failed(struct tailq_report *report) {
-    int num;
-    num = num_by_status(report, STATUS_NOTOK);		/* TestAnythingProtocol	*/
-    num += num_by_status(report, STATUS_ERROR);     	/* JUnit */
-    num += num_by_status(report, STATUS_FAILURE);   	/* JUnit */
-    num += num_by_status(report, STATUS_FAILED);    	/* Subunit */
-    num += num_by_status(report, STATUS_XFAILURE);  	/* Subunit */
-    num += num_by_status(report, STATUS_UXSUCCESS); 	/* Subunit */
-    return num;
-}
-
-int calc_skipped(struct tailq_report *report) {
-    int num;
-    num = num_by_status(report, STATUS_MISSING);	/* TestAnythingProtocol	*/
-    num += num_by_status(report, STATUS_TODO);         	/* TestAnythingProtocol	*/
-    num += num_by_status(report, STATUS_SKIP);         	/* TestAnythingProtocol	*/
-    num += num_by_status(report, STATUS_SKIPPED);      	/* Subunit */
-    num += num_by_status(report, STATUS_UNDEFINED);    	/* Subunit */
-    num += num_by_status(report, STATUS_ENUMERATION);  	/* Subunit */
-    num += num_by_status(report, STATUS_INPROGRESS);   	/* Subunit */
-    return num;
+   switch (status) {
+   case STATUS_OK:
+     return STATUS_CLASS_PASS;
+     break;
+   case STATUS_PASS:
+     return STATUS_CLASS_PASS;
+     break;
+   case STATUS_SUCCESS:
+     return STATUS_CLASS_PASS;
+     break;
+   case STATUS_NOTOK:
+     return STATUS_CLASS_FAIL;
+     break;
+   case STATUS_ERROR:
+     return STATUS_CLASS_FAIL;
+     break;
+   case STATUS_FAILURE:
+     return STATUS_CLASS_FAIL;
+     break;
+   case STATUS_FAILED:
+     return STATUS_CLASS_FAIL;
+     break;
+   case STATUS_XFAILURE:
+     return STATUS_CLASS_FAIL;
+     break;
+   case STATUS_UXSUCCESS:
+     return STATUS_CLASS_FAIL;
+     break;
+   case STATUS_MISSING:
+     return STATUS_CLASS_SKIP;
+     break;
+   case STATUS_TODO:
+     return STATUS_CLASS_SKIP;
+     break;
+   case STATUS_SKIP:
+     return STATUS_CLASS_SKIP;
+     break;
+   case STATUS_SKIPPED:
+     return STATUS_CLASS_SKIP;
+     break;
+   case STATUS_UNDEFINED:
+     return STATUS_CLASS_SKIP;
+     break;
+   case STATUS_ENUMERATION:
+     return STATUS_CLASS_SKIP;
+     break;
+   case STATUS_INPROGRESS:
+     return STATUS_CLASS_SKIP;
+     break;
+   default:
+     break;
+   }
 }
 
 /*
@@ -308,9 +333,9 @@ int calc_skipped(struct tailq_report *report) {
  */
 double calc_success_perc(struct tailq_report *report) {
     double num = 0;
-    int passed = calc_passed(report);
-    int failed = calc_failed(report);
-    int skipped = calc_skipped(report);
+    int passed = num_by_status_class(report, STATUS_CLASS_PASS);
+    int failed = num_by_status_class(report, STATUS_CLASS_FAIL);
+    int skipped = num_by_status_class(report, STATUS_CLASS_SKIP);
     num = (double)passed / (double)(passed + failed + skipped) * 100;
 
     return round(num);

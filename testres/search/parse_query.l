@@ -29,29 +29,30 @@
 %{
 #include <stdio.h>
 #include "parse_query.tab.h"
-
-void yyerror(char *);
 extern int yylval;
 %}
 
-%%
-">"			return TOK_GT;
-"<"			return TOK_LT;
-"="			return TOK_EQ;
-"fmt"			return TOK_FMT;
-"suite"			return TOK_SUITE;
-"test"			return TOK_TEST;
-"created"		return TOK_CREATED;
-"passrate"		return TOK_PASSRATE;
+%option yylineno
+%option noyywrap
 
+%%
+">"					return GT;
+"<"					return LT;
+"="					return EQ;
+"<="				return LE;
+">="				return GE;
+":"					return COLON;
+"fmt"				return FMT;
+"suite"				return SUITE;
+"test"				return TEST;
+"created"			return CREATED;
+"passrate"			return PASSRATE;
 "junit"|"testanything"|"subunit_v1"|"subunit_v2" return FORMAT;
-[A-Z|a-z|0-9]+		return NAME;
-[0-9]+              	return NUMBER;
-\n                  	/* skip end line */;
-[ \t]+              	/* skip whitespace */;
-.           		yyerror("Unknown character");
-%%
+[0-9]{8}			return DATE;
+[0-9]+              return NUMBER;
+[A-Za-z0-9_\-]+		return NAME;
+\n                  return NL;
+[ \t]+              /* skip whitespace */;
+.  					{ yyerror("Unrecognized character"); }
 
-int yywrap(void) {
-    return 1;
-}
+%%

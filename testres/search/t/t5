@@ -1,5 +1,5 @@
-created =  "2012/01/01 00:00"
-created >  "2015/02/09"
-created <  "2015/02/11"
-created >= "2015/02/09"
-created <= "2015/02/11"
+created = 20120101
+created > 20150209
+created < 20150211
+created >= 20150209
+created <= 20150211

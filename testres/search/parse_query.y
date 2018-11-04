@@ -32,28 +32,64 @@
     int yylex(void);
 %}
 
-%token TOK_GT TOK_LT TOK_EQ
-%token TOK_FMT TOK_SUITE TOK_TEST TOK_CREATED TOK_PASSRATE
-%token FORMAT NAME NUMBER
+%token GT LT LE GE EQ COLON NL
+%token FMT SUITE TEST CREATED PASSRATE
+%token FORMAT DATE NAME NUMBER
 
 %%
 
-query:
-        query expression
-        | /* NULL */
-        ;
+program:
+		program expression NL
+		|
+		| error NL { yyerrok; }
+		;
 
 expression:
-	TOK_TEST TOK_EQ NAME	{ printf("TOK_TEST\n"); }
-        | TOK_SUITE TOK_EQ NAME	{ printf("TOK_SUITE\n"); }
-        | TOK_FMT TOK_EQ FORMAT	{ printf("TOK_FMT\n"); }
+		TEST COLON NAME	{ printf("TEST\n"); }
+        | SUITE COLON NAME	{ printf("SUITE\n"); }
+        | FMT COLON FORMAT	{ printf("FMT\n"); }
+		| CREATED compare_op DATE { printf("CREATED\n"); }
+		| PASSRATE compare_op NUMBER { printf("PASSRATE\n"); }
         ;
+
+compare_op:
+		EQ
+		| GT
+		| LT
+		| LE
+		| GE
+		;
 %%
 
-void yyerror(char *s) {
-    fprintf(stderr, "%s\n", s);
+#include <ctype.h>
+
+char *progname;
+extern int yylex();
+extern int yyparse();
+extern int yylineno;
+extern FILE *yyin;
+
+void yyerror(char *s)
+{
+	fprintf(stderr, "Warning: %s, line %d\n", s, yylineno);
 }
 
-int main(void) {
-    yyparse();
+int main( int argc, char **argv ) {
+
+  progname = argv[0];
+
+  if (argc > 1)
+  {
+	yyin = fopen(argv[1], "r");
+	yylineno = 0;
+	if (!yyin) {
+		printf("Can't open file %s\n", argv[1]);
+		return -1;
+	}
+  }
+
+  yyparse();
+
+  close(yyin);
+  return 0;
 }

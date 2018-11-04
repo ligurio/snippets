@@ -6,7 +6,7 @@ void yyerror(char *);
 int yylex(void);
 %}
 
-%token PASS NE BAILOUT SKIP TODO
+%token OK NOT BAILOUT SKIP SKIPPED TODO
 %token HASH DASH DOTS YAML_START YAML_END
 %token VERSION WORD NUMBER NL 
 
@@ -19,25 +19,20 @@ program:
 
 test_line:
 		VERSION NUMBER { printf("TAP version is %d\n", $2); }
-		| plan { printf("Plan\n"); }
-		| status test_number desc { printf("Testcase %d\n", $2); }
-		| comment { printf("Comment\n"); }
-		| BAILOUT string { printf("Bail out!\n"); }
+		| plan directive { printf("PLAN\n"); }
+		| status test_number desc directive { printf("TESTCASE #%d\n", $2); }
+		| comment { printf("COMMENT\n"); }
+		| BAILOUT string { printf("BAIL OUT!\n"); }
 		| YAML_START string YAML_END { /* ignore */ }
 		;
 
-string:
-		| WORD
-		|
-		;
-
 status:
-		PASS
-		| NE PASS
+		OK
+		| NOT OK
 		;
 
 comment: /* empty */
-		| HASH
+		HASH
 		| HASH string
 		;
 
@@ -80,18 +75,23 @@ line. There are currently two directives allowed: TODO and SKIP.
 */
 
 desc:	/* empty */
-		| string DASH
 		| string
+		| DASH string
 		;
 
 directive:	/* empty */
-		| HASH SKIP
-		| HASH TODO
+		| HASH SKIP string
+		| HASH SKIPPED string
+		| HASH TODO string
 		;
+
+string: /* empty */
+		string WORD
+		|
+		;
+
 %%
 
-//#include <stdlib.h>
-//#include <stdio.h>
 #include <ctype.h>
 #include <sys/queue.h>
 

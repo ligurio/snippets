@@ -119,6 +119,7 @@ typedef struct tailq_report tailq_report;
 
 char *get_filename_ext(const char *filename);
 enum test_format detect_format(const char *basename);
+struct reportq *process_dir(char *path);
 tailq_report *process_file(char *path);
 tailq_test *make_test(char *name, char *time, char *comment);
 unsigned char *digest_to_str(unsigned char *str, unsigned char digest[], unsigned int n);

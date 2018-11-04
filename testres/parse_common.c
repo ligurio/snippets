@@ -26,6 +26,7 @@
  *
  */
 
+#include <dirent.h>
 #include <math.h>
 
 #include "parse_common.h"
@@ -339,4 +340,42 @@ double calc_success_perc(struct tailq_report *report) {
     num = (double)passed / (double)(passed + failed + skipped) * 100;
 
     return round(num);
+}
+
+struct reportq *process_dir(char *path) {
+
+	DIR *d;
+	int fd;
+
+	fd = open(path, O_RDONLY);
+	if ((d = fdopendir(fd)) == NULL) {
+		printf("failed to open dir %s\n", path);
+		close(fd);
+		return NULL;
+	}
+
+	struct reportq *reports;
+	TAILQ_INIT(reports);
+
+	struct dirent *dir;
+	char *path_file = (char *) NULL;
+	tailq_report *report_item;
+	while ((dir = readdir(d)) != NULL) {
+		char *basename;
+		basename = dir->d_name;
+		if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
+			continue;
+		}
+		/* TODO: recursive search in directories */
+		int path_len = strlen(path) + strlen(basename) + 2;
+		path_file = calloc(path_len, sizeof(char));
+		snprintf(path_file, path_len, "%s/%s", path, basename);
+		report_item = process_file(path_file);
+		TAILQ_INSERT_TAIL(reports, report_item, entries);
+		free(path_file);
+	}
+	close(fd);
+	closedir(d);
+
+	return reports;
 }

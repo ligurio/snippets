@@ -26,7 +26,6 @@
  *
  */
 
-#include <dirent.h>
 #include <err.h>
 #include <fcntl.h>
 #include <libgen.h>
@@ -86,7 +85,7 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-        if (path == (char*)NULL) {
+    if (path == (char*)NULL) {
 		perror("specified path is empty");
 		return 1;
 	}
@@ -98,8 +97,9 @@ main(int argc, char *argv[])
 		perror("cannot open specified path");
 		return 1;
 	}
+	close(fd);
 
-   	char *query_string = getenv("QUERY_STRING");
+	char *query_string = getenv("QUERY_STRING");
 	tailq_report *report_item;
 	if (S_ISREG(path_st.st_mode)) {
 	   report_item = process_file(path);
@@ -111,58 +111,38 @@ main(int argc, char *argv[])
 	      print_report(report_item);
  	   }
 	   free_report(report_item);
-	   close(fd);
 	   return 0;
 	}
 
-	DIR *d;
-	struct dirent *dir;
-	if ((d = fdopendir(fd)) == NULL) {
-		printf("failed to open dir %s\n", path);
-		close(fd);
-		return 1;
-	}
-	char *path_file = (char *) NULL;
-	struct reportq reports;
-	TAILQ_INIT(&reports);
-
-	while ((dir = readdir(d)) != NULL) {
-		char *basename;
-		basename = dir->d_name;
-		if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
-			continue;
-		}
-		/* TODO: recursive search in directories */
-		int path_len = strlen(path) + strlen(basename) + 2;
-		path_file = calloc(path_len, sizeof(char));
-		snprintf(path_file, path_len, "%s/%s", path, basename);
-		report_item = process_file(path_file);
-		TAILQ_INSERT_TAIL(&reports, report_item, entries);
-		free(path_file);
-	}
-	close(fd);
-	closedir(d);
+	struct reportq *reports;
+	reports = process_dir(path);
+	if (query_string == NULL) {
+	   print_reports(reports);
+	   free_reports(reports);
+	   return 0;
+ 	}
 
 	if (strcmp(query_string, "index") == 0) {
 	   print_html_headers(version, stylesheet);
-	   print_html_reports(&reports);
+	   print_html_reports(reports);
 	   print_html_footer(version);
-	   free_reports(&reports);
+	   free_reports(reports);
 	   return 0;
 	}
 
-        if (strcmp(strtok(query_string, "="), "show") == 0) {
+    if (strcmp(strtok(query_string, "="), "show") == 0) {
 	   const char *report_id = strtok(NULL, "=");
 	   struct tailq_report *report;
-	   if ((report = is_report_exists(&reports, report_id)) != NULL) {
+	   if ((report = is_report_exists(reports, report_id)) != NULL) {
 	      print_html_headers(version, stylesheet);
 	      print_html_report(report);
 	      print_html_footer(version);
 	      free_report(report);
-	      free_reports(&reports);
+	      free_reports(reports);
 	   } else {
 	      print_html_headers(version, stylesheet);
 	      printf("not found\n");
+	      print_html_footer(version);
 	   }
 	}
 	return 0;

@@ -36,23 +36,25 @@ extern int yylval;
 %option noyywrap
 
 %%
-">"					return GT;
-"<"					return LT;
-"="					return EQ;
-"<="				return LE;
-">="				return GE;
-":"					return COLON;
-"fmt"				return FMT;
-"suite"				return SUITE;
-"test"				return TEST;
-"created"			return CREATED;
-"passrate"			return PASSRATE;
+">"							return GT;
+"<"							return LT;
+"="							return EQ;
+"<="						return LE;
+">="						return GE;
+":"							return COLON;
+"fmt"						return FMT;
+"suite"						return SUITE;
+"test"						return TEST;
+"hostname"					return HOSTNAME;
+"created"					return CREATED;
+"passrate"					return PASSRATE;
 "junit"|"testanything"|"subunit_v1"|"subunit_v2" return FORMAT;
-[0-9]{8}			return DATE;
-[0-9]+              return NUMBER;
-[A-Za-z0-9_\-]+		return NAME;
-\n                  return NL;
-[ \t]+              /* skip whitespace */;
-.  					{ yyerror("Unrecognized character"); }
+[0-9]{8}					return DATE;
+[0-9]+						return NUMBER;
+[A-Za-z][A-Za-z0-9\.\-]+	return HNAME;
+[A-Za-z0-9_\-]+				return NAME;
+\n							return NL;
+[ \t]+						/* skip whitespace */;
+.							{ yyerror("Unrecognized character"); }
 
 %%

@@ -33,7 +33,7 @@
 %}
 
 %token GT LT LE GE EQ COLON NL
-%token FMT SUITE TEST CREATED PASSRATE
+%token FMT SUITE TEST HOSTNAME HNAME CREATED PASSRATE
 %token FORMAT DATE NAME NUMBER
 
 %%
@@ -46,8 +46,9 @@ program:
 
 expression:
 		TEST COLON NAME	{ printf("TEST\n"); }
-        | SUITE COLON NAME	{ printf("SUITE\n"); }
-        | FMT COLON FORMAT	{ printf("FMT\n"); }
+        | SUITE COLON NAME { printf("SUITE\n"); }
+        | FMT COLON FORMAT { printf("FMT\n"); }
+        | HOSTNAME COLON HNAME { printf("HOSTNAME\n"); }
 		| CREATED compare_op DATE { printf("CREATED\n"); }
 		| PASSRATE compare_op NUMBER { printf("PASSRATE\n"); }
         ;

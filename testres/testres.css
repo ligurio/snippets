@@ -45,3 +45,7 @@ tr:nth-child(even) {
 .passed {background-color: #4CAF50;}	/* green */
 .failed {background-color: #FF0000;}	/* red */
 .skipped {background-color: #6C6C6C;}	/* grey */
+
+input {
+    font-size: 16pt;
+}

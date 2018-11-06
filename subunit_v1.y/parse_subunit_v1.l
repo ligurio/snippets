@@ -26,14 +26,16 @@ int yylval;
 "="				return EQUAL;
 ";"				return COLON;
 "0"				return ZERO;
-"Content-Type: type/" 		return CONTENT_TYPE;
+"["				return OPEN_BRACKET;
+"]"				return CLOSE_BRACKET;
+"/"				return SLASH;
+"multipart"			return MULTIPART;
+"Content-Type:" 		return CONTENT_TYPE;
+[-a-z]+				return TYPE;
 [0-9]+				return NUMBER;
 [0-9]{4}-[0-9]{2}-[0-9]{2}  	return DATE_VALUE;
 [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z	return TIME_VALUE;
-[a-zA-Z0-9()_/\\.-]+		return NAME;
-"\[\n"				return OPEN_BRACKET;
-"\]\n"				return CLOSE_BRACKET;
-"[ multipart\n"			return MULTIPART_BRACKET;
+[a-zA-Z0-9()_/\\.,-]+		return NAME;
 "\n"				return NL;
 [ \t]+			 	/* skip whitespace */
 %%

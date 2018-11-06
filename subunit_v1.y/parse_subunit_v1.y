@@ -9,14 +9,14 @@ int yylex(void);
 %token TEST SUCCESS FAILURE ERROR SKIP XFAIL UXSUCCESS
 %token PROGRESS TAGS TIME DATE_VALUE TIME_VALUE NL
 %token NUMBER NAME PLUS MINUS PUSH POP CONTENT_TYPE
-%token OPEN_BRACKET CLOSE_BRACKET MULTIPART_BRACKET
-%token COLON EQUAL ZERO
+%token OPEN_BRACKET CLOSE_BRACKET MULTIPART
+%token COLON EQUAL ZERO SLASH TYPE
 
 %%
 program:
 		program test_line NL
-		|
 		| error NL { yyerrok; }
+		|
 		;
 
 test_line:
@@ -29,8 +29,9 @@ test_line:
 		;
 
 details:
-		OPEN_BRACKET NL string CLOSE_BRACKET NL		/* BRACKETED */
-		| MULTIPART_BRACKET NL part CLOSE_BRACKET NL 	/* MULTIPART */
+		OPEN_BRACKET NL string CLOSE_BRACKET NL			/* BRACKETED */
+		| OPEN_BRACKET MULTIPART NL part CLOSE_BRACKET NL 	/* MULTIPART */
+		|
 		;
 
 part:
@@ -39,7 +40,7 @@ part:
 		;
 
 part_type:
-		CONTENT_TYPE NAME params
+		CONTENT_TYPE TYPE SLASH TYPE params
 		|
 		;
 

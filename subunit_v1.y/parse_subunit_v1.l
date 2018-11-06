@@ -31,11 +31,13 @@ int yylval;
 "/"				return SLASH;
 "multipart"			return MULTIPART;
 "Content-Type:" 		return CONTENT_TYPE;
-[-a-z]+				return TYPE;
+[-a-z0-9]+			return TYPE;
 [0-9]+				return NUMBER;
+[0-9A-Z]+			return NUM_BYTES;
 [0-9]{4}-[0-9]{2}-[0-9]{2}  	return DATE_VALUE;
 [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z	return TIME_VALUE;
-[a-zA-Z0-9()_/\\.,-]+		return NAME;
-"\n"				return NL;
+[a-zA-Z0-9()_/\\.',-]+		return NAME;
+[a-zA-Z0-9()_/\\."@<>:',-]+	return WORD;
+\n				return NL;
 [ \t]+			 	/* skip whitespace */
 %%

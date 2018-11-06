@@ -10,7 +10,7 @@ int yylex(void);
 %token PROGRESS TAGS TIME DATE_VALUE TIME_VALUE NL
 %token NUMBER NAME PLUS MINUS PUSH POP CONTENT_TYPE
 %token OPEN_BRACKET CLOSE_BRACKET MULTIPART
-%token COLON EQUAL ZERO SLASH TYPE
+%token COLON EQUAL ZERO SLASH TYPE WORD NUM_BYTES
 
 %%
 program:
@@ -29,33 +29,34 @@ test_line:
 		;
 
 details:
-		OPEN_BRACKET NL string CLOSE_BRACKET NL			/* BRACKETED */
-		| OPEN_BRACKET MULTIPART NL part CLOSE_BRACKET NL 	/* MULTIPART */
+		OPEN_BRACKET NL string CLOSE_BRACKET NL				/* BRACKETED */
+		| OPEN_BRACKET MULTIPART NL mpart_section CLOSE_BRACKET NL 	/* MULTIPART */
 		|
 		;
 
-part:
-		part part_type NL NAME NL part_bytes NL
+mpart_section:
+		mpart_section part_type NL NAME NL NUM_BYTES NL multiline ZERO NL
 		|
 		;
 
+/* Content-Type: text/plain;charset=utf8 */
+/* FIXME: TYPE should have limited values */
 part_type:
 		CONTENT_TYPE TYPE SLASH TYPE params
-		|
 		;
 
+/* FIXME: NAME should conform to HTTP standard */
 params:
 		params COLON NAME EQUAL NAME
 		|
 		;
 
-part_bytes:
-		part_bytes NUMBER NL string ZERO NL
+string:
+		string WORD
 		|
 		;
 
-string:
-		string NAME
+multiline:	multiline string NL
 		|
 		;
 

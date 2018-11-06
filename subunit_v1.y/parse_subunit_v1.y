@@ -8,8 +8,9 @@ int yylex(void);
 
 %token TEST SUCCESS FAILURE ERROR SKIP XFAIL UXSUCCESS
 %token PROGRESS TAGS TIME DATE_VALUE TIME_VALUE NL
-%token NUMBER NAME PLUS MINUS PUSH POP PART_TYPE
+%token NUMBER NAME PLUS MINUS PUSH POP CONTENT_TYPE
 %token OPEN_BRACKET CLOSE_BRACKET MULTIPART_BRACKET
+%token COLON EQUAL ZERO
 
 %%
 program:
@@ -28,28 +29,32 @@ test_line:
 		;
 
 details:
-		|
-		| bracketed
-		| multipart
+		OPEN_BRACKET NL string CLOSE_BRACKET NL		/* BRACKETED */
+		| MULTIPART_BRACKET NL part CLOSE_BRACKET NL 	/* MULTIPART */
 		;
-
-bracketed:
-		| OPEN_BRACKET lines CLOSE_BRACKET
-		;
-
-multipart:
-		| MULTIPART_BRACKET lines CLOSE_BRACKET
 
 part:
-		| PART_TYPE NL NAME NL part_bytes NL
+		part part_type NL NAME NL part_bytes NL
+		|
+		;
+
+part_type:
+		CONTENT_TYPE NAME params
+		|
+		;
+
+params:
+		params COLON NAME EQUAL NAME
+		|
 		;
 
 part_bytes:
-		| /* FIXME */
+		part_bytes NUMBER NL string ZERO NL
+		|
 		;
 
-lines:
-		| lines NAME
+string:
+		string NAME
 		|
 		;
 
@@ -86,6 +91,7 @@ progress_action:
 
 #include <ctype.h>
 #include <sys/queue.h>
+#include <unistd.h>
 
 char *progname;
 extern int yylex();
@@ -146,6 +152,6 @@ int main( int argc, char **argv ) {
   }
 */
 
-  close(yyin);
+  /* close(yyin); */
   return 0;
 }

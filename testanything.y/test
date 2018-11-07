@@ -1,0 +1,15 @@
+#!/bin/sh
+
+_sample=$1
+
+[ -e $_sample ] || exit 1
+
+echo $_sample
+
+_line=0
+while read p; do
+  echo -n "$p - ";
+  echo "$p" | ./parse_testanything
+  _line=$(($_line+1))
+  #echo $_line
+done < $_sample

@@ -9,20 +9,20 @@ int yylval;
 %option noyywrap
 
 %%
-"ok"			return OK;
-"not"			return NOT;
-"Bail out!"		return BAILOUT;
-"TODO"			return TODO;
-"TAP version"	return VERSION;
-[Ss][Kk][Ii][Pp]				return SKIP;
+"ok"				return OK;
+"not"				return NOT;
+"Bail out!"			return BAILOUT;
+"TODO"				return TODO;
+"TAP version"			return VERSION;
+[Ss][Kk][Ii][Pp]		return SKIP;
 [Ss][Kk][Ii][Pp][Pp][Ee][Dd]	return SKIPPED;
-"-"				return DASH;
-"#"				return HASH;
-".."			return DOTS;
-^"..."$			return YAML_START;
-^"---"$			return YAML_END;
-[0-9]+			{ yylval = atoi(yytext); return NUMBER; }
-[-a-zA-Z0-9:\-\"\_/\.\!\*\+\<\>\}\[\]]+		return WORD;
-"\n"			return NL;
-[ \t]+			 /* skip whitespace */
+-				return DASH;
+#				return HASH;
+\.{2}				return DOTS;
+^\.{3}$				return YAML_START;
+^-{3}$				return YAML_END;
+[0-9]+				{ yylval = atoi(yytext); return NUMBER; }
+[-a-zA-Z0-9:$^"',_\./\!*+<>}\[\]]+	return WORD;
+\n				return NL;
+[ \t]+			 	/* skip whitespace */
 %%

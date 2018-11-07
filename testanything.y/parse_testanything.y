@@ -19,11 +19,11 @@ program:
 
 test_line:
 		VERSION NUMBER { printf("TAP version is %d\n", $2); }
-		| plan directive { printf("PLAN\n"); }
-		| status test_number desc directive { printf("TESTCASE #%d\n", $2); }
+		| NUMBER DOTS NUMBER comment { printf("PLAN %d - %d\n", $1, $3); }
+		| status test_number description comment { printf("TESTCASE #%d\n", $2); }
 		| comment { printf("COMMENT\n"); }
 		| BAILOUT string { printf("BAIL OUT!\n"); }
-		| YAML_START string YAML_END { /* ignore */ }
+		| YAML_START multiline YAML_END { /* ignore */ }
 		;
 
 status:
@@ -31,36 +31,64 @@ status:
 		| NOT OK
 		;
 
-comment: /* empty */
-		HASH
-		| HASH string
+comment:
+		HASH directive string
+		|
 		;
 
-test_number: /* empty */
-		| NUMBER
+test_number:
+		NUMBER
+		|
+		;
+
+description:
+		string
+		| DASH string
+		|
+		;
+
+directive:
+		SKIP
+		| SKIPPED
+		| TODO
+		|
+		;
+
+string:
+		string WORD
+		|
+		;
+
+multiline:
+		multiline string NL
+		|
 		;
 
 /*
+
+Type: PLAN
+
 Example:
 
-1..10
-1..0 # Skipped: WWW::Mechanize not installed
+	1..10
+	1..0 # Skipped: WWW::Mechanize not installed
+
+Description:
 
 - is optional
 - if there is a plan before the test points it must be the first non-diagnostic
 line output by the test file
 - plan cannot appear in the middle of the output, nor can it appear more than once
-*/
 
-plan:	/* empty */
-		| NUMBER DOTS NUMBER { printf("Max number of tests is %d\n", $3); }
-		; 
+------------------------------------------------------
 
-/*
+Type: STATUS
 
 Example:
 
-ok 42 this is the description of the test
+	ok 42 this is the description of the test
+
+Description:
 
 Any text after the test number but before a # is the description of
 the test point.
@@ -74,21 +102,6 @@ line. There are currently two directives allowed: TODO and SKIP.
 
 */
 
-desc:	/* empty */
-		| string
-		| DASH string
-		;
-
-directive:	/* empty */
-		| HASH SKIP string
-		| HASH SKIPPED string
-		| HASH TODO string
-		;
-
-string: /* empty */
-		string WORD
-		|
-		;
 
 %%
 
@@ -154,6 +167,7 @@ int main( int argc, char **argv ) {
   }
 */
 
-  close(yyin);
+  /* close(yyin); */
+
   return 0;
 }

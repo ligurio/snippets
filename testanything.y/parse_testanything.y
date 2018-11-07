@@ -56,6 +56,7 @@ directive:
 
 string:
 		string WORD
+		| string NUMBER
 		|
 		;
 

@@ -22,7 +22,7 @@ $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) -o $@
 
 regress: all
-	@for t in $(REGRESS); do echo "==== t/$$t"; ./test t/$$t; done
+	@for t in $(REGRESS); do echo "==== t/$$t"; ./${PROGRAM} t/$$t; done
 
 clean:
 	rm -f $(OBJS) $(PROGRAM) $(PROGRAM).c $(PROGRAM).tab.c $(PROGRAM).tab.h core

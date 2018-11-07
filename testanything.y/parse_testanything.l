@@ -8,12 +8,16 @@ int yylval;
 %option yylineno
 %option noyywrap
 
+DIGITS		[0-9]+
+CHAR		[A-Z]
+ALPHANUM	[a-zA-Z0-9]
+
 %%
 "ok"				return OK;
 "not"				return NOT;
 "Bail out!"			return BAILOUT;
 "TODO"				return TODO;
-"TAP version"			return VERSION;
+^"TAP version"			return VERSION;
 [Ss][Kk][Ii][Pp]		return SKIP;
 [Ss][Kk][Ii][Pp][Pp][Ee][Dd]	return SKIPPED;
 -				return DASH;
@@ -21,7 +25,7 @@ int yylval;
 \.{2}				return DOTS;
 ^\.{3}$				return YAML_START;
 ^-{3}$				return YAML_END;
-[0-9]+				{ yylval = atoi(yytext); return NUMBER; }
+{DIGITS}+			{ yylval = atoi(yytext); return NUMBER; }
 [-a-zA-Z0-9:$^"',_\./\!*+<>}\[\]]+	return WORD;
 \n				return NL;
 [ \t]+			 	/* skip whitespace */

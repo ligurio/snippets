@@ -7,63 +7,50 @@ int yylex(void);
 %}
 
 %token OK NOT BAILOUT SKIP SKIPPED TODO
-%token HASH DASH DOTS YAML_START YAML_END
-%token VERSION WORD NUMBER NL 
+%token VERSION HASH DASH YAML PLAN
+%token WORD NUMBER NL
 
 %%
-program:
-		program test_line NL
-		|
-		| error NL { yyerrok; }
-		;
+program		: program test_line NL
+			| error NL { yyerrok; }
+			|
+			;
 
-test_line:
-		VERSION NUMBER { printf("TAP version is %d\n", $2); }
-		| NUMBER DOTS NUMBER comment { printf("PLAN %d - %d\n", $1, $3); }
-		| status test_number description comment { printf("TESTCASE #%d\n", $2); }
-		| comment { printf("COMMENT\n"); }
-		| BAILOUT string { printf("BAIL OUT!\n"); }
-		| YAML_START multiline YAML_END { /* ignore */ }
-		;
+test_line	: VERSION NUMBER { printf("TAP version is %d\n", $2); }
+			| PLAN comment { printf("PLAN\n"); }
+			| status test_number description comment { printf("TESTCASE #%d\n", $2); }
+			| comment { printf("COMMENT\n"); }
+			| BAILOUT string { printf("BAIL OUT!\n"); }
+			| YAML { /* ignore */ }
+			;
 
-status:
-		OK
-		| NOT OK
-		;
+status		: OK
+			| NOT OK
+			;
 
-comment:
-		HASH directive string
-		|
-		;
+comment		: HASH directive string
+			|
+			;
 
-test_number:
-		NUMBER
-		|
-		;
+test_number	: NUMBER
+			|
+			;
 
-description:
-		string
-		| DASH string
-		|
-		;
+description	: string
+			| DASH string
+			|
+			;
 
-directive:
-		SKIP
-		| SKIPPED
-		| TODO
-		|
-		;
+directive	: SKIP
+			| SKIPPED
+			| TODO
+			|
+			;
 
-string:
-		string WORD
-		| string NUMBER
-		|
-		;
-
-multiline:
-		multiline string NL
-		|
-		;
+string		: string WORD
+			| string NUMBER
+			|
+			;
 
 /*
 

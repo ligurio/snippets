@@ -1,7 +1,6 @@
 %{
 #include <stdio.h>
 #include "parse_testanything.tab.h"
-/* extern YYSTYPE yylval; */
 int yylval;
 %}
 
@@ -9,12 +8,10 @@ int yylval;
 %option noyywrap
 
 DIGITS		[0-9]+
-CHAR		[A-Z]
-ALPHANUM	[a-zA-Z0-9]
 
 %%
-"ok"				return OK;
-"not"				return NOT;
+ok				return OK;
+not				return NOT;
 "Bail out!"			return BAILOUT;
 "TODO"				return TODO;
 ^"TAP version"			return VERSION;
@@ -22,9 +19,8 @@ ALPHANUM	[a-zA-Z0-9]
 [Ss][Kk][Ii][Pp][Pp][Ee][Dd]	return SKIPPED;
 -				return DASH;
 #				return HASH;
-\.{2}				return DOTS;
-^\.{3}$				return YAML_START;
-^-{3}$				return YAML_END;
+1..[0-9]+				return PLAN;
+^\.{3}$(.|\n)*^-{3}$	return YAML;
 {DIGITS}+			{ yylval = atoi(yytext); return NUMBER; }
 [-a-zA-Z0-9:$^"',_\./\!*+<>}\[\]]+	return WORD;
 \n				return NL;

@@ -6,6 +6,4 @@ $ make
 $ make regress
 ```
 
-License: Public domain
-
 Author: [Sergey Bronnikov](https://bronevichok.ru/) (estetus@gmail.com)

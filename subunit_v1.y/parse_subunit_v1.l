@@ -1,7 +1,6 @@
 %{
 #include <stdio.h>
 #include "parse_subunit_v1.tab.h"
-/* extern YYSTYPE yylval; */
 int yylval;
 %}
 
@@ -9,35 +8,25 @@ int yylval;
 %option noyywrap
 
 %%
-("test"|"testing"):?		return TEST;
-("success"|"successful"):?	return SUCCESS;
-"failure:"			return FAILURE;
-"error:"			return ERROR;
-"skip":?			return SKIP;
-"xfail":?			return XFAIL;
-"uxsuccess":?			return UXSUCCESS;
-"progress:"			return PROGRESS;
-"tags:"				return TAGS;
-"time:"				return TIME;
-"push"				return PUSH;
-"pop"				return POP;
-"-"				return MINUS;
-"+"				return PLUS;
-"="				return EQUAL;
-";"				return COLON;
-"0"				return ZERO;
+^(test|testing):?		return TEST;
+^(success|successful):?	return SUCCESS;
+^failure:			return FAILURE;
+^error:				return ERROR;
+^skip:?				return SKIP;
+^xfail:?			return XFAIL;
+^uxsuccess:?		return UXSUCCESS;
+^progress:			return PROGRESS;
+^tags:				return TAGS;
+^time:				return TIME;
+pop|push			yylval = !strcmp(yytext, "pop"); return ACTION;
+multipart			return MULTIPART;
+Content-Type: 		return CONTENT_TYPE;
+0				return ZERO;
 "["				return OPEN_BRACKET;
 "]"				return CLOSE_BRACKET;
-"/"				return SLASH;
-"multipart"			return MULTIPART;
-"Content-Type:" 		return CONTENT_TYPE;
-[-a-z0-9]+			return TYPE;
-[0-9]+				return NUMBER;
-[0-9A-Z]+			return NUM_BYTES;
-[0-9]{4}-[0-9]{2}-[0-9]{2}  	return DATE_VALUE;
-[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z	return TIME_VALUE;
-[a-zA-Z0-9()_/\\.',-]+		return NAME;
-[a-zA-Z0-9()_/\\."@<>:',-]+	return WORD;
+"["(.|\n)*"]"	return CONTENT;
+[1-9][0-9]+				yylval = atoi(yytext); return NUMBER;
+[[:alnum:][:punct:]]+	return WORD;
 \n				return NL;
 [ \t]+			 	/* skip whitespace */
 %%

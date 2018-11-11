@@ -2,93 +2,71 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define YYDEBUG 1
+
 void yyerror(char *);
 int yylex(void);
 %}
 
 %token TEST SUCCESS FAILURE ERROR SKIP XFAIL UXSUCCESS
-%token PROGRESS TAGS TIME DATE_VALUE TIME_VALUE NL
-%token NUMBER NAME PLUS MINUS PUSH POP CONTENT_TYPE
-%token OPEN_BRACKET CLOSE_BRACKET MULTIPART
-%token COLON EQUAL ZERO SLASH TYPE WORD NUM_BYTES
+%token PROGRESS TAGS TIME ACTION CONTENT_TYPE MULTIPART NL
+%token ZERO OPEN_BRACKET CLOSE_BRACKET CONTENT
+%token WORD NUMBER
 
 %%
-program:
-		program test_line NL
-		| error NL { yyerrok; }
-		|
-		;
+program			: program testline NL
+				| error NL { yyerrok; }
+				|
+				;
 
-test_line:
-		TEST NAME { printf("TEST\n"); }
-		| status NAME details { printf("STATUS\n"); }
-		| PROGRESS progress_action { printf("PROGRESS push/pop\n"); }
-		| PROGRESS progress_sign NUMBER { printf("PROGRESS\n"); }
-		| TAGS tags { printf("TAGS\n"); }
-		| TIME DATE_VALUE TIME_VALUE { printf("TIME\n"); }
-		;
+testline		: TEST WORD {
+					printf("TEST\n");
+				}
+				| status WORD details {
+					printf("STATUS\n");
+				}
+				| PROGRESS ACTION {
+					printf("PROGRESS\n");
+				}
+				| PROGRESS NUMBER {
+					printf("PROGRESS %d\n", $2);
+				}
+				| TAGS tags {
+					printf("TAGS\n");
+				}
+				| TIME WORD WORD {
+					printf("TIME\n");
+				}
+				| NL
+				|
+				;
 
-details:
-		OPEN_BRACKET NL string CLOSE_BRACKET NL				/* BRACKETED */
-		| OPEN_BRACKET MULTIPART NL mpart_section CLOSE_BRACKET NL 	/* MULTIPART */
-		|
-		;
+details			: OPEN_BRACKET MULTIPART NL CONTENT CLOSE_BRACKET
+				| OPEN_BRACKET NL string NL CLOSE_BRACKET
+				|
+				;
 
-mpart_section:
-		mpart_section part_type NL NAME NL NUM_BYTES NL multiline ZERO NL
-		|
-		;
+string			: WORD
+				| string WORD
+				|
+				;
 
-/* Content-Type: text/plain;charset=utf8 */
-/* FIXME: TYPE should have limited values */
-part_type:
-		CONTENT_TYPE TYPE SLASH TYPE params
-		;
+multiline		: string NL
+				| multiline string NL
+				|
+				;
 
-/* FIXME: NAME should conform to HTTP standard */
-params:
-		params COLON NAME EQUAL NAME
-		|
-		;
+tags			: WORD
+				| tags WORD
+				;
 
-string:
-		string WORD
-		|
-		;
-
-multiline:	multiline string NL
-		|
-		;
-
-tags:
-		tags tag_sign NAME
-		|
-		;
-
-status:
-		SUCCESS
-		| FAILURE
-		| ERROR
-		| SKIP
-		| XFAIL
-		| UXSUCCESS
-		;
-
-progress_sign:
-		PLUS
-		| MINUS
-		|
-		;
-
-tag_sign:
-		MINUS
-		|
-		;
-
-progress_action:
-		PUSH
-		| POP
-		;
+status			: SUCCESS
+				| FAILURE
+				| ERROR
+				| SKIP
+				| XFAIL
+				| UXSUCCESS
+				;
 %%
 
 #include <ctype.h>

@@ -14,12 +14,12 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: September 19 2018 $
+.Dd $Mdocdate: November 5 2018 $
 .Dt TESTRES 1
 .Os
 .Sh NAME
 .Nm testres
-.Nd A hyperfast web frontend for software testing results written in C
+.Nd A hyperfast web frontend for software testing results written in C.
 .Sh SYNOPSIS
 .Nm
 .Op Fl h
@@ -30,21 +30,24 @@
 The
 .Nm
 utility knits together software testing reports.
-It helps to store and analyze software testing reports.
-The
+It helps to store and analyze them.
 .Nm
-supports two modes: as console application and as CGI application.
+is able to read software testing reports in three formats: JUnit, SubUnit
+(versions 1 and 2) and Test Anything Protocol.
+It supports two modes: console and Web application.
 .Sh USAGE
 .Bl -tag -width Ds
 .It Pa Console application
-FIXME
-.It Pa CGI application
-FIXME
+shows a summary of multiple reports in a directory and detailed summary of a
+single report.
+.It Pa Web application
+works as a CGI application.
+Shows index of multiple reports, separate reports and supports searching.
 .El
 .Sh FORMATS
 .Nm
-supports three the most popular test report formats: TAP
-(TestAnythingProtocol), SubUnit and JUnit.
+supports three the most popular software testing report formats: TAP
+(TestAnythingProtocol), SubUnit (version 1 and 2) and JUnit.
 .Bl -tag -width Ds
 .It Pa JUnit "   "
 The JUnit XML Report output comes from a build tool called Nant, as opposed to
@@ -54,9 +57,6 @@ There have been a number of attempts to codify the schema, first off there is
 an XSD for JUnit.
 .It Pa Test Anything Protocol
 is a simple text-based interface between testing modules a test harness.
-TAP started life as part of the test harness for Perl but now has
-implementations in C/C++, Python, PHP, Perl and probably others by the time you
-read this.
 .It Pa SubUnit
 is a streaming protocol for test results.
 It allows communication between unit tests and a test harness.
@@ -71,9 +71,9 @@ models xUnit style test execution.
 .Sh FILES
 .Bl -tag -width "/var/www/conf/testres.css" -compact
 .It Pa /var/www/conf/testres.css
-Optional
-.Nm
 CSS style sheet.
+.It Pa /var/www/conf/favicon.ico
+favicon.
 .El
 .Sh EXIT STATUS
 .Ex -std

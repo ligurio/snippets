@@ -17,3 +17,5 @@ handy tool to pass manual testcases.
   - https://github.com/javier-lopez/learn/blob/master/sh/tools/test-case-format
 - TestRail:
   - http://automation-remarks.com/2018/test-cases-as-a-code/index.html
+- Linaro:
+	https://github.com/Linaro/test-definitions

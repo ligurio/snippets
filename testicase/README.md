@@ -18,4 +18,6 @@ handy tool to pass manual testcases.
 - TestRail:
   - http://automation-remarks.com/2018/test-cases-as-a-code/index.html
 - Linaro:
-	https://github.com/Linaro/test-definitions
+  - https://github.com/Linaro/test-definitions
+- Chromium (Blink):
+  - https://cs.chromium.org/chromium/src/third_party/blink/manual_tests/?g=0

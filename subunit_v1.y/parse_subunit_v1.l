@@ -8,25 +8,20 @@ int yylval;
 %option noyywrap
 
 %%
-^(test|testing):?		return TEST;
+^(test|testing):?	return TEST;
 ^(success|successful):?	return SUCCESS;
-^failure:			return FAILURE;
-^error:				return ERROR;
-^skip:?				return SKIP;
-^xfail:?			return XFAIL;
+^failure:		return FAILURE;
+^error:			return ERROR;
+^skip:?			return SKIP;
+^xfail:?		return XFAIL;
 ^uxsuccess:?		return UXSUCCESS;
-^progress:			return PROGRESS;
-^tags:				return TAGS;
-^time:				return TIME;
-pop|push			yylval = !strcmp(yytext, "pop"); return ACTION;
-multipart			return MULTIPART;
-Content-Type: 		return CONTENT_TYPE;
-0				return ZERO;
-"["				return OPEN_BRACKET;
-"]"				return CLOSE_BRACKET;
-"["(.|\n)*"]"	return CONTENT;
-[1-9][0-9]+				yylval = atoi(yytext); return NUMBER;
+^progress:		return PROGRESS;
+^tags:			return TAGS;
+^time:			return TIME;
+pop|push		yylval = !strcmp(yytext, "pop"); return ACTION;
+"["(.|\n)*"]"		return CONTENT;
+[1-9][0-9]+		yylval = atoi(yytext); return NUMBER;
 [[:alnum:][:punct:]]+	return WORD;
-\n				return NL;
-[ \t]+			 	/* skip whitespace */
+\n			return NL;
+[ \t]+			/* skip whitespace */
 %%

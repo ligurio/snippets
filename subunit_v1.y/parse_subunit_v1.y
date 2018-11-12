@@ -15,58 +15,51 @@ int yylex(void);
 
 %%
 program			: program testline NL
-				| error NL { yyerrok; }
-				|
-				;
+			| error NL { yyerrok; }
+			|
+			;
 
 testline		: TEST WORD {
-					printf("TEST\n");
-				}
-				| status WORD details {
-					printf("STATUS\n");
-				}
-				| PROGRESS ACTION {
-					printf("PROGRESS\n");
-				}
-				| PROGRESS NUMBER {
-					printf("PROGRESS %d\n", $2);
-				}
-				| TAGS tags {
-					printf("TAGS\n");
-				}
-				| TIME WORD WORD {
-					printf("TIME\n");
-				}
-				| NL
-				|
-				;
+				printf("TEST\n");
+			}
+			| status WORD details {
+				printf("STATUS\n");
+			}
+			| PROGRESS ACTION {
+				printf("PROGRESS\n");
+			}
+			| PROGRESS NUMBER {
+				printf("PROGRESS %d\n", $2);
+			}
+			| TAGS tags {
+				printf("TAGS\n");
+			}
+			| TIME WORD WORD {
+				printf("TIME\n");
+			}
+			;
 
 details			: OPEN_BRACKET MULTIPART NL CONTENT CLOSE_BRACKET
-				| OPEN_BRACKET NL string NL CLOSE_BRACKET
-				|
-				;
+			| OPEN_BRACKET NL string NL CLOSE_BRACKET
+			|
+			;
 
 string			: WORD
-				| string WORD
-				|
-				;
-
-multiline		: string NL
-				| multiline string NL
-				|
-				;
+			| string WORD
+			|
+			;
 
 tags			: WORD
-				| tags WORD
-				;
+			| tags WORD
+			;
 
 status			: SUCCESS
-				| FAILURE
-				| ERROR
-				| SKIP
-				| XFAIL
-				| UXSUCCESS
-				;
+			| FAILURE
+			| ERROR
+			| SKIP
+			| XFAIL
+			| UXSUCCESS
+			;
 %%
 
 #include <ctype.h>

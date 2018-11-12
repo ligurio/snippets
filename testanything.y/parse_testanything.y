@@ -34,91 +34,79 @@ void yyerror(char *);
 int yylex(void);
 %}
 
-%token OK NOT BAILOUT SKIP SKIPPED TODO
+%token OK NOT BAILOUT SKIP TODO
 %token VERSION HASH DASH YAML PLAN
 %token WORD NUMBER NL
 
 %%
 program		: program test_line NL
-			| error NL { yyerrok; }
-			|
-			;
+		| error NL { yyerrok; }
+		|
+		;
 
-test_line	: VERSION NUMBER { printf("TAP version is %d\n", $2); }
-			| PLAN comment { printf("PLAN\n"); }
-			| status test_number description comment { printf("TESTCASE #%d\n", $2); }
-			| comment { printf("COMMENT\n"); }
-			| BAILOUT string { printf("BAIL OUT!\n"); }
-			| YAML { /* ignore */ }
-			;
+test_line	: VERSION NUMBER {
+			printf("TAP version is %d\n", $2);
+			if ($2 != 13) {
+			   perror("unsupported format version\n");
+			}
+		}
+		| PLAN comment {
+			printf("PLAN\n");
+			/*
+			TODO:
+			- first number == 1
+			- second number > 1
+			- if there is a plan before the test points it must be
+			the first non-diagnostic line output by the test file
+			- plan cannot appear in the middle of the output, nor
+			can it appear more than once
+
+			int *min = NULL, *max = NULL;
+			if (sscanf(yyval, "%u..%u", min, max) != 2) {
+			   perror("cannot parse plan\n");
+			};
+			*/
+		}
+		| status test_number description comment {
+			printf("TESTCASE #%d\n", $2);
+		}
+		| comment {
+			printf("COMMENT\n");
+		}
+		| BAILOUT string {
+			printf("BAIL OUT!\n");
+		}
+		| YAML {
+			printf("YAML\n");
+		}
+		;
 
 status		: OK
-			| NOT OK
-			;
+		| NOT OK
+		;
 
 comment		: HASH directive string
-			|
-			;
+		|
+		;
 
 test_number	: NUMBER
-			|
-			;
+		|
+		;
 
 description	: string
-			| DASH string
-			|
-			;
+		| DASH string
+		|
+		;
 
 directive	: SKIP
-			| SKIPPED
-			| TODO
-			|
-			;
+		| TODO
+		|
+		;
 
 string		: string WORD
-			| string NUMBER
-			|
-			;
-
-/*
-
-Type: PLAN
-
-Example:
-
-	1..10
-	1..0 # Skipped: WWW::Mechanize not installed
-
-Description:
-
-- is optional
-- if there is a plan before the test points it must be the first non-diagnostic
-line output by the test file
-- plan cannot appear in the middle of the output, nor can it appear more than once
-
-------------------------------------------------------
-
-Type: STATUS
-
-Example:
-
-	ok 42 this is the description of the test
-
-Description:
-
-Any text after the test number but before a # is the description of
-the test point.
-
-Descriptions should not begin with a digit so that they are not confused with
-the test point number. The harness may do whatever it wants with the
-description.
-
-The test point may include a directive, following a hash on the test
-line. There are currently two directives allowed: TODO and SKIP.
-
-*/
-
-
+		| string NUMBER
+		|
+		;
 %%
 
 #include <ctype.h>

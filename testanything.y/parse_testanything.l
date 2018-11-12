@@ -36,6 +36,10 @@ int yylval;
 %option noyywrap
 
 DIGITS		[0-9]+
+YAML_START	"---\n"
+YAML_END	"..."|"---"
+DOTS		".."
+SKIP		[Ss][Kk][Ii][Pp]([Pp][Ee][Dd])?
 
 %%
 ok				return OK;
@@ -43,14 +47,13 @@ not				return NOT;
 "Bail out!"			return BAILOUT;
 "TODO"				return TODO;
 ^"TAP version"			return VERSION;
-[Ss][Kk][Ii][Pp]		return SKIP;
-[Ss][Kk][Ii][Pp][Pp][Ee][Dd]	return SKIPPED;
+{SKIP}{1}			return SKIP;
 -				return DASH;
 #				return HASH;
-1..[0-9]+				return PLAN;
-^\.{3}$(.|\n)*^-{3}$	return YAML;
+1{DOTS}{1}[0-9]+		return PLAN;
+{YAML_START}{1}(.|\n)*{YAML_END}{1}	return YAML;
 {DIGITS}+			{ yylval = atoi(yytext); return NUMBER; }
-[-a-zA-Z0-9:$^"',_\./\!*+<>}\[\]]+	return WORD;
+[[:alnum:][:punct:]]+		return WORD;
 \n				return NL;
 [ \t]+			 	/* skip whitespace */
 %%

@@ -33,28 +33,44 @@
 %}
 
 %token GT LT LE GE EQ COLON NL
-%token FMT SUITE TEST HOSTNAME HNAME CREATED PASSRATE
+%token FMT SUITE TEST HOSTNAME HOST CREATED PASSRATE
 %token FORMAT DATE NAME NUMBER
+
+/*
+ * https://github.com/jgarzik/sqlfun/blob/master/sql.y
+ * https://github.com/itechbear/SimpleQueryParser/blob/master/parser.y
+ * https://github.com/wclever/NdYaccLexTool/tree/master/progs
+ *
+ */
 
 %%
 
-program:
-		program expression NL
-		|
+program		: program expression NL
 		| error NL { yyerrok; }
+		|
 		;
 
-expression:
-		TEST COLON NAME	{ printf("TEST\n"); }
-        | SUITE COLON NAME { printf("SUITE\n"); }
-        | FMT COLON FORMAT { printf("FMT\n"); }
-        | HOSTNAME COLON HNAME { printf("HOSTNAME\n"); }
-		| CREATED compare_op DATE { printf("CREATED\n"); }
-		| PASSRATE compare_op NUMBER { printf("PASSRATE\n"); }
-        ;
+expression	: TEST COLON NAME {
+			printf("TEST\n");
+		}
+		| SUITE COLON NAME {
+			printf("SUITE\n");
+		}
+		| FMT COLON FORMAT {
+			printf("FMT\n");
+		}
+		| HOSTNAME COLON HOST {
+			printf("HOSTNAME\n");
+		}
+		| CREATED compare_op DATE {
+			printf("CREATED\n");
+		}
+		| PASSRATE compare_op NUMBER {
+			printf("PASSRATE\n");
+		}
+		;
 
-compare_op:
-		EQ
+compare_op	: EQ
 		| GT
 		| LT
 		| LE
@@ -91,6 +107,6 @@ int main( int argc, char **argv ) {
 
   yyparse();
 
-  close(yyin);
+  /* close(yyin); */
   return 0;
 }

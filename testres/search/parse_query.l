@@ -26,35 +26,43 @@
  *
  */
 
+/*
+ * https://github.com/jgarzik/sqlfun/blob/master/sql.l
+ * https://github.com/itechbear/SimpleQueryParser/blob/master/lexer.l
+ * https://github.com/wclever/NdYaccLexTool/tree/master/progs
+ *
+ */
+
 %{
 #include <stdio.h>
 #include "parse_query.tab.h"
 extern int yylval;
+extern void yyerror(char *s);
 %}
 
 %option yylineno
 %option noyywrap
 
 %%
-">"							return GT;
-"<"							return LT;
-"="							return EQ;
-"<="						return LE;
-">="						return GE;
-":"							return COLON;
-"fmt"						return FMT;
-"suite"						return SUITE;
-"test"						return TEST;
-"hostname"					return HOSTNAME;
-"created"					return CREATED;
-"passrate"					return PASSRATE;
+">"				return GT;
+"<"				return LT;
+"="				return EQ;
+"<="				return LE;
+">="				return GE;
+":"				return COLON;
+"fmt"				return FMT;
+"suite"				return SUITE;
+"test"				return TEST;
+"hostname"			return HOSTNAME;
+"created"			return CREATED;
+"passrate"			return PASSRATE;
 "junit"|"testanything"|"subunit_v1"|"subunit_v2" return FORMAT;
-[0-9]{8}					return DATE;
-[0-9]+						return NUMBER;
-[A-Za-z][A-Za-z0-9\.\-]+	return HNAME;
-[A-Za-z0-9_\-]+				return NAME;
-\n							return NL;
-[ \t]+						/* skip whitespace */;
-.							{ yyerror("Unrecognized character"); }
+[0-9]{8}			return DATE;
+[0-9]+				return NUMBER;
+[A-Za-z][A-Za-z0-9\.\-]+	return HOST;
+[A-Za-z0-9_\-]+			return NAME;
+\n				return NL;
+[ \t]+				/* skip whitespace */;
+.				{ yyerror("Unrecognized character"); }
 
 %%

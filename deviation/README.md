@@ -24,22 +24,3 @@ the full gamut of Computer Science and Statistics.
  $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "plot '<cat'"
  $ curl -s $DATA | cut -f2 -d' ' | gnuplot -p -e "set terminal dumb; plot '<cat'
 ```
-
-TODO: identificate deviations in logs and similar logs
-
-### Benchmarks
-
-- http://www.dbs.ifi.lmu.de/research/outlier-evaluation/
-- http://odds.cs.stonybrook.edu/
-- https://github.com/numenta/NAB
-- https://github.com/yui0/catseye/
-- https://github.com/attractivechaos/kann
-- https://github.com/attractivechaos/sann
-
-### References
-
-- [Automatic Detection of Performance Deviations in the Load Testing of Large Scale Systems] -- Haroon Malik, Hadi Hemmati, Ahmed E. Hassan
-- https://github.com/yzhao062/Pyod
-- https://github.com/lytics/anomalyzer
-- https://github.com/blue-yonder/tsfresh
-- https://github.com/yzhao062/anomaly-detection-resources

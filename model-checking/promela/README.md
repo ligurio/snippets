@@ -12,3 +12,4 @@
 - [A Spin model for eChronos](https://github.com/kaizsv/eChronos-Spin)
 - http://spinroot.com/spin/success.html
 - http://www.imm.dtu.dk/~albl/promela.html
+- https://github.com/dgryski/modelchecking

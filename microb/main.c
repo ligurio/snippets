@@ -76,7 +76,7 @@ int run_bench(const char *label, size_t (*bench)(void *), void *params, enum bet
 
 int main() {
 
-  printf("name,real_time,cpu_time,items_per_second,better\n");
+  printf("name,real_time,cpu_time,items_per_second,interpretation\n");
 
   RUN(b_malloc_sparse, 0, HIGHER);
   RUN(b_malloc_bubble, 0, HIGHER);

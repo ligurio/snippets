@@ -8,6 +8,11 @@
 - [Specifying and Verifying Concurrent C Programs with TLA+](https://cedric.cnam.fr/fichiers/art_3439.pdf)
 - https://git.kernel.org/pub/scm/linux/kernel/git/cmarinas/kernel-tla.git/tree/
 
+### Exercises
+
+- https://github.com/Apress/practical-tla-plus
+- https://learntla.com/introduction/
+
 ### BLAST case studies
 
 - [The Software Model Checker BLAST: Applications to Software Engineering](http://pub.ist.ac.at/~tah/Publications/the_software_model_checker_blast.pdf)

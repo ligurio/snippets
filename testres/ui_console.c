@@ -26,20 +26,22 @@
  *
  */
 
+#include <math.h>
+
 #include "parse_common.h"
 #include "ui_console.h"
 #include "ui_common.h"
 
-void 
+void
 print_report(struct tailq_report * report)
 {
 	printf("\nTEST REPORT (%s)\n", format_string(report->format));
+	printf("ID: %s\n", report->id);
 	char buffer[80] = "";
 	struct tm *info = localtime(&report->ctime);
 	strftime(buffer, 80, "%x - %I:%M%p", info);
 	printf("CREATED ON: %s\n", buffer);
 	printf("FILE: %s\n", report->path);
-	printf("ID: %s\n", report->id);
 	if (!TAILQ_EMPTY(report->suites)) {
 		print_suites(report->suites);
 	}
@@ -49,12 +51,12 @@ void
 print_report_summary(struct tailq_report * report)
 {
 	printf("\nTEST REPORT (%s)\n", format_string(report->format));
+	printf("ID: %s\n", report->id);
 	char buffer[80] = "";
 	struct tm *info = localtime(&report->ctime);
 	strftime(buffer, 80, "%x - %I:%M%p", info);
 	printf("CREATED ON: %s\n", buffer);
 	printf("FILE: %s\n", report->path);
-	printf("ID: %s\n", report->id);
 	printf("STATUS: %d PASSED, %d FAILED, %d SKIPPED\n",
 				num_by_status_class(report, STATUS_CLASS_PASS),
 				num_by_status_class(report, STATUS_CLASS_FAIL),
@@ -70,27 +72,23 @@ print_reports(struct reportq * reports)
 	}
 }
 
-void 
+void
 print_suites(struct suiteq * suites)
 {
 	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
-		const char* name = NULL;
 		if (suite_item->name != (char *)NULL) {
-			name = suite_item->name;
+			printf("\nSuite: %10s ", suite_item->name);
 		} else {
-			/* FIXME	*/
-			name = "unknown name";
+			printf("\nSuite: ");
 		}
-		printf("SUITE: %10s ", name);
-		/* TODO: print testsuite summary  */
-		printf("(%d failures, %d errors)\n", suite_item->n_failures, suite_item->n_errors);
-		printf("TOTAL DURATION: %5f ", suite_item->time);
+		printf("(%d failures, %d errors), ", suite_item->n_failures, suite_item->n_errors);
+		printf("Duration %5f", suite_item->time);
 		if (suite_item->timestamp != (char *)NULL) {
-			printf("TIMESTAMP: %10s ", suite_item->timestamp);
+			printf(", Timestamp %10s", suite_item->timestamp);
 		}
 		if (suite_item->hostname != (char *)NULL) {
-			printf("HOSTNAME %10s ", suite_item->hostname);
+			printf(", Hostname %10s", suite_item->hostname);
 		}
 		printf("\n");
 		if (!TAILQ_EMPTY(suite_item->tests)) {
@@ -99,16 +97,17 @@ print_suites(struct suiteq * suites)
 	}
 }
 
-void 
+void
 print_tests(struct testq * tests)
 {
 	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
-		printf("\tTEST: %10.50s ", test_item->name);
-		printf("%10.50s ", status_string(test_item->status));
-		if (test_item->time != (char *)NULL) {
-			printf("(%5ss) ", test_item->time);
+		printf("%5s ", status_string(test_item->status));
+		if (test_item->time != NULL) {
+			float t = atof(test_item->time);
+			printf("(%.3fs) ", t);
 		}
+		printf("%s ", test_item->name);
 		if (test_item->comment != (char *)NULL) {
 			printf("Comment: %5s", test_item->comment);
 		}

@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef PARSE_SUBUNITV2_H
-#define PARSE_SUBUNITV2_H
+#ifndef PARSE_SUBUNIT_V2_H
+#define PARSE_SUBUNIT_V2_H
 
 #include <stdint.h>
 
@@ -72,4 +72,4 @@ tailq_test *read_packet(FILE *stream);
 struct suiteq *parse_subunit_v2(FILE *stream);
 int is_subunit_v2(char* path);
 
-#endif				/* PARSE_SUBUNITV2_H */
+#endif				/* PARSE_SUBUNIT_V2_H */

@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef PARSE_SUBUNITV1_H
-#define PARSE_SUBUNITV1_H
+#ifndef PARSE_SUBUNIT_V1_H
+#define PARSE_SUBUNIT_V1_H
 
 #include "parse_common.h"
 
@@ -52,4 +52,4 @@ const char* directive_string(enum directive dir);
 void read_tok();
 tailq_test* read_test();
 
-#endif				/* PARSE_SUBUNITV1_H */
+#endif				/* PARSE_SUBUNIT_V1_H */

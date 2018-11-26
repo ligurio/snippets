@@ -34,18 +34,18 @@ format_string(enum test_format format)
 
 	switch (format) {
 	case FORMAT_TAP13:
-		return "FORMAT_TAP13";
+		return "TAP13";
 	case FORMAT_JUNIT:
-		return "FORMAT_JUNIT";
+		return "JUNIT";
 	case FORMAT_SUBUNIT_V1:
-		return "FORMAT_SUBUNIT_V1";
+		return "SUBUNIT_V1";
 	case FORMAT_SUBUNIT_V2:
-		return "FORMAT_SUBUNIT_V2";
+		return "SUBUNIT_V2";
 	case FORMAT_UNKNOWN:
-		return "FORMAT_UNKNOWN";
+		return "UNKNOWN";
 
 	default:
-		return "FORMAT_UNKNOWN";
+		return "UNKNOWN";
 	}
 }
 
@@ -53,40 +53,34 @@ const char *
 status_string(enum test_status status)
 {
 	switch (status) {
-	case STATUS_OK:
-		return "STATUS_OK";
-	case STATUS_NOTOK:
-		return "STATUS_NOTOK";
-	case STATUS_MISSING:
-		return "STATUS_MISSING";
-	case STATUS_TODO:
-		return "STATUS_TODO";
-	case STATUS_SKIP:
-		return "STATUS_SKIP";
-	case STATUS_UNDEFINED:
-		return "STATUS_UNDEFINED";
-	case STATUS_ENUMERATION:
-		return "STATUS_ENUMERATION";
-	case STATUS_INPROGRESS:
-		return "STATUS_INPROGRESS";
 	case STATUS_SUCCESS:
-		return "STATUS_SUCCESS";
-	case STATUS_UXSUCCESS:
-		return "STATUS_UXSUCCESS";
-	case STATUS_SKIPPED:
-		return "STATUS_SKIPPED";
-	case STATUS_FAILED:
-		return "STATUS_FAILED";
-	case STATUS_XFAILURE:
-		return "STATUS_XFAILURE";
-	case STATUS_ERROR:
-		return "STATUS_ERROR";
-	case STATUS_FAILURE:
-		return "STATUS_FAILURE";
 	case STATUS_PASS:
-		return "STATUS_PASS";
-
+	case STATUS_OK:
+		return "PASS";
+	case STATUS_FAILED:
+	case STATUS_FAILURE:
+	case STATUS_NOTOK:
+		return "FAIL";
+	case STATUS_MISSING:
+		return "MISSING";
+	case STATUS_TODO:
+		return "TODO";
+	case STATUS_SKIPPED:
+	case STATUS_SKIP:
+		return "SKIP";
+	case STATUS_UNDEFINED:
+		return "UNDEFINED";
+	case STATUS_ENUMERATION:
+		return "ENUMERATION";
+	case STATUS_INPROGRESS:
+		return "INPROGRESS";
+	case STATUS_UXSUCCESS:
+		return "UXSUCCESS";
+	case STATUS_XFAILURE:
+		return "XFAILURE";
+	case STATUS_ERROR:
+		return "ERROR";
 	default:
-		return "STATUS_UNKNOWN";
+		return "UNKNOWN";
 	}
 }

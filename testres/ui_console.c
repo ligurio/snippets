@@ -77,11 +77,11 @@ print_suites(struct suiteq * suites)
 {
 	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
+		const char *name = "none";
 		if (suite_item->name != (char *)NULL) {
-			printf("\nSuite: %10s ", suite_item->name);
-		} else {
-			printf("\nSuite: ");
+			name = suite_item->name;
 		}
+		printf("\nSuite: %s ", name);
 		printf("(%d failures, %d errors), ", suite_item->n_failures, suite_item->n_errors);
 		printf("Duration %5f", suite_item->time);
 		if (suite_item->timestamp != (char *)NULL) {

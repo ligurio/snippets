@@ -44,6 +44,8 @@ print_report(struct tailq_report * report)
 	printf("FILE: %s\n", report->path);
 	if (!TAILQ_EMPTY(report->suites)) {
 		print_suites(report->suites);
+	} else {
+		printf("None suites.\n");
 	}
 }
 
@@ -93,6 +95,8 @@ print_suites(struct suiteq * suites)
 		printf("\n");
 		if (!TAILQ_EMPTY(suite_item->tests)) {
 			print_tests(suite_item->tests);
+		} else {
+			printf("None tests.\n");
 		}
 	}
 }

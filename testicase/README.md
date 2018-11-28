@@ -2,8 +2,17 @@
 
 handy tool to pass manual testcases.
 
-- Support of testplans with format described in the [829-2008 - IEEE Standard for Software and System Test Documentation](https://standards.ieee.org/findstds/standard/829-2008.html)
-- Produce JUnit compliant output
+- Support of testplans with format described in the [829-2008 - IEEE Standard
+for Software and System Test
+Documentation](https://standards.ieee.org/findstds/standard/829-2008.html)
+- Produce JUnit and TestAnythingProtocol compliant output
+
+### Usage
+
+```
+$ go build main.go
+$ ./main -file sample.yaml
+```
 
 ### See also
 

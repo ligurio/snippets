@@ -101,7 +101,7 @@ print_tests(struct testq * tests)
 {
 	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
-		printf("%5.4s ", status_string(test_item->status));
+		printf("\t%4.4s ", status_string(test_item->status));
 		if (test_item->time != NULL) {
 			float t = atof(test_item->time);
 			printf("%7.2fs ", t);

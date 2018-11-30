@@ -277,52 +277,36 @@ enum test_status_class class_by_status(enum test_status status) {
    switch (status) {
    case STATUS_OK:
      return STATUS_CLASS_PASS;
-     break;
    case STATUS_PASS:
      return STATUS_CLASS_PASS;
-     break;
    case STATUS_SUCCESS:
      return STATUS_CLASS_PASS;
-     break;
    case STATUS_NOTOK:
      return STATUS_CLASS_FAIL;
-     break;
    case STATUS_ERROR:
      return STATUS_CLASS_FAIL;
-     break;
    case STATUS_FAILURE:
      return STATUS_CLASS_FAIL;
-     break;
    case STATUS_FAILED:
      return STATUS_CLASS_FAIL;
-     break;
    case STATUS_XFAILURE:
      return STATUS_CLASS_FAIL;
-     break;
    case STATUS_UXSUCCESS:
      return STATUS_CLASS_FAIL;
-     break;
    case STATUS_MISSING:
      return STATUS_CLASS_SKIP;
-     break;
    case STATUS_TODO:
      return STATUS_CLASS_SKIP;
-     break;
    case STATUS_SKIP:
      return STATUS_CLASS_SKIP;
-     break;
    case STATUS_SKIPPED:
      return STATUS_CLASS_SKIP;
-     break;
    case STATUS_UNDEFINED:
      return STATUS_CLASS_SKIP;
-     break;
    case STATUS_ENUMERATION:
      return STATUS_CLASS_SKIP;
-     break;
    case STATUS_INPROGRESS:
      return STATUS_CLASS_SKIP;
-     break;
    default:
      break;
    }

@@ -80,18 +80,13 @@ print_suites(struct suiteq * suites)
 {
 	tailq_suite *suite_item = NULL;
 	TAILQ_FOREACH(suite_item, suites, entries) {
-		const char *name = "none";
+		const char *name = "noname";
 		if (suite_item->name != (char *)NULL) {
 			name = suite_item->name;
 		}
-		printf("\nSuite: %s ", name);
-		printf("(%d failures, %d errors), ", suite_item->n_failures, suite_item->n_errors);
-		printf("Duration %5f", suite_item->time);
+		printf("\nSUITE: %s", name);
 		if (suite_item->timestamp != (char *)NULL) {
-			printf(", Timestamp %10s", suite_item->timestamp);
-		}
-		if (suite_item->hostname != (char *)NULL) {
-			printf(", Hostname %10s", suite_item->hostname);
+			printf(" (%s)", suite_item->timestamp);
 		}
 		printf("\n");
 		if (!TAILQ_EMPTY(suite_item->tests)) {
@@ -107,15 +102,11 @@ print_tests(struct testq * tests)
 {
 	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
-		printf("%5s ", status_string(test_item->status));
+		printf("\t%4.4s ", status_string(test_item->status));
 		if (test_item->time != NULL) {
 			float t = atof(test_item->time);
-			printf("(%.3fs) ", t);
+			printf("%7.2fs ", t);
 		}
-		printf("%s ", test_item->name);
-		if (test_item->comment != (char *)NULL) {
-			printf("Comment: %5s", test_item->comment);
-		}
-		printf("\n");
+		printf("%s\n", test_item->name);
 	}
 }

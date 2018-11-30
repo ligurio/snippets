@@ -43,7 +43,6 @@ format_string(enum test_format format)
 		return "SUBUNIT_V2";
 	case FORMAT_UNKNOWN:
 		return "UNKNOWN";
-
 	default:
 		return "UNKNOWN";
 	}

@@ -46,18 +46,6 @@
 #define FLAG_EOF		0x0010
 #define FLAG_FILE_CONTENT	0x0040
 
-/*
-struct packet {
-    char     *test_id;
-    char     *route_code;
-    uint32_t timestamp;
-    uint32_t status;
-    char     *tags[];
-};
-
-typedef struct packet packet;
-*/
-
 struct subunit_header {
     uint8_t  signature;
     uint16_t flags;

@@ -121,7 +121,7 @@ parse_subunit_v2(FILE * stream)
 		perror("malloc failed");
 		return NULL;
 	}
-	/* TODO: n_errors, n_failures */
+
 	suite_item->tests = calloc(1, sizeof(struct testq));
 	if (suite_item->tests == NULL) {
 		perror("malloc failed");
@@ -131,10 +131,24 @@ parse_subunit_v2(FILE * stream)
 
 	TAILQ_INIT(suite_item->tests);
 	tailq_test *test_item = NULL;
+
+	test_item = read_packet(stream);
+	if (test_item != NULL)
+		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+
+	/*
 	while (!feof(stream)) {
 		test_item = read_packet(stream);
-		TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+		if (test_item != NULL)
+			TAILQ_INSERT_TAIL(suite_item->tests, test_item, entries);
+		else
+		{
+			free_tests(suite_item->tests);
+			free_suite(suite_item);
+			return NULL;
+		}
 	}
+	*/
 
 	struct suiteq *suites = NULL;
 	suites = calloc(1, sizeof(struct suiteq));
@@ -151,7 +165,6 @@ parse_subunit_v2(FILE * stream)
 tailq_test *
 read_packet(FILE * stream)
 {
-
 	subunit_header header;
 	int n_bytes = 0;
 	n_bytes = fread(&header, sizeof(subunit_header), 1, stream);
@@ -164,6 +177,7 @@ read_packet(FILE * stream)
 		perror("malloc failed");
 		return NULL;
 	}
+
 	uint16_t flags = htons(header.flags);
 	printf("SIGNATURE: %02hhX\n", header.signature);
 	printf("FLAGS: %02hX\n", flags);
@@ -174,6 +188,7 @@ read_packet(FILE * stream)
 	printf("\tVERSION: %d\n", version);
 	assert(version == SUBUNIT_VERSION);
 
+	/*
 	int8_t status;
 	status = flags & 0x0007;
 	printf("\tSTATUS: %d\n", status);
@@ -189,7 +204,6 @@ read_packet(FILE * stream)
 		printf("FLAG_TIMESTAMP ");
 		field_value = read_field(stream);
 		printf("%08X\n", field_value);
-		/* FIXME: test_item->time = "12:14:44"; */
 	};
 	if (flags & FLAG_TEST_ID) {
 		printf("FLAG_TEST_ID ");
@@ -225,6 +239,7 @@ read_packet(FILE * stream)
 	printf("CRC32: ");
 	field_value = read_field(stream);
 	printf("%08X\n", field_value);
+	*/
 
 	return test_item;
 }

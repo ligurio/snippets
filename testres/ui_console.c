@@ -39,7 +39,7 @@ print_report(struct tailq_report * report)
 	printf("ID: %s\n", report->id);
 	char buffer[80] = "";
 	struct tm *info = localtime(&report->ctime);
-	strftime(buffer, 80, "%x - %I:%M%p", info);
+	strftime(buffer, 80, "%c", info);
 	printf("CREATED ON: %s\n", buffer);
 	printf("FILE: %s\n", report->path);
 	if (!TAILQ_EMPTY(report->suites)) {
@@ -52,23 +52,21 @@ print_report(struct tailq_report * report)
 void
 print_report_summary(struct tailq_report * report)
 {
-	/* TODO: sort reports by date */
-	printf("\nTEST REPORT (%s)\n", format_string(report->format));
-	printf("ID: %s\n", report->id);
 	char buffer[80] = "";
 	struct tm *info = localtime(&report->ctime);
-	strftime(buffer, 80, "%x - %I:%M%p", info);
-	printf("CREATED ON: %s\n", buffer);
-	printf("FILE: %s\n", report->path);
-	printf("STATUS: %d PASSED, %d FAILED, %d SKIPPED\n",
+	strftime(buffer, 80, "%D %H:%M", info);
+	printf("%s", buffer);
+	printf(" %5d %5d %5d",
 				num_by_status_class(report, STATUS_CLASS_PASS),
 				num_by_status_class(report, STATUS_CLASS_FAIL),
 				num_by_status_class(report, STATUS_CLASS_SKIP));
+	printf(" %-40s\n", report->path);
 }
 
 void
 print_reports(struct reportq * reports)
 {
+	/* TODO: sort reports by date */
 	tailq_report *report_item = NULL;
 	TAILQ_FOREACH(report_item, reports, entries) {
 		print_report_summary(report_item);

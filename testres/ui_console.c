@@ -52,6 +52,7 @@ print_report(struct tailq_report * report)
 void
 print_report_summary(struct tailq_report * report)
 {
+	/* TODO: sort reports by date */
 	printf("\nTEST REPORT (%s)\n", format_string(report->format));
 	printf("ID: %s\n", report->id);
 	char buffer[80] = "";

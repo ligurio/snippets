@@ -37,8 +37,8 @@ extern YYSTYPE yylval;
 %option yylineno
 %option noyywrap
 
-DIGITS		[0-9]+
-YAML_START	"---\n"
+DIGIT		[0-9]
+YAML_START	"---"
 YAML_END	"..."|"---"
 DOTS		".."
 SKIP		[Ss][Kk][Ii][Pp]([Pp][Ee][Dd])?
@@ -46,6 +46,7 @@ TODO		"TODO"
 OK			"ok"
 NOT			"not"
 BAILOUT		"Bail out!"
+SYMBOL		[[:alpha:][:punct:]]
 
 %%
 {OK}{1}			return OK;
@@ -56,10 +57,11 @@ BAILOUT		"Bail out!"
 ^"TAP version"	return VERSION;
 -				return DASH;
 #				return HASH;
-^[0-9]+{DOTS}{1}[0-9]+	{ yylval.string = strdup(yytext); return PLAN; }
-{YAML_START}{1}(.|\n)*{YAML_END}{1}	return YAML;
-{DIGITS}+			{ yylval.long_val = strtol(yytext, 0, 10); return NUMBER; }
-[[:alnum:][:punct:]]+		{ yylval.string = strdup(yytext); return WORD; };
+{DIGIT}{1}{DOTS}{1}{DIGIT}+	{ yylval.string = strdup(yytext); return PLAN; }
+{YAML_START}{1}	return YAML_START;
+{YAML_END}{1}	return YAML_END;
+{DIGIT}+		{ yylval.long_val = strtol(yytext, 0, 10); return NUMBER; }
+{SYMBOL}+		{ yylval.string = strdup(yytext); return WORD; };
 \n				return NL;
 [ \t]+			 	/* skip whitespace */
 %%

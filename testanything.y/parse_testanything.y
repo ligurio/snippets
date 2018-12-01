@@ -27,6 +27,7 @@
  */
 
 %{
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -35,8 +36,8 @@ int yylex(void);
 %}
 
 %token NOT OK BAILOUT SKIP TODO
-%token VERSION HASH DASH YAML PLAN
-%token WORD NUMBER NL
+%token VERSION HASH DASH PLAN
+%token WORD NUMBER NL YAML_START YAML_END
 
 %union {
 	long long_val;
@@ -48,53 +49,53 @@ int yylex(void);
 %type <string> 		WORD
 %type <string> 		PLAN
 %type <string> 		string
+%type <string> 		description
 
 %%
-program		: program test_line NL
+program		: program test_line
 		| error NL { yyerrok; }
 		|
 		;
 
-test_line	: VERSION NUMBER {
+test_line	: VERSION NUMBER NL {
 			printf("TAP version is %d\n", $2);
 			if ($2 != 13) {
 			   perror("Unsupported format version\n");
 			}
 		}
-		| PLAN comment {
+		| PLAN comment NL {
 			printf("PLAN");
 			/*
 			TODO:
-			- first number == 1
-			- second number > 1
 			- if there is a plan before the test points it must be
 			the first non-diagnostic line output by the test file
 			- plan cannot appear in the middle of the output, nor
 			can it appear more than once
 			*/
 
-			int min = 0, max = 0;
-			printf(" %s\n", $1);
-			/*
-			if (sscanf($1, "%u..%u", min, max) != 2) {
-			   perror("Cannot parse plan\n");
+			long min = 0, max = 0;
+			if (sscanf($1, "%d..%d", &min, &max) != 2) {
+				perror("Cannot parse plan\n");
+			} else {
+				printf(" %d -- %d\n", min, max);
+				assert(min == 1);
+				assert(max >= 0);
 			};
-			*/
 		}
-		| status test_number description comment {
+		| status test_number description comment NL {
 			if ($2 != 0) {
 				printf(" TESTCASE #%d\n", $2);
 			} else {
 				printf(" TESTCASE\n");
 			}
 		}
-		| comment {
+		| comment NL {
 			printf("COMMENT\n");
 		}
-		| BAILOUT string {
+		| BAILOUT string NL {
 			printf("BAIL OUT!\n");
 		}
-		| YAML {
+		| YAML_START NL yaml_strings YAML_END NL {
 			printf("YAML\n");
 		}
 		;
@@ -125,6 +126,10 @@ directive	: TODO { printf(" TODO "); }
 
 string		: string WORD
 		| string NUMBER
+		|
+		;
+
+yaml_strings: yaml_strings string NL
 		|
 		;
 %%

@@ -28,8 +28,10 @@
 
 %{
 #include <stdio.h>
+#include <limits.h>	/* strtol() */
+#include <stdlib.h> /* strtol() */
 #include "parse_testanything.tab.h"
-int yylval;
+extern YYSTYPE yylval;
 %}
 
 %option yylineno
@@ -40,20 +42,24 @@ YAML_START	"---\n"
 YAML_END	"..."|"---"
 DOTS		".."
 SKIP		[Ss][Kk][Ii][Pp]([Pp][Ee][Dd])?
+TODO		"TODO"
+OK			"ok"
+NOT			"not"
+BAILOUT		"Bail out!"
 
 %%
-ok				return OK;
-not				return NOT;
-"Bail out!"			return BAILOUT;
-"TODO"				return TODO;
-^"TAP version"			return VERSION;
-{SKIP}{1}			return SKIP;
+{OK}{1}			return OK;
+{NOT}{1}		return NOT;
+{BAILOUT}{1}	return BAILOUT;
+{TODO}{1}		return TODO;
+{SKIP}{1}		return SKIP;
+^"TAP version"	return VERSION;
 -				return DASH;
 #				return HASH;
-1{DOTS}{1}[0-9]+		return PLAN;
+^[0-9]+{DOTS}{1}[0-9]+	{ yylval.string = strdup(yytext); return PLAN; }
 {YAML_START}{1}(.|\n)*{YAML_END}{1}	return YAML;
-{DIGITS}+			{ yylval = atoi(yytext); return NUMBER; }
-[[:alnum:][:punct:]]+		return WORD;
+{DIGITS}+			{ yylval.long_val = strtol(yytext, 0, 10); return NUMBER; }
+[[:alnum:][:punct:]]+		{ yylval.string = strdup(yytext); return WORD; };
 \n				return NL;
 [ \t]+			 	/* skip whitespace */
 %%

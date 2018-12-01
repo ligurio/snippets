@@ -34,9 +34,20 @@ void yyerror(char *);
 int yylex(void);
 %}
 
-%token OK NOT BAILOUT SKIP TODO
+%token NOT OK BAILOUT SKIP TODO
 %token VERSION HASH DASH YAML PLAN
 %token WORD NUMBER NL
+
+%union {
+	long long_val;
+	char *string;
+};
+
+%type <long_val>	NUMBER
+%type <long_val>	test_number
+%type <string> 		WORD
+%type <string> 		PLAN
+%type <string> 		string
 
 %%
 program		: program test_line NL
@@ -47,11 +58,11 @@ program		: program test_line NL
 test_line	: VERSION NUMBER {
 			printf("TAP version is %d\n", $2);
 			if ($2 != 13) {
-			   perror("unsupported format version\n");
+			   perror("Unsupported format version\n");
 			}
 		}
 		| PLAN comment {
-			printf("PLAN\n");
+			printf("PLAN");
 			/*
 			TODO:
 			- first number == 1
@@ -60,15 +71,22 @@ test_line	: VERSION NUMBER {
 			the first non-diagnostic line output by the test file
 			- plan cannot appear in the middle of the output, nor
 			can it appear more than once
+			*/
 
-			int *min = NULL, *max = NULL;
-			if (sscanf(yyval, "%u..%u", min, max) != 2) {
-			   perror("cannot parse plan\n");
+			int min = 0, max = 0;
+			printf(" %s\n", $1);
+			/*
+			if (sscanf($1, "%u..%u", min, max) != 2) {
+			   perror("Cannot parse plan\n");
 			};
 			*/
 		}
 		| status test_number description comment {
-			printf("TESTCASE #%d\n", $2);
+			if ($2 != 0) {
+				printf(" TESTCASE #%d\n", $2);
+			} else {
+				printf(" TESTCASE\n");
+			}
 		}
 		| comment {
 			printf("COMMENT\n");
@@ -81,11 +99,9 @@ test_line	: VERSION NUMBER {
 		}
 		;
 
-status		: OK
-		| NOT OK
-		;
-
-comment		: HASH directive string
+comment		: HASH directive string {
+				if ($3 != NULL) { printf(" %s ", $3); }
+			}
 		|
 		;
 
@@ -98,8 +114,12 @@ description	: string
 		|
 		;
 
-directive	: SKIP
-		| TODO
+status	: OK { printf("PASSED"); }
+		| NOT OK { printf("FAILED"); }
+		;
+
+directive	: TODO { printf(" TODO "); }
+		| SKIP { printf(" SKIP "); }
 		|
 		;
 

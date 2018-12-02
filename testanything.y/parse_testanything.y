@@ -36,7 +36,7 @@ int yylex(void);
 %}
 
 %token NOT OK BAILOUT SKIP TODO
-%token VERSION HASH DASH PLAN
+%token HASH DASH PLAN TAP_VERSION
 %token WORD NUMBER NL YAML_START YAML_END
 
 %union {
@@ -57,7 +57,7 @@ program		: program test_line
 		|
 		;
 
-test_line	: VERSION NUMBER NL {
+test_line	: TAP_VERSION NUMBER NL {
 			printf("TAP version is %d\n", $2);
 			if ($2 != 13) {
 			   perror("Unsupported format version\n");
@@ -143,18 +143,9 @@ extern int yyparse();
 extern int yylineno;
 extern FILE *yyin;
 
-struct tailq_entry {
-	int tc_number;
-	char tc_desc;
-	char tc_comment;
-	TAILQ_ENTRY(tailq_entry) entries;
-};
-
-TAILQ_HEAD(, tailq_entry) report_head;
-
 void yyerror(char *s)
 {
-    fprintf( stderr, "Warning: %s, line %d\n", s, yylineno);
+    fprintf(stderr, "Warning: %s, line %d\n", s, yylineno);
 }
 
 int main( int argc, char **argv ) {
@@ -166,37 +157,12 @@ int main( int argc, char **argv ) {
 	yyin = fopen(argv[1], "r");
 	yylineno = 0;
 	if (!yyin) {
-		printf("Can't open file %s\n", argv[1]);
+		fprintf(stderr, "Can't open file %s\n", argv[1]);
 		return -1;
 	}
   }
 
   yyparse();
-
-/*
-  struct tailq_entry *item;
-  struct tailq_entry *tmp_item;
-  int i;
-
-  TAILQ_INIT(&report_head);
-
-  for (i = 0; i < 10; i++) {
-    item = malloc(sizeof(*item));
-	if (item == NULL) {
-	  perror("malloc failed");
-	  exit(EXIT_FAILURE);
-	}
-
-    item->tc_number = i;
-    TAILQ_INSERT_TAIL(&report_head, item, entries);
-  }
-
-  TAILQ_FOREACH(item, &report_head, entries) {
-	printf("%d ", item->tc_number);
-  }
-*/
-
-  /* close(yyin); */
 
   return 0;
 }

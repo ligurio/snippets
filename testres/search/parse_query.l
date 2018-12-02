@@ -43,26 +43,37 @@ extern void yyerror(char *s);
 %option yylineno
 %option noyywrap
 
+FORMAT			"junit"|"testanything"|"subunit_v1"|"subunit_v2"
+FMT				"fmt"
+SUITE			"suite"
+TEST			"test"
+PASSRATE		"passrate"
+CREATED			"created"
+HOSTNAME		"hostname"
+HOST			[A-Za-z][A-Za-z0-9\.\-]+
+DIGIT			[0-9]
+SYMBOLS			[A-Za-z0-9_\-]
+
 %%
-">"				return GT;
-"<"				return LT;
-"="				return EQ;
+">"					return GT;
+"<"					return LT;
+"="					return EQ;
 "<="				return LE;
 ">="				return GE;
-":"				return COLON;
-"fmt"				return FMT;
-"suite"				return SUITE;
-"test"				return TEST;
-"hostname"			return HOSTNAME;
-"created"			return CREATED;
-"passrate"			return PASSRATE;
-"junit"|"testanything"|"subunit_v1"|"subunit_v2" return FORMAT;
-[0-9]{8}			return DATE;
-[0-9]+				return NUMBER;
-[A-Za-z][A-Za-z0-9\.\-]+	return HOST;
-[A-Za-z0-9_\-]+			return NAME;
-\n				return NL;
+":"					return COLON;
+{FMT}{1}			return FMT;
+{SUITE}{1}			return SUITE;
+{TEST}{1}			return TEST;
+{HOSTNAME}{1}		return HOSTNAME;
+{CREATED}{1}		return CREATED;
+{PASSRATE}{1}		return PASSRATE;
+{FORMAT}{1}			return FORMAT;
+{DIGIT}{8}			return DATE;
+{DIGIT}+			return NUMBER;
+{HOST}{1}			return HOST;
+{SYMBOLS}+			return NAME;
+\n					return NL;
 [ \t]+				/* skip whitespace */;
-.				{ yyerror("Unrecognized character"); }
+.					{ yyerror("Unrecognized character"); }
 
 %%

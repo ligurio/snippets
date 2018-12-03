@@ -1,7 +1,7 @@
 PROGRAM	= parse_testanything
 
 OBJS	= $(PROGRAM).tab.o $(PROGRAM).o
-SRCS	= $(PROGRAM).tab.c $(PROGRAM).c
+SRCS	= $(PROGRAM).tab.c $(PROGRAM).c parse_common.c
 CC	= gcc
 CFLAGS	= -O3 -ggdb
 

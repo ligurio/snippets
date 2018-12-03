@@ -58,7 +58,7 @@ program		: program test_line
 		;
 
 test_line	: TAP_VERSION NUMBER NL {
-			printf("TAP version is %d\n", $2);
+			printf("TAP version is %lu\n", $2);
 			if ($2 != 13) {
 			   perror("Unsupported format version\n");
 			}
@@ -74,17 +74,17 @@ test_line	: TAP_VERSION NUMBER NL {
 			*/
 
 			long min = 0, max = 0;
-			if (sscanf($1, "%d..%d", &min, &max) != 2) {
+			if (sscanf($1, "%lu..%lu", &min, &max) != 2) {
 				perror("Cannot parse plan\n");
 			} else {
-				printf(" %d -- %d\n", min, max);
+				printf(" %lu -- %lu\n", min, max);
 				assert(min == 1);
 				assert(max >= 0);
 			};
 		}
 		| status test_number description comment NL {
 			if ($2 != 0) {
-				printf(" TESTCASE #%d\n", $2);
+				printf(" TESTCASE #%lu\n", $2);
 			} else {
 				printf(" TESTCASE\n");
 			}
@@ -101,7 +101,7 @@ test_line	: TAP_VERSION NUMBER NL {
 		;
 
 comment		: HASH directive string {
-				if ($3 != NULL) { printf(" %s ", $3); }
+			/* if ($3 != NULL) { printf(" %s ", $3); } */
 			}
 		|
 		;

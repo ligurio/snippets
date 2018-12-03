@@ -43,26 +43,26 @@ YAML_END		"..."|"---"
 DOTS			".."
 SKIP			[Ss][Kk][Ii][Pp]([Pp][Ee][Dd])?
 TODO			"TODO"
-OK				"ok"
-NOT				"not"
+OK			"ok"
+NOT			"not"
 BAILOUT			"Bail out!"
 SYMBOL			[[:alpha:][:punct:]]
 TAP_VERSION		^"TAP version"
 
 %%
-{OK}{1}				return OK;
-{NOT}{1}			return NOT;
+{OK}{1}			return OK;
+{NOT}{1}		return NOT;
 {BAILOUT}{1}		return BAILOUT;
-{TODO}{1}			return TODO;
-{SKIP}{1}			return SKIP;
+{TODO}{1}		return TODO;
+{SKIP}{1}		return SKIP;
 {TAP_VERSION}{1}	return TAP_VERSION;
--					return DASH;
-#					return HASH;
+-			return DASH;
+#			return HASH;
 {DIGIT}{1}{DOTS}{1}{DIGIT}+	{ yylval.string = strdup(yytext); return PLAN; }
 {YAML_START}{1}		return YAML_START;
 {YAML_END}{1}		return YAML_END;
-{DIGIT}+			{ yylval.long_val = strtol(yytext, 0, 10); return NUMBER; }
-{SYMBOL}+			{ yylval.string = strdup(yytext); return WORD; };
-\n					return NL;
-[ \t]+			 	/* skip whitespace */
+{DIGIT}+		{ yylval.long_val = strtol(yytext, 0, 10); return NUMBER; }
+{SYMBOL}+		{ yylval.string = strdup(yytext); return WORD; };
+\n			return NL;
+[ \t]+			/* skip whitespace */
 %%

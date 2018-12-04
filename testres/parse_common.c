@@ -339,6 +339,10 @@ struct reportq *process_dir(char *path) {
 	}
 
 	struct reportq *reports;
+	reports = calloc(1, sizeof(struct reportq));
+	if (reports == NULL) {
+	   return NULL;
+	}
 	TAILQ_INIT(reports);
 
 	struct dirent *dir;

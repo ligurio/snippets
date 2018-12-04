@@ -72,7 +72,7 @@ print_reports(struct reportq * reports)
 	printf("DATE            PASS  FAIL  SKIP FILE\n");
 	printf("-------------------------------------------------------------\n");
 	TAILQ_FOREACH(report_item, reports, entries) {
-		print_report_summary(report_item);
+	   print_report_summary(report_item);
 	}
 }
 

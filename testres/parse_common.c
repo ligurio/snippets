@@ -41,7 +41,7 @@ free_reports(struct reportq * reports)
 {
 	tailq_report *report_item = NULL;
 	while ((report_item = TAILQ_FIRST(reports))) {
-		if (!TAILQ_EMPTY(report_item->suites)) {
+		if (report_item->suites != NULL) {
 			free_suites(report_item->suites);
 		}
 		TAILQ_REMOVE(reports, report_item, entries);
@@ -52,7 +52,7 @@ free_reports(struct reportq * reports)
 void 
 free_report(tailq_report *report)
 {
-	if (!TAILQ_EMPTY(report->suites)) {
+	if (report->suites != NULL) {
 		free_suites(report->suites);
 	}
 	free(report->path);
@@ -128,7 +128,7 @@ get_filename_ext(const char *filename)
 {
 	char *dot = strrchr(filename, '.');
 	if (!dot || dot == filename)
-		return (char *) NULL;
+	   return (char *) NULL;
 
 	return dot + 1;
 }
@@ -138,6 +138,9 @@ detect_file_format(char *path)
 {
 	char *file_ext;
 	file_ext = get_filename_ext(basename(path));
+	if (file_ext == NULL) {
+	   return FORMAT_UNKNOWN;
+	}
 
 	if (strcasecmp("xml", file_ext) == 0) {
 		return FORMAT_JUNIT;
@@ -200,6 +203,7 @@ process_file(char *path)
 		report->suites = parse_subunit_v2(file);
 		break;
 	case FORMAT_UNKNOWN:
+		report->format = FORMAT_UNKNOWN;
 		break;
 	}
 	fclose(file);
@@ -242,28 +246,18 @@ static int cmp_date(const void *p1, const void *p2) {
 struct reportq *sort_reports(struct reportq *reports) {
    return reports;
 }
-
-struct suiteq *sort_suites(struct suiteq *suites) {
-   return suites;
-}
-
-struct testq *sort_tests(struct testq *tests) {
-   return tests;
-}
 */
 
 int num_by_status_class(struct tailq_report *report, enum test_status_class c) {
 
    int number = 0;
-   if (!TAILQ_EMPTY(report->suites)) {
+   if (report->suites != NULL) {
       tailq_suite *suite_item = NULL;
       TAILQ_FOREACH(suite_item, report->suites, entries) {
          if (!TAILQ_EMPTY(suite_item->tests)) {
-            if (!TAILQ_EMPTY(suite_item->tests)) {
-               tailq_test *test_item = NULL;
-               TAILQ_FOREACH(test_item, suite_item->tests, entries) {
-                  if (class_by_status(test_item->status) == c) number++;
-               }
+            tailq_test *test_item = NULL;
+            TAILQ_FOREACH(test_item, suite_item->tests, entries) {
+               if (class_by_status(test_item->status) == c) number++;
             }
          }
       }
@@ -318,10 +312,14 @@ enum test_status_class class_by_status(enum test_status status) {
  */
 double calc_success_perc(struct tailq_report *report) {
     double num = 0;
-    int passed = num_by_status_class(report, STATUS_CLASS_PASS);
-    int failed = num_by_status_class(report, STATUS_CLASS_FAIL);
-    int skipped = num_by_status_class(report, STATUS_CLASS_SKIP);
-    num = (double)passed / (double)(passed + failed + skipped) * 100;
+    if (report->suites != NULL) {
+       int passed = num_by_status_class(report, STATUS_CLASS_PASS);
+       int failed = num_by_status_class(report, STATUS_CLASS_FAIL);
+       int skipped = num_by_status_class(report, STATUS_CLASS_SKIP);
+       num = (double)passed / (double)(passed + failed + skipped) * 100;
+    } else {
+       num = 0;
+    }
 
     return round(num);
 }
@@ -352,14 +350,23 @@ struct reportq *process_dir(char *path) {
 		char *basename;
 		basename = dir->d_name;
 		if ((strcmp("..", basename) == 0) || (strcmp(".", basename) == 0)) {
-			continue;
+		   continue;
 		}
 		/* TODO: recursive search in directories */
 		int path_len = strlen(path) + strlen(basename) + 2;
 		path_file = calloc(path_len, sizeof(char));
 		snprintf(path_file, path_len, "%s/%s", path, basename);
+           	struct stat sb;
+		if (lstat(path_file, &sb) == -1) {
+		    perror("lstat");
+		}
+           	if (sb.st_mode & S_IFMT != S_IFREG) {
+		    continue;
+           	}
 		report_item = process_file(path_file);
-		TAILQ_INSERT_TAIL(reports, report_item, entries);
+		if (report_item->format != FORMAT_UNKNOWN) {
+		   TAILQ_INSERT_TAIL(reports, report_item, entries);
+		}
 		free(path_file);
 	}
 	close(fd);

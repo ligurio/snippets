@@ -85,7 +85,7 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-    if (path == (char*)NULL) {
+    	if (path == (char*)NULL) {
 		perror("specified path is empty");
 		return 1;
 	}
@@ -130,7 +130,7 @@ main(int argc, char *argv[])
 	   return 0;
 	}
 
-    if (strcmp(strtok(query_string, "="), "show") == 0) {
+    	if (strcmp(strtok(query_string, "="), "show") == 0) {
 	   const char *report_id = strtok(NULL, "=");
 	   struct tailq_report *report;
 	   if ((report = is_report_exists(reports, report_id)) != NULL) {

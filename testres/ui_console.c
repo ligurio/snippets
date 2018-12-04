@@ -68,6 +68,9 @@ print_reports(struct reportq * reports)
 {
 	/* TODO: sort reports by date */
 	tailq_report *report_item = NULL;
+	printf("-------------------------------------------------------------\n");
+	printf("DATE            PASS  FAIL  SKIP FILE\n");
+	printf("-------------------------------------------------------------\n");
 	TAILQ_FOREACH(report_item, reports, entries) {
 		print_report_summary(report_item);
 	}

@@ -208,9 +208,6 @@ process_file(char *path)
 	}
 	fclose(file);
 
-	struct stat sb;
-	stat(path, &sb);
-	report->ctime = sb.st_ctime;
 	report->path = (unsigned char*)strdup(path);
 
 	int length = 20;
@@ -356,17 +353,20 @@ struct reportq *process_dir(char *path) {
 		int path_len = strlen(path) + strlen(basename) + 2;
 		path_file = calloc(path_len, sizeof(char));
 		snprintf(path_file, path_len, "%s/%s", path, basename);
-           	struct stat sb;
-		if (lstat(path_file, &sb) == -1) {
-		    perror("lstat");
+
+		struct stat path_st;
+		if (stat(path, &path_st) == -1) {
+		   perror("cannot open specified path");
+		   return NULL;
 		}
-           	if (sb.st_mode & S_IFMT != S_IFREG) {
-		    continue;
-           	}
+		if (S_ISREG(path_st.st_mode)) {
+		   continue;
+		}
 		report_item = process_file(path_file);
 		if (report_item->format != FORMAT_UNKNOWN) {
+		   report_item->ctime = path_st.st_ctime;
 		   TAILQ_INSERT_TAIL(reports, report_item, entries);
-		}
+           	}
 		free(path_file);
 	}
 	close(fd);

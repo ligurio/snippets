@@ -90,14 +90,11 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-	int fd;
-	fd = open(path, O_RDONLY);
 	struct stat path_st;
-	if (fstat(fd, &path_st) == -1) {
-		perror("cannot open specified path");
-		return 1;
+	if (stat(path, &path_st) == -1) {
+	   perror("cannot open specified path");
+	   return 1;
 	}
-	close(fd);
 
 	char *query_string = getenv("QUERY_STRING");
 	tailq_report *report_item;

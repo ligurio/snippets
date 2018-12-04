@@ -134,7 +134,7 @@ get_filename_ext(const char *filename)
 }
 
 enum test_format 
-detect_file_format(char *path)
+detect_format(char *path)
 {
 	char *file_ext;
 	file_ext = get_filename_ext(basename(path));
@@ -184,7 +184,7 @@ process_file(char *path)
 		return NULL;
 	}
 	enum test_format format;
-	format = detect_file_format(path);
+	format = detect_format(path);
 	switch (format) {
 	case FORMAT_JUNIT:
 		report->format = FORMAT_JUNIT;

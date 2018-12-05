@@ -80,10 +80,17 @@ favicon.
 .Sh EXAMPLES
 .Bd -literal
 
-TEST REPORT (FORMAT_JUNIT)
-CREATED ON: 09/12/18 - 10:58PM
-    noname (0 failures, 0 errors) 47.482000
-        test_bisect_serial_fail_detected STATUS_PASS
+TEST REPORT (SUBUNIT_V1)
+ID: b09b24ebda9e4725552bf89f9afdd9d04ab1cab
+CREATED ON: Thu Jan  1 03:00:00 1970
+FILE: web/subunit_v1.subunit
+
+SUITE: noname
+        PASS test_add.TestAdd.test_add_control_dir(pre-views)
+        PASS test_add.TestAdd.test_add_control_dir(view-aware)
+        PASS test_add.TestAdd.test_add_dry_run(pre-views)
+        PASS test_add.TestAdd.test_add_dry_run(view-aware)
+
 .Ed
 .Sh STANDARDS
 .Rs
@@ -112,5 +119,9 @@ utility was written by
 .An Sergey Bronnikov
 .Sh CAVEATS
 Supported formats uses different names and types of test statuses.
-For simplification summary in console and web modes prints only three statuses:
-PASS, FAIL and SKIP. They aggregates similar types of statuses in supported formats.
+For simplification
+.Nm
+number of statuses limited by PASS, FAIL and SKIP in report summary. These
+statuses aggregates other appropriate types of statuses in supported formats.
+
+TODO: Bail out processing

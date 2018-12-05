@@ -21,6 +21,7 @@ install:
 
 script:
   - mkdir build
-  - cd build && cmake ..
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=RELEASE
   - make
-  - make unit-test
+  - bin/testres -s samples/junit.xml

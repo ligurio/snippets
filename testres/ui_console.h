@@ -30,8 +30,9 @@
 #define UI_CONSOLE_H
 
 void print_report_summary(struct tailq_report * report);
-void print_report(struct tailq_report *report);
+void print_report_prof(struct tailq_report *report);
 void print_reports(struct reportq *reports_head);
+void print_report(struct tailq_report *report);
 void print_suites(struct suiteq *suites_head);
 void print_tests(struct testq *tests_head);
 

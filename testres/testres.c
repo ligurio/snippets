@@ -105,6 +105,7 @@ main(int argc, char *argv[])
 	      print_html_report(report_item);
 	      print_html_footer(version);
 	   } else {
+	      /* print_report_prof(report_item); */
 	      print_report(report_item);
  	   }
 	   free_report(report_item);

@@ -26,8 +26,6 @@
  *
  */
 
-#include <math.h>
-
 #include "parse_common.h"
 #include "ui_console.h"
 #include "ui_common.h"
@@ -96,29 +94,6 @@ print_suites(struct suiteq * suites)
 			printf("None tests.\n");
 		}
 	}
-}
-
-void format_sec(double sec, char *out) {
-	if (sec > 3600) {
-	    sec = round(sec);
-	    int h = sec / 3600;
-	    int m = (sec - h * 3600) / 60;
-	    int s = sec - h * 3600 - m * 60;
-	    snprintf(out, 16, "%dh%dm%ds", h, m, s);
-	}
-	else if (sec > 60) {
-	    int m = sec / 60.0;
-	    int s = sec - 60.0 * m;
-	    snprintf(out, 16, "%dm %ds", m, s);
-	}
-	else if (sec > 1)
-	    snprintf(out, 16, "%7.0fs", round(sec));
-	else if (sec > 0.001)
-	    snprintf(out, 16, "%7.0fms", round(sec * 1000.0));
-	else if (sec > 0.001 * 0.001)
-	    snprintf(out, 16, "%7.0fµs", round(sec * 1000.0 * 1000.0));
-	else if (sec > 0.001 * 0.001 * 0.001)
-	    snprintf(out, 16, "%7.0fns", round(sec * 1000.0 * 1000.0 * 1000.0));
 }
 
 void

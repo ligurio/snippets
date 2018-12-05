@@ -120,9 +120,9 @@ print_html_report(struct tailq_report * report) {
     struct tm *info = localtime(&report->ctime);
     strftime(buffer, 80, "%x - %I:%M%p", info);
     printf("<table>\n");
-    printf("<tr><td>Report ID:</td><td>%s</td></tr>\n", report->id);
-    printf("<tr><td>Created On:</td><td>%s</td></tr>\n", buffer);
-    printf("<tr><td>Format:</td><td>%s</td></tr>\n", format_string(report->format));
+    printf("<tr><td><b>Report ID:</b></td><td>%s</td></tr>\n", report->id);
+    printf("<tr><td><b>Created On:</b></td><td>%s</td></tr>\n", buffer);
+    printf("<tr><td><b>Format:</b></td><td>%s</td></tr>\n", format_string(report->format));
     printf("</table>\n");
     printf("<br>\n");	/* FIXME */
     if (!TAILQ_EMPTY(report->suites)) {
@@ -166,6 +166,7 @@ print_html_tests(struct testq * tests) {
     TAILQ_FOREACH(test_item, tests, entries) {
 	printf("<tr>\n");
 	const char *name = NULL;
+	char buf[16];
 	if (test_item->name != NULL) {
 		name = test_item->name;
 	} else {
@@ -173,8 +174,9 @@ print_html_tests(struct testq * tests) {
 	}
 	printf("<td>%s</td>\n", name);
 	printf("<td>%s</td>\n", format_status(test_item->status));
-	printf("<td>%s</td>\n", test_item->time);
 	printf("<td></td>\n");	/* FIXME */
+	format_sec(atof(test_item->time), buf);
+	printf("<td>%s</td>\n", buf);
 	printf("</tr>\n");
     }
 }

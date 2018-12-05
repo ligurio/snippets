@@ -49,7 +49,7 @@ format_string(enum test_format format)
 }
 
 const char *
-status_string(enum test_status status)
+format_status(enum test_status status)
 {
 	switch (status) {
 	case STATUS_SUCCESS:

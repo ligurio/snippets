@@ -29,7 +29,7 @@
 #ifndef UI_COMMON_H
 #define UI_COMMON_H
 
-const char *status_string(enum test_status status);
+const char *format_status(enum test_status status);
 const char *format_string(enum test_format format);
 
 #endif				/* UI_COMMON_H */

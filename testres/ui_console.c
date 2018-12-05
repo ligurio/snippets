@@ -98,15 +98,39 @@ print_suites(struct suiteq * suites)
 	}
 }
 
+void format_sec(double sec, char *out) {
+	if (sec > 3600) {
+	    sec = round(sec);
+	    int h = sec / 3600;
+	    int m = (sec - h * 3600) / 60;
+	    int s = sec - h * 3600 - m * 60;
+	    snprintf(out, 16, "%dh%dm%ds", h, m, s);
+	}
+	else if (sec > 60) {
+	    int m = sec / 60.0;
+	    int s = sec - 60.0 * m;
+	    snprintf(out, 16, "%dm %ds", m, s);
+	}
+	else if (sec > 1)
+	    snprintf(out, 16, "%7.0fs", round(sec));
+	else if (sec > 0.001)
+	    snprintf(out, 16, "%7.0fms", round(sec * 1000.0));
+	else if (sec > 0.001 * 0.001)
+	    snprintf(out, 16, "%7.0fµs", round(sec * 1000.0 * 1000.0));
+	else if (sec > 0.001 * 0.001 * 0.001)
+	    snprintf(out, 16, "%7.0fns", round(sec * 1000.0 * 1000.0 * 1000.0));
+}
+
 void
 print_tests(struct testq * tests)
 {
 	tailq_test *test_item = NULL;
 	TAILQ_FOREACH(test_item, tests, entries) {
-		printf("\t%4.4s ", status_string(test_item->status));
+		printf("\t%4.4s ", format_status(test_item->status));
 		if (test_item->time != NULL) {
-			float t = atof(test_item->time);
-			printf("%7.2fs ", t);
+			char buf[16];
+			format_sec(atof(test_item->time), buf);
+			printf("%s ", buf);
 		}
 		printf("%s\n", test_item->name);
 	}

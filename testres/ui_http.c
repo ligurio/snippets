@@ -172,7 +172,7 @@ print_html_tests(struct testq * tests) {
 		name = "Unknown name";
 	}
 	printf("<td>%s</td>\n", name);
-	printf("<td>%s</td>\n", status_string(test_item->status));
+	printf("<td>%s</td>\n", format_status(test_item->status));
 	printf("<td>%s</td>\n", test_item->time);
 	printf("<td></td>\n");	/* FIXME */
 	printf("</tr>\n");

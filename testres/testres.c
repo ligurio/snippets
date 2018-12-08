@@ -29,6 +29,7 @@
 #include <err.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,14 +42,14 @@
 
 char version[1024];
 
-void 
+void
 usage(char *path)
 {
 	char *name = basename(path);
 	fprintf(stderr, "Usage: %s [-s file | directory] [-h|-v]\n", name);
 }
 
-int 
+int
 main(int argc, char *argv[])
 {
 	char *path = (char *) NULL;
@@ -72,7 +73,7 @@ main(int argc, char *argv[])
 			printf("Build-date: %s\n", version);
 			return 0;
 		case 's':
-			path = optarg;
+			path = realpath(optarg, path);
 			break;
 		default:	/* '?' */
 			usage(argv[0]);
@@ -85,14 +86,14 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-    	if (path == (char*)NULL) {
-		perror("specified path is empty");
+	if (path == (char*)NULL) {
+		fprintf(stderr, "specified path is empty");
 		return 1;
 	}
 
 	struct stat path_st;
 	if (stat(path, &path_st) == -1) {
-	   perror("cannot open specified path");
+	   fprintf(stderr, "cannot open specified path");
 	   return 1;
 	}
 
@@ -118,7 +119,7 @@ main(int argc, char *argv[])
 	   print_reports(reports);
 	   free_reports(reports);
 	   return 0;
- 	}
+	}
 
 	if (strcmp(query_string, "index") == 0) {
 	   print_html_headers(version, stylesheet);
@@ -128,7 +129,7 @@ main(int argc, char *argv[])
 	   return 0;
 	}
 
-    	if (strcmp(strtok(query_string, "="), "show") == 0) {
+	if (strcmp(strtok(query_string, "="), "show") == 0) {
 	   const char *report_id = strtok(NULL, "=");
 	   struct tailq_report *report;
 	   if ((report = is_report_exists(reports, report_id)) != NULL) {

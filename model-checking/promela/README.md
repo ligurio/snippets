@@ -13,3 +13,4 @@
 - http://spinroot.com/spin/success.html
 - http://www.imm.dtu.dk/~albl/promela.html
 - https://github.com/dgryski/modelchecking
+- https://swtch.com/spin/

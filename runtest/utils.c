@@ -1,5 +1,5 @@
+#define _GNU_SOURCE
 #include <stdio.h>
-
 #include <libgen.h>
 #include <signal.h>
 #include <poll.h>
@@ -228,7 +228,9 @@ static inline void
 run_child(char *run_test, int fd_stdout, int fd_stderr)
 {
 	char **argv = malloc(sizeof(char) * 2);
-	chdir(dirname(strdup(run_test)));
+	if (chdir(dirname(strdup(run_test))) == -1) {
+	   exit(-1);
+	}
 
 	argv[0] = run_test;
 	argv[1] = NULL;

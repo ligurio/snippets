@@ -1,4 +1,4 @@
-CC		=  cc
+CC	=  cc
 CFLAGS	=  -I .
 CFLAGS	+= -W -Wall -Wextra -Wfloat-equal
 CFLAGS	+= -Wundef -Wpointer-arith -Wcast-align -Wshadow

@@ -1,0 +1,4 @@
+pkg-resources==0.0.0
+pycparser==2.19
+unidiff==0.5.5
+whatthepatch==0.0.5

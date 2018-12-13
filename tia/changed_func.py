@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+from unidiff.patch import PatchSet, PatchedFile, Hunk
+import codecs
+import pycparser
+import urllib2
+import unittest
+
+def affected_lines(patch):
+    changes = {}
+    for p in patch:
+        lines = []
+	if p.is_added_file:
+        	print added_files
+        	changes[p.path] = []
+        	continue
+        if isinstance(p.added, tuple):
+            lines = lines + list(p.added)
+        else:
+            lines.append(p.added)
+        if isinstance(p.removed, tuple):
+            lines = lines + list(p.removed)
+        else:
+            lines.append(p.removed)
+        changes[p.path] = sorted(lines)
+	for pp in p:
+		print "kuku", type(pp)
+		for a in pp.source_lines():
+			#if not a.is_context:
+				# print a
+			if a.is_added or a.is_removed:
+				print a.source_line_no, a.target_line_no, a.diff_line_no
+		for b in pp.target_lines():
+			#if not b.is_context:
+			# print b
+			if b.is_added or b.is_removed:
+				print b.source_line_no, b.target_line_no, b.diff_line_no
+
+    return changes
+
+diff = 'hello.patch'
+with codecs.open(diff, 'r', encoding='utf-8') as diff:
+    patch = PatchSet(diff)
+    print affected_lines(patch)
+
+#url_patch = 'https://github.com/checkpoint-restore/criu/commit/5a39cc6f0c61d79fd1a469e66cdecbe8e5bba484.patch'
+#diff = urllib2.urlopen(url_patch)
+#encoding = diff.headers.getparam('charset')
+#patch = PatchSet(diff, encoding=encoding)
+#print affected_lines(patch)
+
+def test_diff():
+    url_patch = 'https://github.com/checkpoint-restore/criu/commit/5a39cc6f0c61d79fd1a469e66cdecbe8e5bba484.patch'
+    diff = urllib2.urlopen(url_patch)
+    encoding = diff.headers.getparam('charset')
+    patch = PatchSet(diff, encoding=encoding)
+
+    assert(len(patch) == 1)
+    assert(patch.is_added_file == False)
+    assert(patch.added == 2)
+    assert(patch.removed == 1)

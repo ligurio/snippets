@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+"""
+http://valgrind.org/docs/manual/cl-manual.html
+https://github.com/jrfonseca/gprof2dot#which-options-should-i-pass-to-gcc-when-compiling-for-profiling
+
+valgrind: valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes ./sample
+"""

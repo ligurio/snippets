@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+"""
+https://github.com/namhyung/uftrace
+
+For recording, the executable should be compiled with -pg (or
+-finstrument-functions) option which generates profiling code (calling mcount
+or __cyg_profile_func_enter/exit) for each function.
+
+NOTE: i'm not sure we need a separate wrapper for uftrace
+"""

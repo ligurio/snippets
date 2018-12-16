@@ -14,12 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int** cc_params;              /* parameters passed to the CC	*/
-static int   cc_par_cnt = 1;         /* Param count, including argv0 	*/
-static int   be_quiet,               /* Quiet mode                   	*/
-             clang_mode;             /* Invoked as tt-clang?   		*/
-             gcc_mode;               /* Invoked as tt-gcc?   		*/
-
+/*
 static void make_params(int argc, char** argv) {
 
   u8 *name;
@@ -40,6 +35,7 @@ static void make_params(int argc, char** argv) {
   cc_params[cc_par_cnt++] = "-B";
   cc_params[cc_par_cnt] = NULL;
 }
+*/
 
 int main(int argc, char** argv) {
 
@@ -48,8 +44,7 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  make_params(argc, argv);
-  execvp(cc_params[0], (char**)cc_params);
-  printf("Oops, failed to execute '%s' - check your PATH", cc_params[0]);
+  //make_params(argc, argv);
+  //execvp(cc_params[0], (char**)cc_params);
   return 0;
 }

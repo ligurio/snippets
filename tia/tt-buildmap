@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-GPROF:
+gprof:
   - https://sourceware.org/binutils/docs/gprof/
   - ./hello_world
   - gprof ./hello_world
@@ -12,6 +12,8 @@ perf:
 valgrind:
   - http://valgrind.org/docs/manual/cl-manual.html
 
+convert coverage data to map func:test
+
 """
 
 import glob
@@ -19,18 +21,18 @@ import sys
 
 from subprocess import Popen, PIPE, STDOUT
 
-GPROF_OPT = "valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes"
+GPROF_OPT = "gprof"
 GPROF_PATTERN = "gmon.out"
 
 PERF_RECORD_OPT = "perf record -g --"
-PERF_SCRIPT_OPT = "perf record -g --"
+PERF_SCRIPT_OPT = "perf script"
 PERF_PATTERN = "perf.data"
-# perf script | c++filt | gprof2dot.py -f perf | dot -Tpng -o output.png
+# perf script | c++filt
 
 VALGRIND_OPT = "valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes"
 VALGRIND_PATTERN = "callgrind.out.*"
 
-# TODO: check valgrind and exit if it is absent
+# TODO: check tool and exit if it is absent
 
 del sys.argv[0]
 print "Run with options:", sys.argv
@@ -47,4 +49,4 @@ rc = proc.wait()
 
 print glob.glob(CALLGRIND_PATTERN)
 
-# TODO: parse callgrind output
+# TODO: parse output

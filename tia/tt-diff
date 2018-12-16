@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+"""
+abidiff, abicheck etc
+"""
+
 from unidiff.patch import PatchSet, PatchedFile, Hunk
 import codecs
 import pycparser

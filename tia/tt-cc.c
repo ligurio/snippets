@@ -15,9 +15,10 @@
 #include <string.h>
 
 static int** cc_params;              /* parameters passed to the CC	*/
-static int   cc_par_cnt = 1;         /* Param count, including argv0 */
-static int   be_quiet,               /* Quiet mode                   */
-            clang_mode;             /* Invoked as mapfunc-clang*?   */
+static int   cc_par_cnt = 1;         /* Param count, including argv0 	*/
+static int   be_quiet,               /* Quiet mode                   	*/
+             clang_mode;             /* Invoked as tt-clang?   		*/
+             gcc_mode;               /* Invoked as tt-gcc?   		*/
 
 static void make_params(int argc, char** argv) {
 

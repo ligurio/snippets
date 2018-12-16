@@ -1,2 +1,0 @@
-pycparser==2.19
-unidiff==0.5.5

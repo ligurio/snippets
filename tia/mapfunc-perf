@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-
-"""
-https://perf.wiki.kernel.org/index.php/Main_Page
-https://github.com/jrfonseca/gprof2dot#which-options-should-i-pass-to-gcc-when-compiling-for-profiling
-"""

@@ -1,9 +1,0 @@
-#!/usr/bin/env python
-
-"""
-https://sourceware.org/binutils/docs/gprof/
-https://github.com/jrfonseca/gprof2dot#which-options-should-i-pass-to-gcc-when-compiling-for-profiling
-
-/path/to/your/executable arg1 arg2
-gprof path/to/your/executable | gprof2dot.py | dot -Tpng -o output.png
-"""

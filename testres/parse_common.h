@@ -50,7 +50,7 @@ enum test_format {
 };
 
 enum test_status {
-	STATUS_OK,		/* TestAnythingProtocol	*/
+	STATUS_OK,			/* TestAnythingProtocol	*/
 	STATUS_NOTOK,		/* TestAnythingProtocol	*/
 	STATUS_MISSING,		/* TestAnythingProtocol	*/
 	STATUS_TODO,		/* TestAnythingProtocol	*/
@@ -67,7 +67,7 @@ enum test_status {
 
 	STATUS_ERROR,		/* JUnit */
 	STATUS_FAILURE,		/* JUnit */
-	STATUS_PASS		/* JUnit */
+	STATUS_PASS			/* JUnit */
 };
 
 enum test_status_class {

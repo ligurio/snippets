@@ -402,7 +402,6 @@ parse_testanything_raw(FILE * f)
 struct suiteq *
 parse_testanything(FILE * f)
 {
-
 	tailq_suite *suite_item = NULL;
 	suite_item = calloc(1, sizeof(tailq_suite));
 	if (suite_item == NULL) {

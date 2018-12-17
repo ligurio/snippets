@@ -14,16 +14,6 @@ valgrind:
 
 convert coverage data to map func:test
 
-"""
-
-import glob
-import sys
-
-from subprocess import Popen, PIPE, STDOUT
-
-GPROF_OPT = "gprof"
-GPROF_PATTERN = "gmon.out"
-
 PERF_RECORD_OPT = "perf record -g --"
 PERF_SCRIPT_OPT = "perf script"
 PERF_PATTERN = "perf.data"
@@ -32,21 +22,812 @@ PERF_PATTERN = "perf.data"
 VALGRIND_OPT = "valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes"
 VALGRIND_PATTERN = "callgrind.out.*"
 
-# TODO: check tool and exit if it is absent
+"""
+
+import glob
+import os
+import sys
+import re
+
+from subprocess import check_call, Popen, PIPE
+
+def is_tool(name):
+    return any(
+        os.access(os.path.join(path, name), os.X_OK)
+        for path in os.environ["PATH"].split(os.pathsep)
+    )
+
+class ParseError(Exception):
+    """Raised when parsing to signal mismatches."""
+
+    def __init__(self, msg, line):
+        Exception.__init__(self)
+        self.msg = msg
+        # TODO: store more source line information
+        self.line = line
+
+    def __str__(self):
+        return '%s: %r' % (self.msg, self.line)
+
+
+class Parser:
+    """Parser interface."""
+
+    stdinInput = True
+    multipleInput = False
+
+    def __init__(self):
+        pass
+
+    def parse(self):
+        raise NotImplementedError
+
+
+class LineParser(Parser):
+    """Base class for parsers that read line-based formats."""
+
+    def __init__(self, stream):
+        Parser.__init__(self)
+        self._stream = stream
+        self.__line = None
+        self.__eof = False
+        self.line_no = 0
+
+    def readline(self):
+        line = self._stream.readline()
+        if not line:
+            self.__line = ''
+            self.__eof = True
+        else:
+            self.line_no += 1
+        line = line.rstrip('\r\n')
+        if not PYTHON_3:
+            encoding = self._stream.encoding
+            if encoding is None:
+                encoding = locale.getpreferredencoding()
+            line = line.decode(encoding)
+        self.__line = line
+
+    def lookahead(self):
+        assert self.__line is not None
+        return self.__line
+
+    def consume(self):
+        assert self.__line is not None
+        line = self.__line
+        self.readline()
+        return line
+
+    def eof(self):
+        assert self.__line is not None
+        return self.__eof
+
+
+class GprofParser(Parser):
+    """Parser for GNU gprof output.
+
+    See also:
+    - Chapter "Interpreting gprof's Output" from the GNU gprof manual
+      http://sourceware.org/binutils/docs-2.18/gprof/Call-Graph.html#Call-Graph
+    - File "cg_print.c" from the GNU gprof source code
+      http://sourceware.org/cgi-bin/cvsweb.cgi/~checkout~/src/gprof/cg_print.c?rev=1.12&cvsroot=src
+    """
+
+    def __init__(self, fp):
+        Parser.__init__(self)
+        self.fp = fp
+        self.functions = {}
+        self.cycles = {}
+
+    def readline(self):
+        line = self.fp.readline()
+        if not line:
+            sys.stderr.write('error: unexpected end of file\n')
+            sys.exit(1)
+        line = line.rstrip('\r\n')
+        return line
+
+    _int_re = re.compile(r'^\d+$')
+    _float_re = re.compile(r'^\d+\.\d+$')
+
+    def translate(self, mo):
+        """Extract a structure from a match object, while translating the types in the process."""
+        attrs = {}
+        groupdict = mo.groupdict()
+        for name, value in compat_iteritems(groupdict):
+            if value is None:
+                value = None
+            elif self._int_re.match(value):
+                value = int(value)
+            elif self._float_re.match(value):
+                value = float(value)
+            attrs[name] = (value)
+        return Struct(attrs)
+
+    _cg_header_re = re.compile(
+        # original gprof header
+        r'^\s+called/total\s+parents\s*$|' +
+        r'^index\s+%time\s+self\s+descendents\s+called\+self\s+name\s+index\s*$|' +
+        r'^\s+called/total\s+children\s*$|' +
+        # GNU gprof header
+        r'^index\s+%\s+time\s+self\s+children\s+called\s+name\s*$'
+    )
+
+    _cg_ignore_re = re.compile(
+        # spontaneous
+        r'^\s+<spontaneous>\s*$|'
+        # internal calls (such as "mcount")
+        r'^.*\((\d+)\)$'
+    )
+
+    _cg_primary_re = re.compile(
+        r'^\[(?P<index>\d+)\]?' + 
+        r'\s+(?P<percentage_time>\d+\.\d+)' + 
+        r'\s+(?P<self>\d+\.\d+)' + 
+        r'\s+(?P<descendants>\d+\.\d+)' + 
+        r'\s+(?:(?P<called>\d+)(?:\+(?P<called_self>\d+))?)?' + 
+        r'\s+(?P<name>\S.*?)' +
+        r'(?:\s+<cycle\s(?P<cycle>\d+)>)?' +
+        r'\s\[(\d+)\]$'
+    )
+
+    _cg_parent_re = re.compile(
+        r'^\s+(?P<self>\d+\.\d+)?' + 
+        r'\s+(?P<descendants>\d+\.\d+)?' + 
+        r'\s+(?P<called>\d+)(?:/(?P<called_total>\d+))?' + 
+        r'\s+(?P<name>\S.*?)' +
+        r'(?:\s+<cycle\s(?P<cycle>\d+)>)?' +
+        r'\s\[(?P<index>\d+)\]$'
+    )
+
+    _cg_child_re = _cg_parent_re
+
+    _cg_cycle_header_re = re.compile(
+        r'^\[(?P<index>\d+)\]?' + 
+        r'\s+(?P<percentage_time>\d+\.\d+)' + 
+        r'\s+(?P<self>\d+\.\d+)' + 
+        r'\s+(?P<descendants>\d+\.\d+)' + 
+        r'\s+(?:(?P<called>\d+)(?:\+(?P<called_self>\d+))?)?' + 
+        r'\s+<cycle\s(?P<cycle>\d+)\sas\sa\swhole>' +
+        r'\s\[(\d+)\]$'
+    )
+
+    _cg_cycle_member_re = re.compile(
+        r'^\s+(?P<self>\d+\.\d+)?' + 
+        r'\s+(?P<descendants>\d+\.\d+)?' + 
+        r'\s+(?P<called>\d+)(?:\+(?P<called_self>\d+))?' + 
+        r'\s+(?P<name>\S.*?)' +
+        r'(?:\s+<cycle\s(?P<cycle>\d+)>)?' +
+        r'\s\[(?P<index>\d+)\]$'
+    )
+
+    _cg_sep_re = re.compile(r'^--+$')
+
+    def parse_function_entry(self, lines):
+        parents = []
+        children = []
+
+        while True:
+            if not lines:
+                sys.stderr.write('warning: unexpected end of entry\n')
+            line = lines.pop(0)
+            if line.startswith('['):
+                break
+
+            # read function parent line
+            mo = self._cg_parent_re.match(line)
+            if not mo:
+                if self._cg_ignore_re.match(line):
+                    continue
+                sys.stderr.write('warning: unrecognized call graph entry: %r\n' % line)
+            else:
+                parent = self.translate(mo)
+                parents.append(parent)
+
+        # read primary line
+        mo = self._cg_primary_re.match(line)
+        if not mo:
+            sys.stderr.write('warning: unrecognized call graph entry: %r\n' % line)
+            return
+        else:
+            function = self.translate(mo)
+
+        while lines:
+            line = lines.pop(0)
+
+            # read function subroutine line
+            mo = self._cg_child_re.match(line)
+            if not mo:
+                if self._cg_ignore_re.match(line):
+                    continue
+                sys.stderr.write('warning: unrecognized call graph entry: %r\n' % line)
+            else:
+                child = self.translate(mo)
+                children.append(child)
+
+        function.parents = parents
+        function.children = children
+
+        self.functions[function.index] = function
+
+    def parse_cycle_entry(self, lines):
+
+        # read cycle header line
+        line = lines[0]
+        mo = self._cg_cycle_header_re.match(line)
+        if not mo:
+            sys.stderr.write('warning: unrecognized call graph entry: %r\n' % line)
+            return
+        cycle = self.translate(mo)
+
+        # read cycle member lines
+        cycle.functions = []
+        for line in lines[1:]:
+            mo = self._cg_cycle_member_re.match(line)
+            if not mo:
+                sys.stderr.write('warning: unrecognized call graph entry: %r\n' % line)
+                continue
+            call = self.translate(mo)
+            cycle.functions.append(call)
+
+        self.cycles[cycle.cycle] = cycle
+
+    def parse_cg_entry(self, lines):
+        if lines[0].startswith("["):
+            self.parse_cycle_entry(lines)
+        else:
+            self.parse_function_entry(lines)
+
+    def parse_cg(self):
+        """Parse the call graph."""
+
+        # skip call graph header
+        while not self._cg_header_re.match(self.readline()):
+            pass
+        line = self.readline()
+        while self._cg_header_re.match(line):
+            line = self.readline()
+
+        # process call graph entries
+        entry_lines = []
+        while line != '\014': # form feed
+            if line and not line.isspace():
+                if self._cg_sep_re.match(line):
+                    self.parse_cg_entry(entry_lines)
+                    entry_lines = []
+                else:
+                    entry_lines.append(line)
+            line = self.readline()
+
+    def parse(self):
+        self.parse_cg()
+        self.fp.close()
+
+        profile = Profile()
+        profile[TIME] = 0.0
+
+        cycles = {}
+        for index in self.cycles:
+            cycles[index] = Cycle()
+
+        for entry in compat_itervalues(self.functions):
+            # populate the function
+            function = Function(entry.index, entry.name)
+            function[TIME] = entry.self
+            if entry.called is not None:
+                function.called = entry.called
+            if entry.called_self is not None:
+                call = Call(entry.index)
+                call[CALLS] = entry.called_self
+                function.called += entry.called_self
+
+            # populate the function calls
+            for child in entry.children:
+                call = Call(child.index)
+
+                assert child.called is not None
+                call[CALLS] = child.called
+
+                if child.index not in self.functions:
+                    # NOTE: functions that were never called but were discovered by gprof's
+                    # static call graph analysis dont have a call graph entry so we need
+                    # to add them here
+                    missing = Function(child.index, child.name)
+                    function[TIME] = 0.0
+                    function.called = 0
+                    profile.add_function(missing)
+
+                function.add_call(call)
+
+            profile.add_function(function)
+
+            if entry.cycle is not None:
+                try:
+                    cycle = cycles[entry.cycle]
+                except KeyError:
+                    sys.stderr.write('warning: <cycle %u as a whole> entry missing\n' % entry.cycle)
+                    cycle = Cycle()
+                    cycles[entry.cycle] = cycle
+                cycle.add_function(function)
+
+            profile[TIME] = profile[TIME] + function[TIME]
+
+        for cycle in compat_itervalues(cycles):
+            profile.add_cycle(cycle)
+
+        # Compute derived events
+        profile.validate()
+        profile.ratio(TIME_RATIO, TIME)
+        profile.call_ratios(CALLS)
+        profile.integrate(TOTAL_TIME, TIME)
+        profile.ratio(TOTAL_TIME_RATIO, TOTAL_TIME)
+
+        return profile
+
+
+class PerfParser(LineParser):
+    """Parser for linux perf callgraph output.
+
+    It expects output generated with
+
+        perf record -g
+        perf script | gprof2dot.py --format=perf
+    """
+
+    def __init__(self, infile):
+        LineParser.__init__(self, infile)
+        self.profile = Profile()
+
+    def readline(self):
+        # Override LineParser.readline to ignore comment lines
+        while True:
+            LineParser.readline(self)
+            if self.eof() or not self.lookahead().startswith('#'):
+                break
+
+    def parse(self):
+        # read lookahead
+        self.readline()
+
+        profile = self.profile
+        profile[SAMPLES] = 0
+        while not self.eof():
+            self.parse_event()
+
+        # compute derived data
+        profile.validate()
+        profile.find_cycles()
+        profile.ratio(TIME_RATIO, SAMPLES)
+        profile.call_ratios(SAMPLES2)
+        if totalMethod == "callratios":
+            # Heuristic approach.  TOTAL_SAMPLES is unused.
+            profile.integrate(TOTAL_TIME_RATIO, TIME_RATIO)
+        elif totalMethod == "callstacks":
+            # Use the actual call chains for functions.
+            profile[TOTAL_SAMPLES] = profile[SAMPLES]
+            profile.ratio(TOTAL_TIME_RATIO, TOTAL_SAMPLES)
+            # Then propagate that total time to the calls.
+            for function in compat_itervalues(profile.functions):
+                for call in compat_itervalues(function.calls):
+                    if call.ratio is not None:
+                        callee = profile.functions[call.callee_id]
+                        call[TOTAL_TIME_RATIO] = call.ratio * callee[TOTAL_TIME_RATIO]
+        else:
+            assert False
+
+        return profile
+
+    def parse_event(self):
+        if self.eof():
+            return
+
+        line = self.consume()
+        assert line
+
+        callchain = self.parse_callchain()
+        if not callchain:
+            return
+
+        callee = callchain[0]
+        callee[SAMPLES] += 1
+        self.profile[SAMPLES] += 1
+
+        for caller in callchain[1:]:
+            try:
+                call = caller.calls[callee.id]
+            except KeyError:
+                call = Call(callee.id)
+                call[SAMPLES2] = 1
+                caller.add_call(call)
+            else:
+                call[SAMPLES2] += 1
+
+            callee = caller
+
+        # Increment TOTAL_SAMPLES only once on each function.
+        stack = set(callchain)
+        for function in stack:
+            function[TOTAL_SAMPLES] += 1
+
+    def parse_callchain(self):
+        callchain = []
+        while self.lookahead():
+            function = self.parse_call()
+            if function is None:
+                break
+            callchain.append(function)
+        if self.lookahead() == '':
+            self.consume()
+        return callchain
+
+    call_re = re.compile(r'^\s+(?P<address>[0-9a-fA-F]+)\s+(?P<symbol>.*)\s+\((?P<module>.*)\)$')
+    addr2_re = re.compile(r'\+0x[0-9a-fA-F]+$')
+
+    def parse_call(self):
+        line = self.consume()
+        mo = self.call_re.match(line)
+        assert mo
+        if not mo:
+            return None
+
+        function_name = mo.group('symbol')
+
+        # If present, amputate program counter from function name.
+        if function_name:
+            function_name = re.sub(self.addr2_re, '', function_name)
+
+        if not function_name or function_name == '[unknown]':
+            function_name = mo.group('address')
+
+        module = mo.group('module')
+
+        function_id = function_name + ':' + module
+
+        try:
+            function = self.profile.functions[function_id]
+        except KeyError:
+            function = Function(function_id, function_name)
+            function.module = os.path.basename(module)
+            function[SAMPLES] = 0
+            function[TOTAL_SAMPLES] = 0
+            self.profile.add_function(function)
+
+        return function
+
+
+class CallgrindParser(LineParser):
+    """Parser for valgrind's callgrind tool.
+    
+    See also:
+    - http://valgrind.org/docs/manual/cl-format.html
+    """
+
+    _call_re = re.compile(r'^calls=\s*(\d+)\s+((\d+|\+\d+|-\d+|\*)\s+)+$')
+
+    def __init__(self, infile):
+        LineParser.__init__(self, infile)
+
+        # Textual positions
+        self.position_ids = {}
+        self.positions = {}
+
+        # Numeric positions
+        self.num_positions = 1
+        self.cost_positions = ['line']
+        self.last_positions = [0]
+
+        # Events
+        self.num_events = 0
+        self.cost_events = []
+
+        self.profile = Profile()
+        self.profile[SAMPLES] = 0
+
+    def parse(self):
+        # read lookahead
+        self.readline()
+
+        self.parse_key('version')
+        self.parse_key('creator')
+        while self.parse_part():
+            pass
+        if not self.eof():
+            sys.stderr.write('warning: line %u: unexpected line\n' % self.line_no)
+            sys.stderr.write('%s\n' % self.lookahead())
+
+        # compute derived data
+        self.profile.validate()
+        self.profile.find_cycles()
+        self.profile.ratio(TIME_RATIO, SAMPLES)
+        self.profile.call_ratios(SAMPLES2)
+        self.profile.integrate(TOTAL_TIME_RATIO, TIME_RATIO)
+
+        return self.profile
+
+    def parse_part(self):
+        if not self.parse_header_line():
+            return False
+        while self.parse_header_line():
+            pass
+        if not self.parse_body_line():
+            return False
+        while self.parse_body_line():
+            pass
+        return True
+
+    def parse_header_line(self):
+        return \
+            self.parse_empty() or \
+            self.parse_comment() or \
+            self.parse_part_detail() or \
+            self.parse_description() or \
+            self.parse_event_specification() or \
+            self.parse_cost_line_def() or \
+            self.parse_cost_summary()
+
+    _detail_keys = set(('cmd', 'pid', 'thread', 'part'))
+
+    def parse_part_detail(self):
+        return self.parse_keys(self._detail_keys)
+
+    def parse_description(self):
+        return self.parse_key('desc') is not None
+
+    def parse_event_specification(self):
+        event = self.parse_key('event')
+        if event is None:
+            return False
+        return True
+
+    def parse_cost_line_def(self):
+        pair = self.parse_keys(('events', 'positions'))
+        if pair is None:
+            return False
+        key, value = pair
+        items = value.split()
+        if key == 'events':
+            self.num_events = len(items)
+            self.cost_events = items
+        if key == 'positions':
+            self.num_positions = len(items)
+            self.cost_positions = items
+            self.last_positions = [0]*self.num_positions
+        return True
+
+    def parse_cost_summary(self):
+        pair = self.parse_keys(('summary', 'totals'))
+        if pair is None:
+            return False
+        return True
+
+    def parse_body_line(self):
+        return \
+            self.parse_empty() or \
+            self.parse_comment() or \
+            self.parse_cost_line() or \
+            self.parse_position_spec() or \
+            self.parse_association_spec()
+
+    __subpos_re = r'(0x[0-9a-fA-F]+|\d+|\+\d+|-\d+|\*)'
+    _cost_re = re.compile(r'^' + 
+        __subpos_re + r'( +' + __subpos_re + r')*' +
+        r'( +\d+)*' +
+    '$')
+
+    def parse_cost_line(self, calls=None):
+        line = self.lookahead().rstrip()
+        mo = self._cost_re.match(line)
+        if not mo:
+            return False
+
+        function = self.get_function()
+
+        if calls is None:
+            # Unlike other aspects, call object (cob) is relative not to the
+            # last call object, but to the caller's object (ob), so try to
+            # update it when processing a functions cost line
+            try:
+                self.positions['cob'] = self.positions['ob']
+            except KeyError:
+                pass
+
+        values = line.split()
+        assert len(values) <= self.num_positions + self.num_events
+
+        positions = values[0 : self.num_positions]
+        events = values[self.num_positions : ]
+        events += ['0']*(self.num_events - len(events))
+
+        for i in range(self.num_positions):
+            position = positions[i]
+            if position == '*':
+                position = self.last_positions[i]
+            elif position[0] in '-+':
+                position = self.last_positions[i] + int(position)
+            elif position.startswith('0x'):
+                position = int(position, 16)
+            else:
+                position = int(position)
+            self.last_positions[i] = position
+
+        events = [float(event) for event in events]
+
+        if calls is None:
+            function[SAMPLES] += events[0] 
+            self.profile[SAMPLES] += events[0]
+        else:
+            callee = self.get_callee()
+            callee.called += calls
+    
+            try:
+                call = function.calls[callee.id]
+            except KeyError:
+                call = Call(callee.id)
+                call[CALLS] = calls
+                call[SAMPLES2] = events[0]
+                function.add_call(call)
+            else:
+                call[CALLS] += calls
+                call[SAMPLES2] += events[0]
+
+        self.consume()
+        return True
+
+    def parse_association_spec(self):
+        line = self.lookahead()
+        if not line.startswith('calls='):
+            return False
+
+        _, values = line.split('=', 1)
+        values = values.strip().split()
+        calls = int(values[0])
+        call_position = values[1:]
+        self.consume()
+
+        self.parse_cost_line(calls)
+
+        return True
+
+    _position_re = re.compile(r'^(?P<position>[cj]?(?:ob|fl|fi|fe|fn))=\s*(?:\((?P<id>\d+)\))?(?:\s*(?P<name>.+))?')
+
+    _position_table_map = {
+        'ob': 'ob',
+        'fl': 'fl',
+        'fi': 'fl',
+        'fe': 'fl',
+        'fn': 'fn',
+        'cob': 'ob',
+        'cfl': 'fl',
+        'cfi': 'fl',
+        'cfe': 'fl',
+        'cfn': 'fn',
+        'jfi': 'fl',
+    }
+
+    _position_map = {
+        'ob': 'ob',
+        'fl': 'fl',
+        'fi': 'fl',
+        'fe': 'fl',
+        'fn': 'fn',
+        'cob': 'cob',
+        'cfl': 'cfl',
+        'cfi': 'cfl',
+        'cfe': 'cfl',
+        'cfn': 'cfn',
+        'jfi': 'jfi',
+    }
+
+    def parse_position_spec(self):
+        line = self.lookahead()
+        
+        if line.startswith('jump=') or line.startswith('jcnd='):
+            self.consume()
+            return True
+
+        mo = self._position_re.match(line)
+        if not mo:
+            return False
+
+        position, id, name = mo.groups()
+        if id:
+            table = self._position_table_map[position]
+            if name:
+                self.position_ids[(table, id)] = name
+            else:
+                name = self.position_ids.get((table, id), '')
+        self.positions[self._position_map[position]] = name
+
+        self.consume()
+        return True
+
+    def parse_empty(self):
+        if self.eof():
+            return False
+        line = self.lookahead()
+        if line.strip():
+            return False
+        self.consume()
+        return True
+
+    def parse_comment(self):
+        line = self.lookahead()
+        if not line.startswith('#'):
+            return False
+        self.consume()
+        return True
+
+    _key_re = re.compile(r'^(\w+):')
+
+    def parse_key(self, key):
+        pair = self.parse_keys((key,))
+        if not pair:
+            return None
+        key, value = pair
+        return value
+
+    def parse_keys(self, keys):
+        line = self.lookahead()
+        mo = self._key_re.match(line)
+        if not mo:
+            return None
+        key, value = line.split(':', 1)
+        if key not in keys:
+            return None
+        value = value.strip()
+        self.consume()
+        return key, value
+
+    def make_function(self, module, filename, name):
+        # FIXME: module and filename are not being tracked reliably
+        #id = '|'.join((module, filename, name))
+        id = name
+        try:
+            function = self.profile.functions[id]
+        except KeyError:
+            function = Function(id, name)
+            if module:
+                function.module = os.path.basename(module)
+            function[SAMPLES] = 0
+            function.called = 0
+            self.profile.add_function(function)
+        return function
+
+    def get_function(self):
+        module = self.positions.get('ob', '')
+        filename = self.positions.get('fl', '') 
+        function = self.positions.get('fn', '') 
+        return self.make_function(module, filename, function)
+
+    def get_callee(self):
+        module = self.positions.get('cob', '')
+        filename = self.positions.get('cfi', '') 
+        function = self.positions.get('cfn', '') 
+        return self.make_function(module, filename, function)
+
+    def readline(self):
+        # Override LineParser.readline to ignore comment lines
+        while True:
+            LineParser.readline(self)
+            if self.eof() or not self.lookahead().startswith('#'):
+                break
+
+GPROF_OPT = "gprof"
+
+if not is_tool("gprof"):
+   print("tool is not found")
+   sys.exit(1)
 
 del sys.argv[0]
-print "Run with options:", sys.argv
+print "run with options:", sys.argv
 
-cmd = VALGRIND_OPT.split(" ")
-proc = Popen(cmd + sys.argv, stdout=PIPE, stderr=PIPE)
+check_call(sys.argv)
+p = Popen([GPROF_OPT] + sys.argv, stderr=PIPE, stdout=PIPE)
+stdout = ""
+#for line in iter(p.stdout.readline, ''):
+#   print line.rstrip()
+#   stdout += line.strip()
+os.unlink("gmon.out")
 
-#for line in iter(proc.stdout.readline, ''):
-#    print line
-
-proc.stdout.close()
-rc = proc.wait()
-# TODO: handle exit code
-
-print glob.glob(CALLGRIND_PATTERN)
-
-# TODO: parse output
+parser = GprofParser(p.stdout.readline)
+parser.parse()

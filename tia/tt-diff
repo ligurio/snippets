@@ -5,7 +5,12 @@
 - process patch and source code and show changed functions
 """
 
-from unidiff.patch import PatchSet, PatchedFile, Hunk
+import sys
+try:
+    from unidiff.patch import PatchSet, PatchedFile, Hunk
+except ImportError:
+    print "python module unidiff is not found"
+    sys.exit(1)
 import codecs
 import pycparser
 import urllib2

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
 """
-- process binaries and changed functions, requires abidiff or abicheck etc
-- process patch and source code and show changed functions
+- process binaries and changed functions
+    abidiff or abicheck etc
+    radiff
+    courgette
+- process patch, source code and print changed functions
 """
 
 import sys

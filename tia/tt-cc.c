@@ -45,11 +45,12 @@ static void make_params(int argc, char** argv) {
      cc_params[cc_par_cnt++] = cur;
   }
 
-  /*
   if (clang_mode == 1) {
-	 cc_params[cc_par_cnt++] = (uint8_t*)("-fsanitize-coverage=trace-pc");
+	 /* cc_params[cc_par_cnt++] = (uint8_t*)("-fsanitize-coverage=trace-pc"); */
+	 cc_params[cc_par_cnt++] = (uint8_t*)("-Xclang");
+	 cc_params[cc_par_cnt++] = (uint8_t*)("-ast-dump");
+	 cc_params[cc_par_cnt++] = (uint8_t*)("-fsyntax-only");
   }
-  */
 
   if (gcc_mode == 1) {
 	 cc_params[cc_par_cnt++] = (uint8_t*)"-finstrument-functions";
@@ -59,20 +60,15 @@ static void make_params(int argc, char** argv) {
 	 cc_params[cc_par_cnt++] = (uint8_t*)"-fno-default-inline";
 	 cc_params[cc_par_cnt++] = (uint8_t*)"-fno-inline";
      /* gcc -fdump-tree-all-graph -g hello_world.c */
-     /* clang -Xclang -ast-dump -fsyntax-only hello_world.c */
   }
 
-/*
-  cc_params[cc_par_cnt++] = "-g3";
-  cc_params[cc_par_cnt++] = "-fno-omit-frame-pointer";
-  cc_params[cc_par_cnt++] = "-O2";
-  cc_params[cc_par_cnt++] = "-DNDEBUG";
-*/
+  cc_params[cc_par_cnt++] = (uint8_t*)"-g3";
+  cc_params[cc_par_cnt++] = (uint8_t*)"-fno-omit-frame-pointer";
+  cc_params[cc_par_cnt++] = (uint8_t*)"-O2";
+  cc_params[cc_par_cnt++] = (uint8_t*)"-DNDEBUG";
   /* gprof */
-/*
-  cc_params[cc_par_cnt++] = "-pg";
+  cc_params[cc_par_cnt++] = (uint8_t*)"-pg";
   cc_params[cc_par_cnt] = NULL;
-*/
 }
 
 int main(int argc, char** argv) {

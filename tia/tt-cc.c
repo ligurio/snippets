@@ -1,6 +1,6 @@
 /**
  * GCC (-finstrument-functions):
- *	- http://kernelchina.org/wp-content/uploads/2017/04/instrumental.pdf
+ *  - http://kernelchina.org/wp-content/uploads/2017/04/instrumental.pdf
  *  - https://linuxgazette.net/151/melinte.html
  *  - http://www.suse.de/~krahmer/instrumental/instrumental.tgz
  *
@@ -10,9 +10,10 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int clang_mode = 0, gcc_mode = 0;
 static uint8_t** cc_params;

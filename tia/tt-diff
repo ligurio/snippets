@@ -18,6 +18,7 @@ from unidiff.patch import PatchSet, PatchedFile, Hunk
     abidiff or abicheck etc
     radiff
     courgette
+    clang-diff
 - process patch, source code and print changed functions
 """
 

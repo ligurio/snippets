@@ -12,6 +12,9 @@
  *	    - http://clang.llvm.org/docs/SanitizerCoverage.html#tracing-pcs-with-guards
  *	    - https://github.com/mcarpenter/afl/blob/master/llvm_mode/afl-clang-fast.c
  *
+ *	   CIL:
+ *	    - https://people.eecs.berkeley.edu/~necula/Papers/cil_cc02.pdf
+ *
  * Building AST:
  *
  *	   cppcheck:

@@ -3,8 +3,10 @@
  *  - http://kernelchina.org/wp-content/uploads/2017/04/instrumental.pdf
  *  - https://linuxgazette.net/151/melinte.html
  *  - http://www.suse.de/~krahmer/instrumental/instrumental.tgz
+ *  - https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
  *
  * Clang:
+ *  - http://clang.llvm.org/docs/SourceBasedCodeCoverage.html
  *  - http://clang.llvm.org/docs/SanitizerCoverage.html#tracing-pcs-with-guards
  *  - https://github.com/mcarpenter/afl/blob/master/llvm_mode/afl-clang-fast.c
  */
@@ -47,10 +49,12 @@ static void make_params(int argc, char** argv) {
   }
 
   if (clang_mode == 1) {
-	 /* cc_params[cc_par_cnt++] = (uint8_t*)("-fsanitize-coverage=trace-pc"); */
+	 cc_params[cc_par_cnt++] = (uint8_t*)("-fsanitize-coverage=trace-pc-guard");
+	 /*
 	 cc_params[cc_par_cnt++] = (uint8_t*)("-Xclang");
 	 cc_params[cc_par_cnt++] = (uint8_t*)("-ast-dump");
 	 cc_params[cc_par_cnt++] = (uint8_t*)("-fsyntax-only");
+	 */
   }
 
   if (gcc_mode == 1) {
@@ -60,7 +64,7 @@ static void make_params(int argc, char** argv) {
 	 cc_params[cc_par_cnt++] = (uint8_t*)"-fno-optimize-sibling-calls";
 	 cc_params[cc_par_cnt++] = (uint8_t*)"-fno-default-inline";
 	 cc_params[cc_par_cnt++] = (uint8_t*)"-fno-inline";
-     /* gcc -fdump-tree-all-graph -g hello_world.c */
+         /* gcc -fdump-tree-all-graph -g hello_world.c */
   }
 
   cc_params[cc_par_cnt++] = (uint8_t*)"-g3";
@@ -75,7 +79,14 @@ static void make_params(int argc, char** argv) {
 int main(int argc, char** argv) {
 
   if (argc < 2) {
-     printf("Usage\n");
+     printf("\n"
+"tt-cc by <sergeyb@bronevichok.ru>\n\n"
+"This is a helper application for testtube. It serves as a drop-in replacement\n"
+"for gcc or clang, letting you recompile third-party code with the required\n"
+"runtime instrumentation. A common use pattern would be one of the following:\n\n"
+"  CC=/usr/bin/tt-gcc ./configure\n"
+"  CXX=/usr/bin/tt-g++ ./configure\n\n"
+"You can specify custom CFLAGS via TT_CFLAGS.\n");
      exit(1);
   }
 

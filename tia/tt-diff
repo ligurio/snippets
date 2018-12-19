@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 
+# Copyright 2018 Sergey Bronnikov
+#
+# This is free software, licensed under the Apache License, Version 2.0,
+# available in the accompanying LICENSE.txt file.
+
+import codecs
+import urllib2
+import unittest
+import optparse
+import sys
+
+from unidiff.patch import PatchSet, PatchedFile, Hunk
+
 """
 - process binaries and changed functions
     abidiff or abicheck etc
@@ -8,15 +21,6 @@
 - process patch, source code and print changed functions
 """
 
-import sys
-try:
-    from unidiff.patch import PatchSet, PatchedFile, Hunk
-except ImportError:
-    print "python module unidiff is not found"
-    sys.exit(1)
-import codecs
-import urllib2
-import unittest
 
 def affected_lines(patch):
     changes = {}
@@ -71,3 +75,69 @@ def test_diff():
     assert(patch.is_added_file == False)
     assert(patch.added == 2)
     assert(patch.removed == 1)
+
+
+class PlainDiffParser():
+
+    def __init__():
+        pass
+
+
+class BinDiffParser():
+
+    def __init__():
+        pass
+
+formats = {
+    "binary": BinDiffParser,
+    "text": PlainDiffParser,
+}
+
+def naturalJoin(values):
+    if len(values) >= 2:
+        return ', '.join(values[:-1]) + ' or ' + values[-1]
+
+    else:
+        return ''.join(values)
+
+
+def main(argv=None):
+    """
+    Process text patch or compare binary files and
+    prints tests covered changes.
+
+    Usage:
+        tt-diff
+
+    By default, JSON output will be written to stdout.
+    """
+
+    formatNames = list(formats.keys())
+    formatNames.sort()
+
+    optparser = optparse.OptionParser(
+        usage="\n\t%prog [options] [file] ...")
+    optparser.add_option(
+        '-o', '--output', metavar='FILE',
+        type="string", dest="output",
+        help="output filename [stdout]")
+    optparser.add_option(
+        '-i', '--input', metavar='FILE',
+        type="string", dest="input",
+        help="input filename [stdin]")
+    optparser.add_option(
+        '-t', '--type',
+        type="choice", choices=formatNames,
+        dest="type", default="text",
+        help="type: %s [default: %%default]" % naturalJoin(formatNames))
+    (options, args) = optparser.parse_args(sys.argv[1:])
+
+    if not options.input:
+        optparser.error('no input file')
+
+    # TODO: map CLI options to functions
+    #process_cobertura(options.input)
+
+
+if __name__ == '__main__':
+    main()

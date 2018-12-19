@@ -1,14 +1,26 @@
 /**
- * GCC (-finstrument-functions):
- *  - http://kernelchina.org/wp-content/uploads/2017/04/instrumental.pdf
- *  - https://linuxgazette.net/151/melinte.html
- *  - http://www.suse.de/~krahmer/instrumental/instrumental.tgz
- *  - https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
+ * Instrumentation:
  *
- * Clang:
- *  - http://clang.llvm.org/docs/SourceBasedCodeCoverage.html
- *  - http://clang.llvm.org/docs/SanitizerCoverage.html#tracing-pcs-with-guards
- *  - https://github.com/mcarpenter/afl/blob/master/llvm_mode/afl-clang-fast.c
+ *	   GCC (-finstrument-functions):
+ *	    - http://kernelchina.org/wp-content/uploads/2017/04/instrumental.pdf
+ *	    - https://linuxgazette.net/151/melinte.html
+ *	    - http://www.suse.de/~krahmer/instrumental/instrumental.tgz
+ *	    - https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
+ *
+ *	   Clang:
+ *	    - http://clang.llvm.org/docs/SourceBasedCodeCoverage.html
+ *	    - http://clang.llvm.org/docs/SanitizerCoverage.html#tracing-pcs-with-guards
+ *	    - https://github.com/mcarpenter/afl/blob/master/llvm_mode/afl-clang-fast.c
+ *
+ * Building AST:
+ *
+ *	   cppcheck:
+ *	    - cppcheck -dump hello_world.c && stat hello_world.c.dump
+ *
+ *	   LLVM and GCC plugins:
+ *	    - https://github.com/mchalupa/dg
+ *	    - https://github.com/danmar/gcc-plugins/blob/master/dump-tree-xml/dump-tree-xml.c
+ *
  */
 
 #include <stdio.h>

@@ -31,6 +31,9 @@ class PerfParser():
 
 
 class CoberturaParser():
+    """
+    SourceBasedCoverage http://clang.llvm.org/docs/SourceBasedCodeCoverage.html
+    """
 
     def __init__():
         pass
@@ -42,6 +45,9 @@ class GprofParser():
 
 
 class RawParser():
+    """
+    SanitizerCoverage http://clang.llvm.org/docs/SanitizerCoverage.html
+    """
 
     def __init__():
         pass

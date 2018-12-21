@@ -17,12 +17,13 @@
  *
  * Building AST:
  *
- *	   cppcheck:
- *	    - cppcheck -dump hello_world.c && stat hello_world.c.dump
- *
- *	   LLVM and GCC plugins:
- *	    - https://github.com/mchalupa/dg
- *	    - https://github.com/danmar/gcc-plugins/blob/master/dump-tree-xml/dump-tree-xml.c
+ *	   cppcheck: (cppcheck -dump hello_world.c && stat hello_world.c.dump)
+ *	   https://github.com/mchalupa/dg
+ *	   libclang https://gist.github.com/bparker06/575fa83149eb2cc90375487cfe9f3442
+ *	   libclang https://gist.github.com/scturtle/a7b5349028c249f2e9eeb5688d3e0c5e
+ *	   https://github.com/philipc/clang-ast
+ *	   https://github.com/BentleyJOakes/PCX
+ *	   https://github.com/danmar/gcc-plugins/blob/master/dump-tree-xml/
  *
  */
 

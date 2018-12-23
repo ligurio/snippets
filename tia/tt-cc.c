@@ -20,6 +20,8 @@
  *	   LLVM and GCC plugins:
  *	    - https://github.com/mchalupa/dg
  *	    - https://github.com/danmar/gcc-plugins/blob/master/dump-tree-xml/dump-tree-xml.c
+ *	    - https://github.com/facebook/facebook-clang-plugins/tree/master/libtooling
+ *	    - https://github.com/Submanifold/libclang-experiments/blob/master/README.md
  *
  */
 

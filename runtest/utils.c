@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <regex.h>
 
 #include <errno.h>
 
@@ -333,10 +334,23 @@ int test_list_length(struct test_list *tests) {
 
 void print_report(struct test_list *tests, const char *report) {
 
+	/* TODO */
 
 }
 
 void filter_tests(struct test_list *tests, const char *filter) {
+	int r;
+	regex_t reg;
+	regmatch_t match[1];
 
-
+	regcomp(&reg, filter, REG_ICASE | REG_EXTENDED);
+	struct test *t;
+	TAILQ_FOREACH(t, tests, entries) {
+		r = regexec(&reg, t->name, 1, match, 0);
+		/* TODO */
+		if (r == 0) {
+			printf("Match!\n");
+		}
+	}
+	regfree(&reg);
 }

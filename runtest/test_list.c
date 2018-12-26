@@ -45,8 +45,13 @@ free_test(struct test *t)
 {
 	if (t->name)
 	   free((char*)t->name);
+	if (t->path)
+	   free((char*)t->path);
 	if (t->comment)
 	   free((char*)t->comment);
+	if (t->system_out)
+	   free((char*)t->system_out);
+	if (t->system_err)
+	   free((char*)t->system_err);
 	free(t);
-	/* FIXME */
 }

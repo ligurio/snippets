@@ -88,7 +88,6 @@ test_discovery(const char *dir)
 				continue;
 			}
 
-			printf("%s\n", d_name);
 			if (asprintf(&run_test, "%s/%s/runtest",
 			    dir, d_name) == -1)  {
 				fail = 1;
@@ -170,59 +169,6 @@ print_tests(struct test_list *tests, FILE *fp)
 		return 0;
 	}
 }
-
-/*
-struct test_list *
-filter_tests(struct test_list *head, char **tests, int test_num)
-{
-	struct test_list *head_new = NULL, *n;
-	int fail = 0, i, saved_errno;
-
-	do {
-		if (head == NULL || tests == NULL || test_num <= 0) {
-			errno = EINVAL;
-			break;
-		}
-
-		head_new = test_list_alloc();
-		if (head_new == NULL)
-			break;
-
-		for (i = 0; i < test_num; i++) {
-			char *test;
-			char *run_test;
-
-			n = test_list_search(head, tests[i]);
-			if (n == NULL) {
-				saved_errno = errno;
-				fail = 1;
-				break;
-			}
-
-			test = strdup(n->test);
-			run_test = strdup(n->run_test);
-			if (test == NULL || run_test == NULL) {
-				saved_errno = errno;
-				fail = 1;
-				break;
-			}
-
-			if (test_list_add(head_new, test, run_test) == NULL) {
-				saved_errno = errno;
-				fail = 1;
-				break;
-			}
-		}
-
-		if (fail) {
-			TEST_LIST_FREE_ALL_CLEAN(head_new);
-			errno = saved_errno;
-		}
-	} while (0);
-
-	return head_new;
-}
-*/
 
 static inline void
 run_child(char *run_test, int fd_stdout, int fd_stderr)
@@ -383,4 +329,14 @@ int test_list_length(struct test_list *tests) {
 	    num++;
 	}
 	return num;
+}
+
+void print_report(struct test_list *tests, const char *report) {
+
+
+}
+
+void filter_tests(struct test_list *tests, const char *filter) {
+
+
 }

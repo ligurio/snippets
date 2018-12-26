@@ -32,7 +32,7 @@
 #include <sys/queue.h>
 
 enum test_status {
-	STATUS_OK,			/* TestAnythingProtocol	*/
+	STATUS_OK,		/* TestAnythingProtocol	*/
 	STATUS_NOTOK,		/* TestAnythingProtocol	*/
 	STATUS_MISSING,		/* TestAnythingProtocol	*/
 	STATUS_TODO,		/* TestAnythingProtocol	*/

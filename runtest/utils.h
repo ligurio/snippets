@@ -4,11 +4,11 @@
 #include "test_list.h"
 
 #define MSG_TESTS_NOT_FOUND "No tests found.\n"
-#define MSG_TESTS_AVAILABLE "Available tests:\n"
+#define MSG_TESTS_AVAILABLE "Found tests:\n"
 
 struct test_options {
 	char *directory;
-	char **exclude;
+	char *filter;
 	int list;
 	int timeout;
 	char **tests;
@@ -19,7 +19,9 @@ extern struct test_list *test_discovery(const char *);
 extern int print_tests(struct test_list *, FILE *);
 extern int run_tests(struct test_list *, const struct test_options,
 		const char *, FILE *, FILE *);
-extern struct test_list *filter_tests(struct test_list *, char **, int);
 extern int test_list_length(struct test_list *tests);
+
+extern void print_report(struct test_list *, const char *);
+void filter_tests(struct test_list *, const char *);
 
 #endif	/* _UTILS_H_ */

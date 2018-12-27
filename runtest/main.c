@@ -5,11 +5,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "utils.h"
 
 #define DEFAULT_DIRECTORY "/usr/src"
 #define DEFAULT_TIMEOUT 300
+#define DEFAULT_EXEC_FILE "runtest"
 
 static inline void
 print_usage(FILE *stream, char *progname)
@@ -28,10 +32,12 @@ main(int argc, char *argv[])
 	struct test_options opts;
 
 	opts.directory = strdup(DEFAULT_DIRECTORY);
+	opts.exec_file = strdup(DEFAULT_EXEC_FILE);
 	opts.filter = NULL;
 	opts.list = 0;
-	opts.timeout = DEFAULT_TIMEOUT;
 	opts.report = NULL;
+	opts.tests = NULL;
+	opts.timeout = DEFAULT_TIMEOUT;
 
 	while ((opt = getopt(argc, argv, "d:f:lt:o:h")) != -1) {
 		switch (opt) {
@@ -40,7 +46,7 @@ main(int argc, char *argv[])
 				opts.directory = realpath(optarg, NULL);
 			break;
 			case 'f':
-				opts.filter = NULL;
+				opts.filter = strdup(optarg);
 			break;
 			case 'l':
 				opts.list = 1;
@@ -52,8 +58,7 @@ main(int argc, char *argv[])
 				print_usage(stdout, argv[0]);
 				exit(0);
 			break;
-			case 'x':
-				free(opts.report);
+			case 'o':
 				opts.report = strdup(optarg);
 			break;
 			default:
@@ -64,10 +69,14 @@ main(int argc, char *argv[])
 	}
 
 	fprintf(stdout, "Searching tests in %s\n", opts.directory);
-	tests = test_discovery(opts.directory);
+	tests = test_discovery(opts.directory, opts.exec_file);
 	if (tests == NULL || test_list_length(tests) == 0) {
 		fprintf(stderr, MSG_TESTS_NOT_FOUND);
 		return 1;
+	}
+
+	if (opts.filter) {
+		filter_tests(tests, opts.filter);
 	}
 
 	if (opts.list) {
@@ -75,15 +84,13 @@ main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (opts.filter) {
-		filter_tests(tests, opts.filter);
-	}
-
 	rc = run_tests(tests, opts, argv[0], stdout, stderr);
 
 	if (opts.report) {
-		print_report(tests, opts.report);
-		return 0;
+		FILE *fp = NULL;
+		if ((fp = fopen(opts.report, "w+")) == NULL)
+			return 1;
+		print_report(tests, fp);
 	}
 
 	free_tests(tests);

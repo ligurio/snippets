@@ -37,7 +37,7 @@ format_time(char *strtime, size_t size)
 }
 
 struct test_list *
-test_discovery(const char *dir)
+test_discovery(const char *dir, const char *exec_file)
 {
 	struct test_list *tests;
 	struct stat st_buf;
@@ -89,8 +89,8 @@ test_discovery(const char *dir)
 				continue;
 			}
 
-			if (asprintf(&run_test, "%s/%s/runtest",
-			    dir, d_name) == -1)  {
+			if (asprintf(&run_test, "%s/%s/%s",
+			    dir, d_name, exec_file) == -1)  {
 				fail = 1;
 				saved_errno = errno;
 				free(d_name);
@@ -109,28 +109,8 @@ test_discovery(const char *dir)
 				continue;
 			}
 
-/*
-			if (test_list_search_by_file(head, run_test, st_buf)) {
-				free(run_test);
-				free(d_name);
-				continue;
-			}
-
-*/
-
-/*
-			struct test_list *p = test_list_add(head,
-				d_name, run_test);
-			if (p == NULL) {
-				fail = 1;
-				saved_errno = errno;
-				free(run_test);
-				free(d_name);
-				break;
-			}
-*/
 			struct test *t = NULL;
-			t= calloc(1, sizeof(struct test));
+			t = calloc(1, sizeof(struct test));
 			if (t == NULL) {
 				fprintf(stderr, "malloc failed");
 				break;
@@ -162,9 +142,10 @@ print_tests(struct test_list *tests, FILE *fp)
 		return 1;
 	} else {
 		fprintf(fp, MSG_TESTS_AVAILABLE);
-		struct test *t;
+		struct test *t = NULL;
 		TAILQ_FOREACH(t, tests, entries) {
-			fprintf(fp, "%s\n", t->name);
+			if (t->status != STATUS_SKIP)
+				fprintf(fp, "%s\n", t->name);
 		}
 
 		return 0;
@@ -257,7 +238,7 @@ wait_child(const char *test_dir, const char *run_test, pid_t pid,
 
 int
 run_tests(struct test_list *tests, const struct test_options opts,
-		const char *progname, FILE *fp, FILE *fp_stderr)
+		const char *progname, FILE *fp_stdout, FILE *fp_stderr)
 {
 	int rc = 0;
 	char time[TIME_BUF_SIZE];
@@ -277,9 +258,12 @@ run_tests(struct test_list *tests, const struct test_options opts,
 			break;
 		}
 
-		fprintf(fp, "START: %s\n", progname);
-		struct test *t;
+		struct test *t = NULL;
 		TAILQ_FOREACH(t, tests, entries) {
+			if (t->status == STATUS_SKIP) {
+				fprintf(fp_stdout, "%s SKIPPED: %s\n", format_time(time, TIME_BUF_SIZE), t->name);
+				continue;
+			}
 			char *test_dir = strdup(t->name);
 			if (test_dir == NULL) {
 				rc = -1;
@@ -289,7 +273,7 @@ run_tests(struct test_list *tests, const struct test_options opts,
 
 			child = fork();
 			if (child == -1) {
-				fprintf(fp, "ERROR: Fork %s\n", strerror(errno));
+				fprintf(fp_stdout, "ERROR: Fork %s\n", strerror(errno));
 				rc = -1;
 				break;
 			} else if (child == 0) {
@@ -297,21 +281,18 @@ run_tests(struct test_list *tests, const struct test_options opts,
 			} else {
 				int status;
 				int fds[2]; fds[0] = pipefd_stdout[0]; fds[1] = pipefd_stderr[0];
-				FILE *fps[2]; fps[0] = fp; fps[1] = fp_stderr;
+				FILE *fps[2]; fps[0] = fp_stdout; fps[1] = fp_stderr;
 
-				fprintf(fp, "%s\n", format_time(time, TIME_BUF_SIZE));
-				fprintf(fp, "BEGIN: %s\n", test_dir);
+				fprintf(fp_stdout, "%s BEGIN: %s\n", format_time(time, TIME_BUF_SIZE), test_dir);
 
 				status = wait_child(test_dir, t->name, child,
 						opts.timeout, fds, fps);
 				if (status)
 					rc += 1;
 
-				fprintf(fp, "END: %s\n", test_dir);
-				fprintf(fp, "%s\n", format_time(time, TIME_BUF_SIZE));
+				fprintf(fp_stdout, "%s END: %s\n", format_time(time, TIME_BUF_SIZE), test_dir);
 			}
 		}
-		fprintf(fp, "STOP: %s\n", progname);
 
 		close(pipefd_stdout[0]); close(pipefd_stdout[1]);
 		close(pipefd_stderr[0]); close(pipefd_stderr[1]);
@@ -325,31 +306,45 @@ run_tests(struct test_list *tests, const struct test_options opts,
 
 int test_list_length(struct test_list *tests) {
 	int num = 0;
-	struct test *t;
+	struct test *t = NULL;
 	TAILQ_FOREACH(t, tests, entries) {
 	    num++;
 	}
 	return num;
 }
 
-void print_report(struct test_list *tests, const char *report) {
+void print_report(struct test_list *tests, FILE *fp) {
 
-	/* TODO */
-
+	int n = 1;
+	fprintf(fp, "TAP version 13\n");
+	fprintf(fp, "1..%d\n", test_list_length(tests));
+	struct test *t = NULL;
+	TAILQ_FOREACH(t, tests, entries) {
+		dirname(t->name);
+		if (t->status == STATUS_OK)
+			fprintf(fp, "ok %d - %s\n", n, t->name);
+		else if (t->status == STATUS_NOTOK)
+			fprintf(fp, "not ok %d - %s\n", n, t->name);
+		else if (t->status == STATUS_SKIP)
+			fprintf(fp, "ok %d - %s # SKIP\n", n, t->name);
+		n++;
+	}
 }
 
 void filter_tests(struct test_list *tests, const char *filter) {
-	int r;
 	regex_t reg;
 	regmatch_t match[1];
 
-	regcomp(&reg, filter, REG_ICASE | REG_EXTENDED);
-	struct test *t;
+	int r;
+	r = regcomp(&reg, filter, REG_ICASE | REG_EXTENDED);
+	if (r != 0) {
+		fprintf(stderr, "%s\n", strerror(errno));
+	}
+	struct test *t = NULL;
 	TAILQ_FOREACH(t, tests, entries) {
 		r = regexec(&reg, t->name, 1, match, 0);
-		/* TODO */
-		if (r == 0) {
-			printf("Match!\n");
+		if (r != 0) {
+			t->status = STATUS_SKIP;
 		}
 	}
 	regfree(&reg);

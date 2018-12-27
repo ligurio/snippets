@@ -72,7 +72,7 @@ int run_bench(const char *label, size_t (*bench)(void *), void *params, enum bet
 
 #define RUN(a, b, c)                                                           \
   extern size_t(a)(void *);                                                    \
-  run_bench(#a " (" #b ")", (a), (b), (c))
+  run_bench(#a, (a), (b), (c))
 
 int main() {
 

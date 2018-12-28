@@ -1,5 +1,0 @@
-# Files I don't care to see in git-status/commit
-testres.cgi
-cppcheck.log
-tags
-*.o

@@ -16,7 +16,7 @@ from unidiff.patch import PatchSet, PatchedFile, Hunk
 
 """
 - process binaries and changed functions
-    abidiff or abicheck etc
+    abidiff, abicheck, abidw
     radiff
     courgette
     clang-diff

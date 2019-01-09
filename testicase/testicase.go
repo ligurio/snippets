@@ -1,195 +1,44 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
+	"encoding/xml"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	"mime/multipart"
-	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"strconv"
-	"syscall"
+	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	gherkin "github.com/cucumber/gherkin-go"
+	junit "github.com/ligurio/recidive/formats/junit"
 )
 
-const (
-	SHORTDESC = 80 // Number of symbols to add from testcase step to description
-	URL       = "http://localhost:8080/upload"
-)
+func SaveReport(filename string, suites []junit.JUnitTestsuite) error {
 
-// A TAP-Directive (TODO/SKIP)
-type Directive int
-
-const (
-	None Directive = iota // No directive given
-	Todo                  // Testpoint is a TODO
-	Skip                  // Testpoint was skipped
-)
-
-func (d Directive) String() string {
-	switch d {
-	case None:
-		return "None"
-	case Todo:
-		return "TODO"
-	case Skip:
-		return "SKIP"
-	}
-	return ""
-}
-
-// A single TAP-Testline
-type Testline struct {
-	Ok          bool      // Whether the Testpoint executed ok
-	Num         uint      // The number of the test
-	Description string    // A short description
-	Directive   Directive // Whether the test was skipped or is a todo
-	Explanation string    // A short explanation why the test was skipped/is a todo
-	Diagnostic  string    // A more detailed diagnostic message about the failed test
-	Yaml        []byte    // The inline Yaml-document, if given
-}
-
-// The outcome of a Testsuite
-type Testsuite struct {
-	Ok    bool        // Whether the Testsuite as a whole succeded
-	Tests []*Testline // Description of all Testlines
-	Plan  int         // Number of tests intended to run
-}
-
-type Testcase struct {
-	Name         string
-	Summary      string
-	Precondition string
-	Steps        []Step
-}
-
-type Step struct {
-	Step  string
-	Check string
-}
-
-func CreateReport(s *Testsuite, w io.Writer) error {
-
-	bytes := []byte("")
-	bytes = append(bytes, "TAP version 13\n"...)
-	version := "1.." + strconv.Itoa(int(s.Plan)) + "\n"
-	bytes = append(bytes, version...)
-
-	var tline string
-
-	for _, t := range s.Tests {
-		if t.Ok {
-			tline = "ok" + " " + strconv.Itoa(int(t.Num)) + " - " + t.Description
-		} else {
-			tline = "not ok" + " " + strconv.Itoa(int(t.Num)) + " - " + t.Description
-		}
-
-		tline = tline + " # "
-
-		t.Directive = 2
-		fmt.Printf("%s", t.Directive)
-		tline = tline + string(t.Directive)
-/*
-		if t.Directive != 0 {
-			tline = tline + string(t.Directive)
-		}
-*/
-
-		if t.Explanation != "" {
-			sz := len(t.Explanation)
-			if sz > 0 && t.Explanation[sz-1] == '\n' {
-				t.Explanation = t.Explanation[:sz-1]
-			}
-			tline = tline + " " + t.Explanation
-		}
-
-		if t.Diagnostic != "" {
-			tline = tline + " " + t.Diagnostic
-		}
-
-		bytes = append(bytes, tline...)
-		bytes = append(bytes, "\n"...)
-		if t.Yaml != nil {
-			bytes = append(bytes, t.Yaml...)
-			bytes = append(bytes, "\n"...)
-		}
-	}
-
-	writer := bufio.NewWriter(w)
-
-	writer.Write(bytes)
-	writer.WriteByte('\n')
-	writer.Flush()
-
-	return nil
-}
-
-func SaveReport(filename string, s *Testsuite) error {
+	var report junit.JUnitReport
+	report.Suites = suites
 
 	f, err := os.Create(filename)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	defer f.Close()
 
-	err = CreateReport(s, f)
+	encoder := xml.NewEncoder(f)
+	err = encoder.Encode(report)
 	if err != nil {
-		fmt.Printf("Failed to write report: %s\n", err)
-		os.Exit(1)
+		return err
 	}
-
-	fmt.Printf("Report saved to the file %v.\n", filename)
+	fmt.Printf("Test report saved to %v\n", filename)
 
 	return nil
 }
 
-func SendReport(filename string, targetUrl string) error {
-	bodyBuf := &bytes.Buffer{}
-	bodyWriter := multipart.NewWriter(bodyBuf)
-
-	fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
-	if err != nil {
-		fmt.Println("error writing to buffer")
-		return err
-	}
-
-	fh, err := os.Open(filename)
-	if err != nil {
-		fmt.Println("error opening file")
-		return err
-	}
-
-	_, err = io.Copy(fileWriter, fh)
-	if err != nil {
-		return err
-	}
-
-	contentType := bodyWriter.FormDataContentType()
-	bodyWriter.Close()
-
-	resp, err := http.Post(targetUrl, contentType, bodyBuf)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	resp_body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(resp.Status)
-	fmt.Println(string(resp_body))
-	return nil
-}
+const (
+	COL_START = "\033[32m"
+	COL_END   = "\033[0m"
+)
 
 func main() {
 
@@ -198,129 +47,73 @@ func main() {
 		fmt.Println("Usage:\n")
 		flag.PrintDefaults()
 	}
-
-	var fileTcase = flag.String("file", "", "testcase filename")
-
+	var spec = flag.String("in", "", "spec filename")
+	var tags = flag.String("tags", "", "filter by specified tags")
+	var output = flag.String("out", "", "report filename")
 	flag.Parse()
 
-	if *fileTcase == "" {
+	if *tags != "" {
+		fmt.Fprintf(os.Stdout, "Tags: ")
+		for _, t := range strings.Split(*tags, " ") {
+			fmt.Fprintf(os.Stdout, "%s ", t)
+		}
+		fmt.Fprintf(os.Stdout, "\n")
+	}
+
+	if *spec == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	var suite Testsuite
-
-	if _, err := os.Stat(*fileTcase); os.IsNotExist(err) {
-		fmt.Printf("File %v doesn't exist.\n", *fileTcase)
-		os.Exit(1)
+	if _, err := os.Stat(*spec); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stdout, "%s\n", err)
+		return
 	}
 
-	tc := Testcase{}
-
-	sigs := make(chan os.Signal, 1)
-	done := make(chan bool, 1)
-
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		sig := <-sigs
-		fmt.Println()
-		fmt.Println(sig)
-		done <- true
-		os.Exit(1)
-	}()
-
-	filename, _ := filepath.Abs(*fileTcase)
-	yamlFile, err := ioutil.ReadFile(filename)
-
+	filename, _ := filepath.Abs(*spec)
+	r, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stdout, "%s\n", err)
+		return
 	}
 
-	err = yaml.Unmarshal(yamlFile, &tc)
+	gherkinDocument, err := gherkin.ParseGherkinDocument(r)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		fmt.Fprintf(os.Stdout, "%s\n", err)
+		return
 	}
 
-	if *fileTcase != "" {
-		fmt.Printf("Filename: %v\n", filepath.Base(*fileTcase))
-	}
-	if string(tc.Name) != "" {
-		fmt.Printf("Testcase name: %v\n", string(tc.Name))
-	}
-	if string(tc.Summary) != "" {
-		fmt.Printf("Summary: %v\n", string(tc.Summary))
-	}
-	if string(tc.Precondition) != "" {
-		fmt.Printf("Precondition: %v\n", string(tc.Precondition))
-	}
+	feature := gherkinDocument.Feature
+	fmt.Fprintf(os.Stdout, "Feature name: %s%+v%s\n", COL_START, feature.Name, COL_END)
 
-	fmt.Printf("\n\033[32m ~ Testcases will follow. \033[0m\n")
-	fmt.Printf("\033[32m ~ Possible answers: [Yy] is PASS, [Ss] is SKIP, [Nn] or everything else will be treated as FAIL. \033[0m\n\n")
-
-	suite.Plan = 0
-	suite.Ok = true
-
-	for _, s := range tc.Steps {
-		fmt.Printf("\n[%d/%d]\n", suite.Plan+1, len(tc.Steps))
-		fmt.Printf("\033[31m *** \033[0m %v\n", s.Step)
-		fmt.Printf("\033[31m *** \033[0m %v\n", s.Check)
-		fmt.Printf("Result? ")
-
-		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
-
-		t := new(Testline)
-
-		if len([]byte(input)) == 2 {
-			switch string([]byte(input)[0]) {
-			case "Y", "y":
-				t.Ok = true
-			case "N", "n":
-				t.Ok = false
-				suite.Ok = false
-			case "S", "s":
-				t.Ok = false
-				t.Directive = Skip
-			default:
-				t.Ok = false
-				suite.Ok = false
-				t.Explanation = string([]byte(input))
+	var suite junit.JUnitTestsuite
+	suite.Hostname, _ = os.Hostname()
+	suite.Timestamp = time.Now().Format(time.RFC3339Nano)
+	suite.Name = feature.Name
+	suite.Time = 0.0
+	for _, c := range feature.Children {
+		var testcase junit.JUnitTestcase
+		start := time.Now()
+		scenario := c.GetScenario()
+		fmt.Fprintf(os.Stdout, "\nName: %+v\n", scenario.Name)
+		if len(scenario.Steps) != 0 {
+			for _, s := range scenario.Steps {
+				fmt.Fprintf(os.Stdout, "%s: %s\n", s.Keyword, s.Text)
 			}
-		} else {
-			t.Ok = false
-			suite.Ok = false
-			t.Explanation = string([]byte(input))
 		}
-
-		if len(s.Step) <= SHORTDESC {
-			t.Description = s.Step
-		} else {
-			t.Description = s.Step[0:SHORTDESC]
-		}
-
-		suite.Plan++
-		t.Num = uint(suite.Plan)
-		suite.Tests = append(suite.Tests, t)
+		testcase.Name = scenario.Name
+		/* time.Sleep(1000 * time.Millisecond) */
+		testcase.Time = float64(time.Since(start) / time.Millisecond)
+		suite.Time = suite.Time + testcase.Time
+		suite.TestCases = append(suite.TestCases, testcase)
 	}
 
-	fmt.Printf("\n\033[32m ~ Testcase finished. \033[0m\n")
-	fmt.Printf("\033[32m ~ Press <Enter> to upload, <Ctrl-C> to cancel. \033[0m\n")
-
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
-
-	if string([]byte(input)) == "\n" {
-		var reportName = "report-" + string(time.Now().Format("20060102-15-04-05")) + ".tap"
-
-		err = SaveReport(reportName, &suite)
-		if err != nil {
-			log.Fatalf("error: %v", err)
-		}
-
-		err := SendReport(reportName, URL)
-		if err != nil {
-			log.Fatalf("error: %v", err)
+	if *output != "" {
+		var suites []junit.JUnitTestsuite
+		suites = append(suites, suite)
+		if SaveReport(*output, suites) != nil {
+			fmt.Fprintf(os.Stdout, "%s\n", err)
+			return
 		}
 	}
 }

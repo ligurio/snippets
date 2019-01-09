@@ -3,13 +3,14 @@
 handy tool to pass manual testcases.
 
 - Consume testcases described with [Gherkin](https://docs.cucumber.io/gherkin) syntax
-- Produce JUnit and TestAnythingProtocol compliant output
+- Produce JUnit compliant output
 
 ### Usage
 
 ```
 $ go build
-$ ./testicase -file sample.feature
+$ ./testicase -in sample.feature
+$ ./testicase -in sample.feature -tags "a b c" -out report.xml
 ```
 
 ### See also
@@ -22,8 +23,6 @@ $ ./testicase -file sample.feature
   - [Writing TestCases](https://wiki.ubuntu.com/QATeam/ContributingTestcases/Manual/Writing)
   - [Ubuntu Manual TestCases](https://launchpad.net/ubuntu-manual-tests/)
   - https://github.com/javier-lopez/learn/blob/master/sh/tools/test-case-format
-- Cucumber:
-  - [Gherkin](https://docs.cucumber.io/gherkin)
 - TestRail:
   - http://automation-remarks.com/2018/test-cases-as-a-code/index.html
 - Linaro:

@@ -2,9 +2,7 @@
 
 handy tool to pass manual testcases.
 
-- Support of testplans with format described in the [829-2008 - IEEE Standard
-for Software and System Test
-Documentation](https://standards.ieee.org/findstds/standard/829-2008.html)
+- Consume testcases described with [Gherkin](https://docs.cucumber.io/gherkin) syntax
 - Produce JUnit and TestAnythingProtocol compliant output
 
 ### Usage

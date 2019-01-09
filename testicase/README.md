@@ -8,8 +8,8 @@ handy tool to pass manual testcases.
 ### Usage
 
 ```
-$ go build main.go
-$ ./main -file sample.yaml
+$ go build
+$ ./testicase -file sample.feature
 ```
 
 ### See also
@@ -22,6 +22,8 @@ $ ./main -file sample.yaml
   - [Writing TestCases](https://wiki.ubuntu.com/QATeam/ContributingTestcases/Manual/Writing)
   - [Ubuntu Manual TestCases](https://launchpad.net/ubuntu-manual-tests/)
   - https://github.com/javier-lopez/learn/blob/master/sh/tools/test-case-format
+- Cucumber:
+  - [Gherkin](https://docs.cucumber.io/gherkin)
 - TestRail:
   - http://automation-remarks.com/2018/test-cases-as-a-code/index.html
 - Linaro:

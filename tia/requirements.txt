@@ -1,2 +1,0 @@
-pycobertura==0.10.5
-unidiff==0.5.5

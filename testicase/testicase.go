@@ -1,11 +1,3 @@
-/*
-            +---------------+
-            |               |
-(1,2) +-->  |   sum(a,b)    | +--> 3
-            |               |
-            +---------------+
-*/
-
 package main
 
 import (
@@ -33,7 +25,7 @@ const (
 	URL       = "http://localhost:8080/upload"
 )
 
-// A TAP-Directive (Todo/Skip)
+// A TAP-Directive (TODO/SKIP)
 type Directive int
 
 const (
@@ -202,7 +194,7 @@ func SendReport(filename string, targetUrl string) error {
 func main() {
 
 	flag.Usage = func() {
-		fmt.Println("fruitycase is a tool for passing manual testcases.\n")
+		fmt.Println("testicase is a tool for passing manual testcases.\n")
 		fmt.Println("Usage:\n")
 		flag.PrintDefaults()
 	}
@@ -319,7 +311,7 @@ func main() {
 	input, _ := reader.ReadString('\n')
 
 	if string([]byte(input)) == "\n" {
-		var reportName = "Report-" + string(time.Now().Format("20060102-15-04-05")) + ".tap"
+		var reportName = "report-" + string(time.Now().Format("20060102-15-04-05")) + ".tap"
 
 		err = SaveReport(reportName, &suite)
 		if err != nil {

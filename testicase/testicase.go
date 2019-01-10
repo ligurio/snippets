@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/xml"
 	"flag"
 	"fmt"
@@ -12,6 +13,27 @@ import (
 	gherkin "github.com/cucumber/gherkin-go"
 	junit "github.com/ligurio/recidive/formats/junit"
 )
+
+func WaitAnswer() Status {
+
+	fmt.Printf(PROMPT)
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		input, _ := reader.ReadString('\n')
+
+		switch string([]byte(input)[0]) {
+		case "P", "p":
+			return PASS
+		case "F", "f":
+			return FAIL
+		case "S", "s":
+			return SKIP
+		default:
+			fmt.Printf(PROMPT)
+			continue
+		}
+	}
+}
 
 func SaveReport(filename string, suites []junit.JUnitTestsuite) error {
 
@@ -38,6 +60,15 @@ func SaveReport(filename string, suites []junit.JUnitTestsuite) error {
 const (
 	COL_START = "\033[32m"
 	COL_END   = "\033[0m"
+	PROMPT    = "(P)ASS, (F)AIL, (S)KIP: "
+)
+
+type Status int
+
+const (
+	PASS Status = 0
+	FAIL Status = 1
+	SKIP Status = 2
 )
 
 func main() {
@@ -105,6 +136,15 @@ func main() {
 		/* time.Sleep(1000 * time.Millisecond) */
 		testcase.Time = float64(time.Since(start) / time.Millisecond)
 		suite.Time = suite.Time + testcase.Time
+		switch WaitAnswer() {
+		case PASS:
+		case FAIL:
+			var s junit.JUnitFailure
+			s.Value = "FAIL"
+			testcase.Failure = &s
+		case SKIP:
+			testcase.Skipped = 1
+		}
 		suite.TestCases = append(suite.TestCases, testcase)
 	}
 

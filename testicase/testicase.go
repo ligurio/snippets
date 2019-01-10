@@ -1,3 +1,14 @@
+/*
+ * TODO:
+ *
+ * - background.feature
+ * - outlines.feature
+ * - steps.feature
+ * - tables.feature
+ * - tags.feature
+ *
+ */
+
 package main
 
 import (
@@ -13,6 +24,30 @@ import (
 	gherkin "github.com/cucumber/gherkin-go"
 	junit "github.com/ligurio/recidive/formats/junit"
 )
+
+const (
+	COL_START = "\033[32m"
+	COL_END   = "\033[0m"
+	PROMPT    = "(P)ASS, (F)AIL, (S)KIP: "
+
+	PASS Status = 0
+	FAIL Status = 1
+	SKIP Status = 2
+)
+
+type TestCase struct {
+	Name    string
+	Arrange string
+	Act     string
+	Assert  string
+}
+
+type TestSuite struct {
+	testcases []TestCase
+	Name      string
+}
+
+type Status int
 
 func WaitAnswer() Status {
 
@@ -57,19 +92,47 @@ func SaveReport(filename string, suites []junit.JUnitTestsuite) error {
 	return nil
 }
 
-const (
-	COL_START = "\033[32m"
-	COL_END   = "\033[0m"
-	PROMPT    = "(P)ASS, (F)AIL, (S)KIP: "
-)
+func ReadGherkin(f *os.File) (TestSuite, error) {
 
-type Status int
+	gherkinDocument, err := gherkin.ParseGherkinDocument(f)
+	if err != nil {
+		return TestSuite{}, err
+	}
+	feature := gherkinDocument.Feature
 
-const (
-	PASS Status = 0
-	FAIL Status = 1
-	SKIP Status = 2
-)
+	suite := TestSuite{Name: feature.Name}
+	for _, c := range feature.Children {
+		var tc TestCase
+		scenario := c.GetScenario()
+		if len(scenario.Steps) != 0 {
+			for _, s := range scenario.Steps {
+				switch s.Keyword {
+				case "Given ":
+					tc.Arrange = s.Text
+				case "Then ":
+					tc.Act = s.Text
+				case "When ":
+					tc.Assert = s.Text
+				default:
+					fmt.Fprintf(os.Stdout, "Unknown: %s: %s\n", s.Keyword, s.Text)
+				}
+			}
+		}
+		tc.Name = scenario.Name
+		suite.testcases = append(suite.testcases, tc)
+	}
+
+	return suite, nil
+}
+
+func ProcessTestcase(testcase TestCase) Status {
+
+	fmt.Fprintf(os.Stdout, "Arrange: %+v\n", testcase.Arrange)
+	fmt.Fprintf(os.Stdout, "Act: %+v\n", testcase.Act)
+	fmt.Fprintf(os.Stdout, "Assert: %+v\n", testcase.Assert)
+
+	return WaitAnswer()
+}
 
 func main() {
 
@@ -102,41 +165,30 @@ func main() {
 	}
 
 	filename, _ := filepath.Abs(*spec)
-	r, err := os.Open(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "%s\n", err)
 		return
 	}
 
-	gherkinDocument, err := gherkin.ParseGherkinDocument(r)
+	var s TestSuite
+	s, err = ReadGherkin(f)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "%s\n", err)
 		return
 	}
 
-	feature := gherkinDocument.Feature
-	fmt.Fprintf(os.Stdout, "Feature name: %s%+v%s\n", COL_START, feature.Name, COL_END)
-
-	var suite junit.JUnitTestsuite
+	suite := junit.JUnitTestsuite{Time: 0.0,
+		Timestamp: time.Now().Format(time.RFC3339Nano),
+		Name:      s.Name}
 	suite.Hostname, _ = os.Hostname()
-	suite.Timestamp = time.Now().Format(time.RFC3339Nano)
-	suite.Name = feature.Name
-	suite.Time = 0.0
-	for _, c := range feature.Children {
-		var testcase junit.JUnitTestcase
-		start := time.Now()
-		scenario := c.GetScenario()
-		fmt.Fprintf(os.Stdout, "\nName: %+v\n", scenario.Name)
-		if len(scenario.Steps) != 0 {
-			for _, s := range scenario.Steps {
-				fmt.Fprintf(os.Stdout, "%s: %s\n", s.Keyword, s.Text)
-			}
-		}
-		testcase.Name = scenario.Name
-		/* time.Sleep(1000 * time.Millisecond) */
-		testcase.Time = float64(time.Since(start) / time.Millisecond)
-		suite.Time = suite.Time + testcase.Time
-		switch WaitAnswer() {
+	if s.Name != "" {
+		fmt.Fprintf(os.Stdout, "Feature name: %s%+v%s\n", COL_START, s.Name, COL_END)
+	}
+	for _, c := range s.testcases {
+		fmt.Fprintf(os.Stdout, "Scenario name: %s\n", c.Name)
+		testcase := junit.JUnitTestcase{Name: c.Name}
+		switch ProcessTestcase(c) {
 		case PASS:
 		case FAIL:
 			var s junit.JUnitFailure
@@ -145,6 +197,12 @@ func main() {
 		case SKIP:
 			testcase.Skipped = 1
 		}
+		/*
+			start := time.Now()
+			fmt.Fprintf(os.Stdout, "\nName: %+v\n", scenario.Name)
+			testcase.Time = float64(time.Since(start) / time.Millisecond)
+		*/
+		suite.Time = suite.Time + testcase.Time
 		suite.TestCases = append(suite.TestCases, testcase)
 	}
 

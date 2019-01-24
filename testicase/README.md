@@ -25,3 +25,5 @@ $ ./testicase -in sample.feature -tags "a b c" -out report.xml
 - [Chromium (Blink)](https://cs.chromium.org/chromium/src/third_party/blink/manual_tests/?g=0)
 - [xmind2testlink](https://github.com/tobyqin/xmind2testlink)
 - [Zephyr](https://github.com/zephyrproject-rtos/qm/tree/master/doc/plans)
+
+[How to write good test cases](https://github.com/robotframework/HowToWriteGoodTestCases/blob/master/HowToWriteGoodTestCases.rst)

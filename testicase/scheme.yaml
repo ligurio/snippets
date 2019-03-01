@@ -1,0 +1,25 @@
+type: map
+mapping:
+  name:
+    type: str
+    required: True
+  summary:
+    type: str
+    allowempty: True
+  precondition:
+    type: str
+    allowempty: True
+  description:
+    type: str
+    allowempty: True
+  steps:
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          step:
+            type: str
+            required: True
+          check:
+            type: str
+            required: True

@@ -185,6 +185,7 @@ func main() {
 	if s.Name != "" {
 		fmt.Fprintf(os.Stdout, "Feature name: %s%+v%s\n", COL_START, s.Name, COL_END)
 	}
+
 	for _, c := range s.testcases {
 		fmt.Fprintf(os.Stdout, "Scenario name: %s\n", c.Name)
 		testcase := junit.JUnitTestcase{Name: c.Name}

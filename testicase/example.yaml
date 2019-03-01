@@ -1,0 +1,9 @@
+---
+
+name: installation using full dvd
+summary:
+precondition:
+description: burn ISO image on DVD and install OpenVZ on HW node with EFI boot.
+steps:
+  - step: go through all installation steps
+    check: make sure installation finished successfuly

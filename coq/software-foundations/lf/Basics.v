@@ -89,8 +89,8 @@ Definition next_weekday (d:day) : day :=
   | tuesday   => wednesday
   | wednesday => thursday
   | thursday  => friday
-  | friday    => monday
-  | saturday  => monday
+  | friday    => saturday
+  | saturday  => sunday
   | sunday    => monday
   end.
 
@@ -123,7 +123,7 @@ Compute (next_weekday (next_weekday saturday)).
     form of a Coq example: *)
 
 Example test_next_weekday:
-  (next_weekday (next_weekday saturday)) = tuesday.
+  (next_weekday (next_weekday saturday)) = monday.
 
 (** This declaration does two things: it makes an
     assertion (that the second weekday after [saturday] is [tuesday]),
@@ -282,17 +282,20 @@ Proof. simpl. reflexivity. Qed.
     model of the [orb] tests above.) The function should return [true]
     if either or both of its inputs are [false]. *)
 
-Definition nandb (b1:bool) (b2:bool) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition nandb (b1:bool) (b2:bool) : bool :=
+  match b1 with
+  | true => (negb b2)
+  | false => true
+  end.
 
 Example test_nandb1:               (nandb true false) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_nandb2:               (nandb false false) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_nandb3:               (nandb false true) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_nandb4:               (nandb true true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (andb3)  
@@ -301,17 +304,20 @@ Example test_nandb4:               (nandb true true) = false.
     return [true] when all of its inputs are [true], and [false]
     otherwise. *)
 
-Definition andb3 (b1:bool) (b2:bool) (b3:bool) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition andb3 (b1:bool) (b2:bool) (b3:bool) : bool :=
+  match b1 with
+  | true => (andb b2 b3) 
+  | false => false
+  end.
 
 Example test_andb31:                 (andb3 true true true) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_andb32:                 (andb3 false true true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_andb33:                 (andb3 true false true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_andb34:                 (andb3 true true false) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -507,7 +513,7 @@ Inductive nat : Type :=
       - [O] is a natural number (note that this is the letter "[O],"
         not the numeral "[0]").
       - [S] can be put in front of a natural number to yield another
-        one -- if [n] is a natural number, then [S n] is too. *)
+          one -- if [n] is a natural number, then [S n] is too. *)
 
 (** Again, let's look at this in a little more detail.  The definition
     of [nat] says how expressions in the set [nat] can be built:
@@ -698,13 +704,23 @@ Fixpoint exp (base power : nat) : nat :=
 
     Translate this into Coq. *)
 
-Fixpoint factorial (n:nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint factorial (n:nat) : nat :=
+  match n with
+    | 0 => 0
+    | 1 => 1
+    | S n' => mult n (factorial (n'))
+ end.
+
+Compute (factorial 1).
+Compute (factorial 2).
+Compute (factorial 3).
 
 Example test_factorial1:          (factorial 3) = 6.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
+
 Example test_factorial2:          (factorial 5) = (mult 10 12).
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
+
 (** [] *)
 
 (** Again, we can make numerical expressions easier to read and write
@@ -797,11 +813,12 @@ Definition ltb (n m : nat) : bool
 Notation "x <? y" := (ltb x y) (at level 70) : nat_scope.
 
 Example test_ltb1:             (ltb 2 2) = false.
-(* FILL IN HERE *) Admitted.
+  (* FILL IN HERE *) Admitted.
 Example test_ltb2:             (ltb 2 4) = true.
-(* FILL IN HERE *) Admitted.
+  (* FILL IN HERE *) Admitted.
 Example test_ltb3:             (ltb 4 2) = false.
-(* FILL IN HERE *) Admitted.
+  (* FILL IN HERE *) Admitted.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -953,7 +970,13 @@ Proof.
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m o.
+  intros H.
+  intros H'.
+  rewrite -> H.
+  rewrite -> H'.
+  reflexivity. Qed.
+
 (** [] *)
 
 (** The [Admitted] command tells Coq that we want to skip trying
@@ -985,7 +1008,11 @@ Theorem mult_S_1 : forall n m : nat,
   m = S n ->
   m * (1 + n) = m * m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros m n.
+  rewrite <- plus_1_l.
+  intros H.
+  rewrite -> H.
+  reflexivity.  Qed.
 
   (* (N.b. This proof can actually be completed with tactics other than
      [rewrite], but please do use [rewrite] for the sake of the exercise.) 

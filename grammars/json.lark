@@ -14,8 +14,8 @@ pair   : string ":" value
 
 string : ESCAPED_STRING
 
-%import common.ESCAPED_STRING
-%import common.SIGNED_NUMBER
-%import common.WS
+ESCAPED_STRING : "\"" _STRING_ESC_INNER "\""
+SIGNED_NUMBER: ["+"|"-"] NUMBER
+WS: /[ \t\f\r\n]/+
 
 %ignore WS

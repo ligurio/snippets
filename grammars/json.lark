@@ -1,12 +1,14 @@
+# Grammar source - http://json.org
+
 ?start: value
 
 ?value: object
         | array
         | string
-        | SIGNED_NUMBER      -> number
-        | "true"             -> true
-        | "false"            -> false
-        | "null"             -> null
+        | SIGNED_NUMBER
+        | "true"
+        | "false"
+        | "null"
 
 array  : "[" [value ("," value)*] "]"
 object : "{" [pair ("," pair)*] "}"

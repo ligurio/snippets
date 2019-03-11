@@ -13,3 +13,5 @@ Grammars in [lark](https://github.com/lark-parser/lark):
 - [robots.txt](https://github.com/temoto/robotstxt)
 - YAML
 - [TAP, SubUnit](https://github.com/ligurio/recidive/wiki/Grammars)
+- [Apache Log Format](https://github.com/katef/liblf/blob/master/doc/logfmt.ebnf)
+- [kgt](https://github.com/katef/kgt/tree/master/examples)

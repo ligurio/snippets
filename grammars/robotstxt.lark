@@ -1,6 +1,5 @@
-// Robots.txt Specifications
+// robots.txt specification
 // https://developers.google.com/search/reference/robots_txt
-// Uniform Resource Locators (URL) https://www.ietf.org/rfc/rfc1738.txt
 // https://maurobringolf.ch/2017/01/defining-my-current-understand-of-a-url-as-ebnf/
 // https://www.w3.org/Addressing/URL/5_BNF.html
 

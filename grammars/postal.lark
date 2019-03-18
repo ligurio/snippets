@@ -1,14 +1,34 @@
-; borrowed from https://en.wikipedia.org/wiki/Augmented_Backus%E2%80%93Naur_form
+// https://en.wikipedia.org/wiki/Augmented_Backus–Naur_form
 
-<postal-address> ::= <name-part> <street-address> <zip-part>
+start: postal_address
+postal_address: name_part street_address zip_part
+name_part: personal_part last_name opt_jr_part CRLF personal_part name_part
 
-<name-part> ::= <personal-part> <last-name> <opt-jr-part> <EOL>
-	| <personal-part> <name-part>
+personal_part: first_name | initial "."
+street_address: house_num street_name CRLF
+zip_part: town_name "," state_code zip_code CRLF
+opt_jr_part: "Sr." | "Jr." | ROMAN_NUMBER | ""
 
-<personal-part> ::= <first-name> | <initial> "."
+first_name: WORD
+initial: LETTER
+last_name: WORD
 
-<street-address> ::= <opt-apt-num> <house-num> <street-name> <EOL>
+street: [apt] house_num street_name CRLF
+apt: DIGIT~4
+house_num: (DIGIT | LETTER)~8
+street_name: WORD
 
-<zip-part> ::= <town-name> "," <state-code> <ZIP-code> <EOL>
+town_name: WORD
+state_code: UCASE_LETTER~2
+zip_code: DIGIT~5 ["-" DIGIT~4]
 
-<opt-jr-part> ::= "Sr." | "Jr." | <roman-numeral> | ""
+DIGIT: "0".."9"
+ROMAN_NUMBER: "I" | "V" | "X"
+LCASE_LETTER: "a".."z"
+UCASE_LETTER: "A".."Z"
+LETTER: UCASE_LETTER | LCASE_LETTER
+WORD: LETTER+
+
+CR : /\r/
+LF : /\n/
+CRLF : (CR? LF)+

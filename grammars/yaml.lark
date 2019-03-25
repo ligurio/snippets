@@ -1,0 +1,36 @@
+// Grammar source - http://json.org
+
+start: value
+
+value: object
+        | array
+        | string
+        | SIGNED_NUMBER
+        | "true"
+        | "false"
+        | "null"
+
+array: "[" [value ("," value)*] "]"
+object: "{" [pair ("," pair)*] "}"
+pair: string ":" value
+
+string: ESCAPED_STRING
+
+ESCAPED_STRING: "\"" _STRING_ESC_INNER "\""
+SIGNED_NUMBER: ["+"|"-"] NUMBER
+WS: /[ \t\f\r\n]/+
+
+%ignore WS
+
+DIGIT: "0".."9"
+INT: DIGIT+
+SIGNED_INT: ["+"|"-"] INT
+DECIMAL: INT "." INT? | "." INT
+_EXP: ("e"|"E") SIGNED_INT
+FLOAT: INT _EXP | DECIMAL _EXP?
+SIGNED_FLOAT: ["+"|"-"] FLOAT
+
+NUMBER: FLOAT | INT
+
+_STRING_INNER: /.*?/
+_STRING_ESC_INNER: _STRING_INNER /(?<!\\)(\\\\)*?/ 

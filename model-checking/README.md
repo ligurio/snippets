@@ -19,7 +19,6 @@ consider a water elimination step), without getting too much water on your
 floor.
 
 - [Hippie problem](https://spcl.inf.ethz.ch/Teaching/2016-dphpc/recitation/spin_tutorial.pdf):
-
 4 Hippies want to cross a bridge. The bridge is fragile, it can only crossed by
 <= 2 people at a time with a torchlight. The hippies have one torchlight and
 want to reach the other side within one hour. Due to different degrees of

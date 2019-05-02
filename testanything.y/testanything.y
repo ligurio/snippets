@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "parse_common.h"
+// #include "parse_common.h"
 
 void yyerror(char *);
 int yylex(void);

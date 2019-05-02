@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <limits.h>	/* strtol() */
 #include <stdlib.h> /* strtol() */
-#include "parse_testanything.tab.h"
 extern YYSTYPE yylval;
 %}
 

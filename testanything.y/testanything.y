@@ -134,13 +134,9 @@ program		: program test_line
 		;
 
 test_line	: TAP_VERSION NUMBER NL {
-			long version = $2;
-			fprintf(stderr, "TAP version is %lu\n", version);
-			if (version != 13) {
-			   error = ERR_UNSUPPORTED_VERSION;
-			   fprintf(stderr, "unsupported format version\n");
-			   /* FIXME: handle exit */
-			}
+			int version = $2;
+			fprintf(stderr, "TAP version is %d\n", version);
+			assert(version == 13);
 		}
 		| PLAN comment NL {
 			long min = 0, max = 0;
@@ -242,7 +238,7 @@ comment		: HASH directive string
 		;
 
 test_number	: NUMBER
-		|
+		| { }
 		;
 
 description	: string

@@ -30,6 +30,9 @@
 #include <stdio.h>
 #include <limits.h>	/* strtol() */
 #include <stdlib.h> /* strtol() */
+
+#include "parse_common.h"
+
 extern YYSTYPE yylval;
 %}
 
@@ -42,8 +45,8 @@ YAML_END		"..."|"---"
 DOTS			".."
 SKIP			[Ss][Kk][Ii][Pp]([Pp][Ee][Dd])?
 TODO			"TODO"
-OK			"ok"
-NOT			"not"
+OK				"ok"
+NOT				"not"
 BAILOUT			"Bail out!"
 SYMBOL			[[:alpha:][:punct:]]
 TAP_VERSION		^"TAP version"

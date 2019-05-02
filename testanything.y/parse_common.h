@@ -41,8 +41,6 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 
-//#include "testres.h"
-
 enum test_format {
 	FORMAT_UNKNOWN,
 	FORMAT_TAP13,

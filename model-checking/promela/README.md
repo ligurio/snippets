@@ -14,3 +14,4 @@
 - http://www.imm.dtu.dk/~albl/promela.html
 - https://github.com/dgryski/modelchecking
 - https://swtch.com/spin/
+- https://github.com/dgryski/modelchecking/tree/master/spin

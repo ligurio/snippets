@@ -1,1 +1,0 @@
-failure: bzrlib.tests.per_transport.TransportTests.test_put_file_unicode(SFTPTransport,SFTPAbsoluteServer)

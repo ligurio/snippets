@@ -1,4 +1,0 @@
-test: bzrlib.tests.blackbox.test_add.TestAdd.test_add_in_versioned(view-aware)
-test bzrlib.tests.blackbox.test_add.TestAdd.test_add_in_versioned(view-aware)
-testing: bzrlib.tests.blackbox.test_add.TestAdd.test_add_in_versioned(view-aware)
-testing bzrlib.tests.blackbox.test_add.TestAdd.test_add_in_versioned(view-aware)

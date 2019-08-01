@@ -15,3 +15,4 @@
 - https://github.com/dgryski/modelchecking
 - https://swtch.com/spin/
 - https://github.com/dgryski/modelchecking/tree/master/spin
+- Course: [Model Checking Concurrent Programs](http://cnx.org/content/col10294/1.3)

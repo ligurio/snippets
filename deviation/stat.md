@@ -1,9 +1,0 @@
-- https://github.com/thorduri/ministat
-- st https://github.com/nferraz/st
-- sta https://github.com/simonccarter/sta
-- https://github.com/dpmcmlxxvi/clistats
-- https://sourceforge.net/projects/average/
-- https://github.com/tonyfischetti/qstats
-- http://www.numcommand.com/
-- http://web.cs.wpi.edu/%7Eclaypool/misc/stats/stats.html
-- https://www.gnu.org/software/datamash/

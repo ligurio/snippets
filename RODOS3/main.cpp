@@ -23,6 +23,7 @@ struct flags_t
     bool no_flags;
     bool on;
     bool off;
+    bool reset;
     bool all;
     bool read;
     unsigned int device_id;
@@ -39,13 +40,14 @@ int main(int argc, char* argv[])
     flags.init();
 
     //  Разбор переданных параметров
-    const char* short_options = "hnfra";
+    const char* short_options = "hnftra";
 
         const struct option long_options[] = {
             {"help",no_argument,NULL,'h'},
             {"id",required_argument,NULL,'i'},
             {"on",no_argument,NULL,'n'},
             {"off",no_argument,NULL,'f'},
+            {"reset",no_argument,NULL,'t'},
             {"read",no_argument,NULL,'r'},
             {"all",no_argument,NULL,'a'},
             {NULL,0,NULL,0}
@@ -64,6 +66,7 @@ int main(int argc, char* argv[])
                             "   --all, -a  - для выполнения на всех RODOS-3\n"
                             "   --on, -n   - включить нагрузку\n"
                             "   --off, -f  - отключить нагрузку\n"
+                            "   --reset, -t  - перезагрузить нагрузку\n"
                             "   --read, -r - считать текущее состояние реле\n"
                             "   или запустите без параметров для получения списка всех устройств и их ID\n"
                          << flush;
@@ -82,6 +85,11 @@ int main(int argc, char* argv[])
                 }
                 case 'f': {
                     flags.off = true;
+                    flags.no_flags = false;
+                    break;
+                }
+                case 't': {
+                    flags.reset = true;
                     flags.no_flags = false;
                     break;
                 }
@@ -142,6 +150,24 @@ int main(int argc, char* argv[])
                         {
                             R3->STATE__OFF();
                             cout <<  "ID: " << R3->Get_Device_ID() << " нагрузка отключена" << endl;
+                        }
+                        if (flags.reset)
+                        {
+                            unsigned char PS;
+                            if (R3->STATE__READ(PS))
+                            {
+                                if (PS==0x19) {
+                            		R3->STATE__ON();
+                            		cout <<  "ID: " << R3->Get_Device_ID() << " нагрузка включена" << endl;
+                                }
+                                else {
+                            		R3->STATE__OFF();
+                            		cout <<  "ID: " << R3->Get_Device_ID() << " нагрузка выключена" << endl;
+                            		R3->STATE__ON();
+                            		cout <<  "ID: " << R3->Get_Device_ID() << " нагрузка включена" << endl;
+                                }
+                            }
+                            else { cout << "Ошибка чтения" << endl; MAIN_RESULT = -1; }
                         }
                         if (flags.read)
                         {

@@ -21,11 +21,11 @@ using namespace std;
 struct flags_t
 {
     bool no_flags;
-    bool on;
-    bool off;
-    bool reset;
-    bool all;
-    bool read;
+    bool on = false;
+    bool off = false;
+    bool reset = false;
+    bool all = false;
+    bool read = false;
     unsigned int device_id;
 
     void init (void);
@@ -163,6 +163,7 @@ int main(int argc, char* argv[])
                                 else {
                             		R3->STATE__OFF();
                             		cout <<  "ID: " << R3->Get_Device_ID() << " нагрузка выключена" << endl;
+                            		sleep(1);
                             		R3->STATE__ON();
                             		cout <<  "ID: " << R3->Get_Device_ID() << " нагрузка включена" << endl;
                                 }

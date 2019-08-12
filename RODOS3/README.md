@@ -36,6 +36,8 @@ USB, с помощью [uhubctl](https://github.com/mvp/uhubctl). Минусы: 
 Я остановился на [RODOS-3b](https://silines.ru/rodos-3b). Для сборки купил [корпус](https://www.chipdip.ru/catalog-show/plastic-cases?page=4), вилку и [розетку](https://www.chipdip.ru/product/sq1806-0031) 2П+З 16А 250В на кабель, кусок провода [ШВВП 2.0 x 5](https://www.chipdip.ru/product/shvvp-2x0.5). После сборки получился удлинитель с реле. Провод к реле подключал в разъёмы `N.O` и `COM` (см. [инструкцию](https://silines.ru/documentation/RODOS/RODOS-3.pdf)), чтобы большую часть времени реле было разомкнуто. В идеале хотелось бы встроить реле в розетку, наподобие [такой](https://www.ozon.ru/context/detail/id/32503720/), но нет гарантии, что
 места внутри под реле хватит.
 
+![Реле](images/IMG_20190810_223520.jpg "Реле")
+
 Подключаем устройство по USB и проверяем, что оно опявилось в системе:
 ```
 $ lsusb 

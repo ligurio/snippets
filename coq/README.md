@@ -9,6 +9,7 @@
 - https://github.com/xgrommx/coq-ecosystem
 - [First impressions of Coq and “Certified Programming with Dependent Types”](http://lambda.jstolarek.com/2015/03/first-impressions-of-coq-and-certified-programming-with-dependent-types/)
 - [Coq’Art, CPDT and SF: a review of books on Coq proof assistant](http://lambda.jstolarek.com/2016/06/coqart-cpdt-and-sf-a-review-of-books-on-coq-proof-assistant/)
+- https://github.com/coq/coq/wiki/CoqInTheClassroom
 
 ### Examples
 

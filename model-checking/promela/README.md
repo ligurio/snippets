@@ -5,6 +5,14 @@
 - [Network protocol for real-time sharing between graphical applications](https://github.com/verse/verse/tree/master/misc/promela)
 - [Modeling and Formal Verification of DHCP Using SPIN](https://pdfs.semanticscholar.org/6ddd/d0951f9596526f138faa68304485a6a052e2.pdf)
 
+----------
+
+- https://github.com/kaizsv/pikoRT-Spin
+- https://github.com/kaizsv/eChronos-Spin
+- https://github.com/kaizsv/FreeRTOS-Spin
+
+----------
+
 - [Applications for the Checker – A Survey](http://www.tucs.fi/publications/attachment.php?fname=TR782.pdf) - Ville R. Koskinen | Juha Plosila
 - [Comparisons of Alloy and Spin](http://www.pamelazave.com/compare.html)
 - [Model Checking Paxos in Spin](https://arxiv.org/abs/1408.5962)

@@ -16,8 +16,6 @@
 - [Applications for the Checker – A Survey](http://www.tucs.fi/publications/attachment.php?fname=TR782.pdf) - Ville R. Koskinen | Juha Plosila
 - [Comparisons of Alloy and Spin](http://www.pamelazave.com/compare.html)
 - [Model Checking Paxos in Spin](https://arxiv.org/abs/1408.5962)
-- [A Promela model of pikoRT under the Spin model checker](https://github.com/kaizsv/pikoRT-Spin)
-- [A Spin model for eChronos](https://github.com/kaizsv/eChronos-Spin)
 - http://spinroot.com/spin/success.html
 - http://www.imm.dtu.dk/~albl/promela.html
 - https://github.com/dgryski/modelchecking

@@ -11,7 +11,7 @@
 - [Coq’Art, CPDT and SF: a review of books on Coq proof assistant](http://lambda.jstolarek.com/2016/06/coqart-cpdt-and-sf-a-review-of-books-on-coq-proof-assistant/)
 - https://github.com/coq/coq/wiki/CoqInTheClassroom
 - https://github.com/anton-trunov/coq-lecture-notes
-- [3110 Coq Tactics Cheatsheet](https://www.cs.cornell.edu/courses/cs3110/2018sp/a5/coq-tactics-cheatsheet.html#reflexivity)
+- [3110 Coq Tactics Cheatsheet](https://www.cs.cornell.edu/courses/cs3110/2018sp/a5/coq-tactics-cheatsheet.html)
 
 ### Examples
 

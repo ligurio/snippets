@@ -1,0 +1,124 @@
+From 7cd952265ce8580189cc57ff99c2b0d6eec1a538 Mon Sep 17 00:00:00 2001
+From: Sergey Bronnikov <sergey.bronnikov@kaspersky.com>
+Date: Mon, 24 Sep 2018 15:17:14 +0300
+Subject: [PATCH] slirp: add qmp method query-ip-table
+
+---
+ qapi/net.json | 36 ++++++++++++++++++++++++++++++++++++
+ slirp/slirp.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 85 insertions(+)
+
+diff --git a/qapi/net.json b/qapi/net.json
+index c86f351161..fc9081cfcd 100644
+--- a/qapi/net.json
++++ b/qapi/net.json
+@@ -680,3 +680,39 @@
+ ##
+ { 'event': 'NIC_RX_FILTER_CHANGED',
+   'data': { '*name': 'str', 'path': 'str' } }
++
++##
++# @IPRecord:
++#
++# Information about a IP record.
++#
++# @ipaddr: an IP address
++#
++# @hwaddr: a hardware address
++#
++# Since: 3.0.50
++##
++{ 'struct': 'IPRecord',
++  'data': { 'ipaddr': 'str', 'hwaddr': 'str' } }
++
++##
++# @query-ip-table:
++#
++# Returns IP records for all NICs.
++#
++# Returns: list of @IPRecord  for all NICs.
++#
++# Since: 3.0.50
++#
++# Example:
++#
++# -> { "execute": "query-ip-table" }
++# <- { "return": [
++#         { "ipaddr": "10.0.2.15", "hwaddr": "52:54:00:12:34:56" },
++#         { "ipaddr": "10.0.2.16", "hwaddr": "33:33:00:00:00:01" },
++#         { "ipaddr": "10.0.2.17", "hwaddr": "33:33:ff:12:34:56" }
++#       ]
++#    }
++#
++##
++{ 'command': 'query-ip-table', 'returns': ['IPRecord'] }
+diff --git a/slirp/slirp.c b/slirp/slirp.c
+index 5c3bd6163f..0002e29162 100644
+--- a/slirp/slirp.c
++++ b/slirp/slirp.c
+@@ -27,9 +27,11 @@
+ #include "qemu/error-report.h"
+ #include "chardev/char-fe.h"
+ #include "migration/register.h"
++#include "net/net.h"
+ #include "slirp.h"
+ #include "hw/hw.h"
+ #include "qemu/cutils.h"
++#include "qapi/qapi-commands-net.h"
+ 
+ #ifndef _WIN32
+ #include <net/if.h>
+@@ -1491,3 +1493,50 @@ static int slirp_state_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     return vmstate_load_state(f, &vmstate_slirp, slirp, version_id);
+ }
++
++IPRecordList *qmp_query_ip_table(Error **errp)
++{
++    Slirp *slirp;
++    IPRecordList *table = NULL;
++    IPRecordList *info = NULL;
++    int i;
++
++    if (QTAILQ_EMPTY(&slirp_instances)) {
++        return NULL;
++    }
++
++    QTAILQ_FOREACH(slirp, &slirp_instances, entry) {
++        ArpTable *arptbl = &slirp->arp_table;
++        if (arptbl) {
++	    for (i = 0; i < ARP_TABLE_SIZE; i++) {
++		if (arptbl->table[i].ar_sip != 0) {
++		   info = g_new0(IPRecordList, 1);
++		   info->value = g_new0(IPRecord, 1);
++		   info->value->ipaddr = g_strdup(inet_ntoa((struct in_addr){.s_addr = arptbl->table[i].ar_sip}));
++		   info->value->hwaddr = qemu_mac_strdup_printf(arptbl->table[i].ar_sha);
++
++		   info->next = table;
++		   table = info;
++		};
++	    }
++        }
++
++        NdpTable *ndptbl = &slirp->ndp_table;
++        if (ndptbl) {
++	    for (i = 0; i < NDP_TABLE_SIZE; i++) {
++		if (!in6_zero(&ndptbl->table[i].ip_addr)) {
++		   info = g_new0(IPRecordList, 1);
++		   info->value = g_new0(IPRecord, 1);
++		   info->value->ipaddr = g_new0(char, INET6_ADDRSTRLEN);
++		   inet_ntop(AF_INET6, &ndptbl->table[i].ip_addr, info->value->ipaddr, INET6_ADDRSTRLEN);
++		   info->value->hwaddr = qemu_mac_strdup_printf(arptbl->table[i].ar_sha);
++
++		   info->next = table;
++		   table = info;
++		};
++	    }
++        }
++    }
++
++    return table;
++}
+-- 
+2.17.1
+

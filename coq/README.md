@@ -102,17 +102,12 @@ https://homes.cs.washington.edu/~jrw12/InductionExercises.html
 
 еще был вот такой саб: https://www.reddit.com/r/DailyProver/
 
-
 Может, кому пригодится
-
 Gallier:
 - Logic For Computer Science
 - Foundations of Automatic Theorem Proving
 
-https://www.google.lv/url?sa=t&source=web&rct=j&url=http://phil.gu.se/logic/books/Gallier:Logic_For_Computer_Science.pdf&ved=2ahUKEwiRpdGM7J3ZAhVR5qQKHe_eCysQFjAAegQIExAB&usg=AOvVaw1zFdc4EwhTB8a93lWiD5EF
-
-О книге:
-https://www.amazon.co.uk/gp/aw/d/0486780821/ref=tmm_pap_title_0?ie=UTF8&qid=1518350351&sr=8-36
+О книге: https://www.amazon.co.uk/gp/aw/d/0486780821/ref=tmm_pap_title_0?ie=UTF8&qid=1518350351&sr=8-36
 
 В Coq-Club пробегала ссылка на веб-приложение для обучения логике: https://www.edukera.com
 
@@ -124,19 +119,11 @@ https://www.amazon.co.uk/gp/aw/d/0486780821/ref=tmm_pap_title_0?ie=UTF8&qid=1518
 
 мне понравился курс на Coursera по вычислительной логике несколько лет назад — Майк Генесерет из Стэнфорда его вел
 
-https://www.monicahq.com/
-
-https://github.com/ejgallego/jscoq
-http://oberon2005.oberoncore.ru/classics/ae1976.pdf
-
-http://logic.stanford.edu/classes/cs157/current/
-
-во, вот здесь можно начать вроде http://intrologic.stanford.edu/lessons/lessons.html
-
-http://tomasp.net/academic/papers/failures/failures-programming.pdf
-
-https://t.co/TUdnkBeuVS?amp=1
-
+- https://github.com/ejgallego/jscoq
+- http://oberon2005.oberoncore.ru/classics/ae1976.pdf
+- http://logic.stanford.edu/classes/cs157/current/
+- вот, вот здесь можно начать вроде http://intrologic.stanford.edu/lessons/lessons.html
+- http://tomasp.net/academic/papers/failures/failures-programming.pdf
 
 В прошедший уикенд я читал лекции в CS-клубе при ПОМИ РАН по выводу типов в системе Хиндли-Милнера и компиляторе GHC (https://compsciclub.ru/courses/types/2019-spring/). Утром второго дня я получил от Amazon'а письмо, начинавшееся со слов «Hello Vitaly Bragilevsky,
 Are you looking for something in our Computers & Technology Software Books department? If so, you might be interested in these items».

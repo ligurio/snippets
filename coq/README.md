@@ -22,6 +22,18 @@
 
 ### Notes
 
+mathcomp (https://github.com/math-comp/math-comp) можно поставить из пакетных менеджеров opam или Nix (ну, или из исходников)
+
+https://t.me/teorkat_msk/222
+
+opam switch create coq8.9 ocaml-base-compiler.4.07.1
+opam repo add coq-released https://coq.inria.fr/opam/released
+opam update
+opam pin add coq 8.9.1 --no-action
+opam pin add coq-mathcomp-ssreflect 1.9.0 --yes
+
+https://t.me/teorkat_msk/224
+
 https://learnxinyminutes.com/docs/coq/
 
 Можно ещё почитать лекции „Constructive Logic“ от Frank Pfenning. Мне кажется

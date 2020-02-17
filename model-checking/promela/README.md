@@ -13,6 +13,7 @@
 
 ----------
 
+- [Formal Analysis of a Space Craft Controller using Spin](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.122.6866&rep=rep1&type=pdf)
 - [Applications for the Checker – A Survey](http://www.tucs.fi/publications/attachment.php?fname=TR782.pdf) - Ville R. Koskinen | Juha Plosila
 - [Comparisons of Alloy and Spin](http://www.pamelazave.com/compare.html)
 - [Model Checking Paxos in Spin](https://arxiv.org/abs/1408.5962)

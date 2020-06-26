@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# Sync music on Apple iPod Shuffle
+
+MUSIC=/home/estet/mm/music/
+IPOD=iPod_Control/Music/
+
+DONE_NAMES="`mktemp /tmp/ipod_XXXXXXXX`"
+
+if [ -n "$1" ]; 
+then
+	MNT=$1
+else
+	MNT=/mnt/ipod
+fi
+
+if ! ( [ -d ${MNT}/${IPOD} ] & [ -e ${MNT}/${IPOD} ] & [ -w ${MNT}/${IPOD} ] );
+then
+	echo "${MNT}/${IPOD} doesn't exist or it is not a directory"
+	exit 1;
+fi
+
+if ! ( [ -d ${MUSIC} ] & [ -e ${MUSIC} ] );
+then
+	echo "${MUSIC} doesn't exist or it is not a directory"
+	exit 1;
+fi
+
+find ${MUSIC} -iname '*.mp3' | while read s;
+do
+	#echo "To Apple iPod Shuffle: $s";
+	find ${MNT}/${IPOD} -iname '*.mp3' | while read i;
+	do
+		SONG=$(basename $i)
+		grep ${SONG} ${DONE_NAMES} > /dev/null 2>&1;
+		if [ $? -ne 0 ]; 
+		then
+			echo "Copied ${s} as ${SONG}";
+			OSIZE=`stat -f "%z" "$s"`;
+			NSIZE=`stat -f "%z" "$i"`;
+			if [ $NSIZE -le $OSIZE ]; 
+			then
+				echo "DEBUG: Size: $OSIZE >= $NSIZE";
+				cp "${s}" "${i}"; 
+			fi
+			echo "DEBUG: Size: $OSIZE < $NSIZE";
+			echo "${SONG}" >> ${DONE_NAMES};
+			break;
+		else
+			continue;
+		fi
+	done;
+done

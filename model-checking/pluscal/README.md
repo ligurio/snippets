@@ -10,6 +10,8 @@
 - Coosmos DB https://github.com/Azure/azure-cosmos-tla, https://www.youtube.com/watch?v=Ej6dlMBvUBI, https://www.microsoft.com/en-us/research/uploads/prod/2018/11/TLA-Specifications-of-the-Consistency-Guarantees-Provided-by-Cosmos-DB-SLIDES.pdf
 - https://github.com/lorin/tla-linearizability
 - ClickHouse https://github.com/VadimPlh/Arrival/
+- [Specification of Snapshot Isolation in TLA+](https://github.com/will62794/snapshot-isolation-spec)
+- [Formal Specs of Database Isolation](https://github.com/pron/amazon-snapshot-spec)
 
 ### Exercises
 

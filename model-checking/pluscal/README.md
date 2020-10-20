@@ -12,6 +12,7 @@
 - ClickHouse https://github.com/VadimPlh/Arrival/
 - [Specification of Snapshot Isolation in TLA+](https://github.com/will62794/snapshot-isolation-spec)
 - [Formal Specs of Database Isolation](https://github.com/pron/amazon-snapshot-spec)
+- [TLA+ in CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/docs/tla-plus)
 
 ### Exercises
 

@@ -7,12 +7,13 @@
 - https://www.hillelwayne.com/post/list-of-tla-examples/
 - [Specifying and Verifying Concurrent C Programs with TLA+](https://cedric.cnam.fr/fichiers/art_3439.pdf)
 - https://git.kernel.org/pub/scm/linux/kernel/git/cmarinas/kernel-tla.git/tree/
-- Coosmos DB https://github.com/Azure/azure-cosmos-tla, https://www.youtube.com/watch?v=Ej6dlMBvUBI, https://www.microsoft.com/en-us/research/uploads/prod/2018/11/TLA-Specifications-of-the-Consistency-Guarantees-Provided-by-Cosmos-DB-SLIDES.pdf
 - https://github.com/lorin/tla-linearizability
 - ClickHouse https://github.com/VadimPlh/Arrival/
 - [Specification of Snapshot Isolation in TLA+](https://github.com/will62794/snapshot-isolation-spec)
 - [Formal Specs of Database Isolation](https://github.com/pron/amazon-snapshot-spec)
 - [TLA+ in CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/docs/tla-plus)
+- [PingCAP TiDB](https://github.com/pingcap/tla-plus)
+- Coosmos DB https://github.com/Azure/azure-cosmos-tla, https://www.youtube.com/watch?v=Ej6dlMBvUBI, https://www.microsoft.com/en-us/research/uploads/prod/2018/11/TLA-Specifications-of-the-Consistency-Guarantees-Provided-by-Cosmos-DB-SLIDES.pdf
 
 ### Exercises
 

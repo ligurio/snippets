@@ -14,12 +14,13 @@ local math = require('math')
 math.randomseed(os.time())
 
 local n_fibers = 50
-local n_ops = 5 * 1000
+local n_ops = 1000000
 local op_channel = fiber.channel(n_ops)
-local res_channel = fiber.channel(n_ops)
+local res_channel = fiber.channel(2 * n_ops)
 
 box.cfg{
   listen = 3301,
+  net_msg_max = 2 * 1024,
 }
 
 box.once('schema', function()
@@ -55,16 +56,13 @@ local function cas_op(id, val1, val2, space)
   box.commit()
 end
 
-local function register_client()
+local function register_client(ch_in, ch_out)
   local conn = net_box.connect('127.0.0.1:3301')
   assert(conn:ping(), true)
   local ok
-  while not op_channel:is_empty() do
-    local op = op_channel:get()
-    res_channel:put({ type = op.type,
-                      f = op.f,
-                      time = clock.time()
-                    })
+  while not ch_in:is_empty() do
+    local op = ch_in:get()
+    ch_out:put({ type = op.type, f = op.f, time = clock.time() })
     if op.f == 'write' then
       ok = pcall(conn.space.test:replace({1, op.v}))
     elseif op.f == 'read' then
@@ -72,21 +70,26 @@ local function register_client()
     elseif op.f == 'cas' then
       ok = cas_op(1, op.v[1], op.v[2], 'test')
     end
-    res_channel:put({ type = ok,
-                      f = op.f,
-                      time = clock.time()
-                    })
+    ch_out:put({ type = ok, f = op.f, time = clock.time() })
     fiber.yield()
   end
   print('client close connection')
   conn:close()
 end
 
-local function process_results()
-  while not res_channel:has_writers() do
-    local res = res_channel:get()
+local function process_results(ch)
+  while not ch:has_writers() do
+    local res = ch:get()
     local inspect = require('inspect')
     print(inspect.inspect(res, {newline=' ', indent=''}))
+  end
+end
+
+local function generate_operations(gen)
+  for _, operation in pairs(gen) do
+    print('Generate new operation, current channel length', op_channel:count())
+    op_channel:put(operation())
+    fiber.yield()
   end
 end
 
@@ -96,18 +99,18 @@ local function main()
                                   return (x == 0 and r) or
                                          (x == 1 and w) or
                                          (x == 2 and cas) end):take(n_ops):totable()
-  for _, operation in pairs(gen) do
-    op_channel:put(operation())
-  end
+  fiber.create(generate_operations, gen)
 
   -- start clients
   for n = 1, n_fibers do
-    print(string.format('start %dth client', n))
-    fiber.create(register_client)
+    fiber.create(register_client, op_channel, res_channel)
+    print('\bStart client', n)
+    io.flush()
   end
+  os.exit()
 
   -- start processing
-  local f = fiber.create(process_results)
+  local f = fiber.create(process_results, res_channel)
   f:set_joinable(true)
   f:join()
 
@@ -123,3 +126,5 @@ local function main()
 end
 
 main()
+
+os.exit(0)

@@ -1,4 +1,9 @@
-local inspect = require('inspect')
+-- local inspect = require('inspect')
+
+if type(jit) ~= 'table' then
+   print('PUC Rio Lua is unsupported')
+   os.exit()
+end
 
 local function __FILE__() return debug.getinfo(3, 'S').source end
 local function __LINE__() return debug.getinfo(3, 'l').currentline end
@@ -29,13 +34,13 @@ function check_promise(condition, params)
     return c()
 end
 
-function ic_hook(event)
+function precondition_hook(event)
     local name = debug.getinfo(2).name or ''
     local fn_name = __FUNC__()
     local argc = debug.getinfo(2).nparams
     local argv = {}
     if fn_name == 'hello' then
-    	print('ic_hook triggered ' .. fn_name)
+        print('precondition_hook triggered ' .. fn_name)
         for i = 1, argc do
             arg, value = debug.getlocal(2, i)
             argv[arg] = value
@@ -51,7 +56,7 @@ function ic_hook(event)
     end
 end
 
-function oc_hook(event)
+function postcondition_hook(event)
     --local info = debug.getinfo(2)
     --print(inspect.inspect(info))
 end
@@ -59,17 +64,17 @@ end
 function dbc_enable()
     print('contracts are enabled')
     -- note: sethook() overrides previous hook
-    debug.sethook(ic_hook, 'l')
-    --debug.sethook(oc_hook, 'r')
+    debug.sethook(precondition_hook, 'l')
+    --debug.sethook(postcondition_hook, 'r')
 end
 
-local function ic_contract(condition)
+local function pre(condition)
     --print('require: ' .. condition)
     -- make sure params are occured in condition
     -- string.gmatch("Hello Lua user", "%a+")
 end
 
-local function oc_contract(condition)
+local function post(condition)
     --print('ensure: ' .. condition)
     -- make sure params are occured in condition
     -- string.gmatch("Hello Lua user", "%a+")
@@ -77,10 +82,13 @@ end
 
 ------------------------------------------
 
-dbc_enable()
 local function hello(p1, p2)
-    ic_contract('p1 > p2')
-    oc_contract('p1 > p2')
+    pre('p1 > p2')
+    post('p1 > p2')
     return nil
 end
+
+-- using DbC has performance impact
+dbc_enable()
+-- execute function with certain parameters
 hello(2, 1)

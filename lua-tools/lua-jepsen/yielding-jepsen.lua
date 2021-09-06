@@ -1,3 +1,4 @@
+-- список возможных тестов Jepsen
 -- https://keplerproject.github.io/luasql/manual.html
 -- https://www.tarantool.io/en/doc/latest/reference/reference_lua/fiber/
 -- https://gist.github.com/sergos/c2dae39bf1ac47519356de23601ea7f4

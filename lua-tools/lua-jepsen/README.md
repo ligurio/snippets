@@ -18,12 +18,12 @@
   built-in into Tarantool.
 - [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple
   interface from Lua to a number of database management systems (optional).
+- [luatest](https://github.com/tarantool/luatest) or any other unit-testing
+  framework (optional).
 - [unreliablefs](https://github.com/ligurio/unreliablefs) - a FUSE-based fault
   injection filesystem (optional).
 - Jepsen-compatible consistency checker (optional): Elle (preffered), Knossos,
-  Gretcha, Porcoupine.
-- [luatest](https://github.com/tarantool/luatest) or any other unit-testing
-  framework (optional).
+  Porcoupine.
 
 ## Possible workloads
 
@@ -143,10 +143,10 @@ incompatible orders. As an example, consider four transactions over an
 empty initial state:
 
 ```
-    (write x 1)
-    (write y 1)
-    (read x nil) (read y 1)
-    (read x 1) (read y nil)
+(write x 1)
+(write y 1)
+(read x nil) (read y 1)
+(read x 1) (read y nil)
 ```
 
 Here, we insert two records, x and y. In a serializable system, one
@@ -167,10 +167,10 @@ updates to independent keys become visible to reads in a way that isn't
 consistent with a total order of those updates. For instance:
 
 ```
-    T1: w(x, 1)
-    T2: w(y, 1)
-    T3: r(x, 1), r(y, nil)
-    T4: r(x, nil), r(y, 1)
+T1: w(x, 1)
+T2: w(y, 1)
+T3: r(x, 1), r(y, nil)
+T4: r(x, nil), r(y, 1)
 ```
 
 Under snapshot isolation, T1 and T2 may execute concurrently, because
@@ -272,19 +272,19 @@ transaction dependency graph, where one transaction overwrites a value a
 different transaction has read. For instance:
 
 ```
-    T1: r(x), w(y)
-    T2: r(y), w(x)
+T1: r(x), w(y)
+T2: r(y), w(x)
 ```
 
 could interleave like so:
 
 ```
-    T1: r(x)
-    T2: r(y)
-    T1: w(y)
-    T2: w(x)
-    T1: commit
-    T2: commit
+T1: r(x)
+T2: r(y)
+T1: w(y)
+T2: w(x)
+T1: commit
+T2: commit
 ```
 
 This violates serializability because the value of a key could have

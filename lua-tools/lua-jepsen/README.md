@@ -17,7 +17,8 @@ $ luatest -v test/
 
 ## Prerequisites
 
-- [Tarantool]() as a Lua interpreter.
+- [Tarantool](https://www.tarantool.io/en/) as a Lua interpreter (built-in
+  json, http, fiber and luafun modules).
 - [luafun](https://luafun.github.io/basic.html) - Lua functional library,
   built-in into Tarantool.
 - [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple

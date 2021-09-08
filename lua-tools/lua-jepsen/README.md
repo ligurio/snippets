@@ -1,29 +1,41 @@
 # lua-jepsen
 
+- Testing distributed systems is difficult.
+- Clojure is not a popular language in software industry.
+- Lua is a simple programming language and easy to learn.
+- Tarantool has a native Lua support and Clojure looks foreign for it.
+- There is a [Jecci](https://github.com/michaelzenz/jecci) that aims to
+  simplify building Jepsen tests.
+
+## How-to use
+
+`luarocks install lua-jepsen`
+
 ## Prerequisites
 
-- tarantool as a Lua interpreter.
+- [Tarantool]() as a Lua interpreter.
 - [luafun](https://luafun.github.io/basic.html) - Lua functional library,
   built-in into Tarantool.
 - [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple
   interface from Lua to a number of database management systems.
 - [unreliablefs](https://github.com/ligurio/unreliablefs) - a FUSE-based fault
   injection filesystem.
+- Jepsen-compatible consistency checker: Elle (preffered), Knossos, Gretcha, Porcoupine.
 
-## Workloads
+## Possible workloads
 
-- `append` checks for dependency cycles in append/read transactions
-- `bank` concurrent transfers between rows of a shared table
-- `bank-multitable` multi-table variant of the bank test
-- `long-fork` distinguishes between parallel snapshot isolation and standard SI
-- `monotonic` looks for contradictory orders over increment-only registers
-- `register` concurrent atomic updates to a shared register
+- `append` checks for dependency cycles in append/read transactions.
+- `bank` concurrent transfers between rows of a shared table.
+- `bank-multitable` multi-table variant of the bank test.
+- `long-fork` distinguishes between parallel snapshot isolation and standard SI.
+- `monotonic` looks for contradictory orders over increment-only registers.
+- `register` concurrent atomic updates to a shared register.
 - `sequential` looks for serializable yet non-sequential orders on independent
-  registers
-- `set` concurrent unique appends to a single table
-- `set-cas` appends elements via compare-and-set to a single row
-- `table` checks for a race condition in table creation
-- `txn-cycle` looks for write-read dependency cycles over read-write registers
+  registers.
+- `set` concurrent unique appends to a single table.
+- `set-cas` appends elements via compare-and-set to a single row.
+- `table` checks for a race condition in table creation.
+- `txn-cycle` looks for write-read dependency cycles over read-write registers.
 
 <!--
 https://github.com/jepsen-io/jepsen/blob/7f3d0b1ca20b27681f3af10124a8b2d2d98c8e18/tidb/src/tidb/monotonic.clj#L37-L87
@@ -45,10 +57,10 @@ https://github.com/fauna/jepsen/blob/b5c3b20d27166ca87796b48077ac17feec2937f9/sr
 
 - Sequential
 
-Sequential: in one process, perform two write transactions (write_1 then
-write_2), concurrently read in the reverse order.
+Sequential: in one process, perform two write transactions (`write_1` then
+`write_2`), concurrently read in the reverse order.
 
-Claim: no instances where write_2 is present before write_1 should be
+Claim: no instances where `write_2` is present before `write_1` should be
 discovered. Required for: sequential Consistency.
 
 To do this, we establish a set of registers, each comprised of a key and
@@ -329,19 +341,12 @@ Claim: concurrent reads should include all present values at any given
 time and at any later time. Note: a stricter variant requires immediate
 visibility instead of allowing stale reads.
 
-## Consistency checkers
-
-- Elle (preffered), Knossos, Gretcha
-- Jecci https://github.com/michaelzenz/jecci
-- Porcoupine https://github.com/anishathalye/porcupine
-
 ## TODO
 
 - timeout in operations
 - elle-compatible test log https://github.com/anishathalye/porcupine/tree/master/test_data/jepsen
 - add nemeses support
 - generators http://jepsen-io.github.io/jepsen/jepsen.generator.html
-- список возможных тестов Jepsen
 - https://gist.github.com/sergos/c2dae39bf1ac47519356de23601ea7f4
 - https://aphyr.com/posts/316-jepsen-etcd-and-consul
 - https://github.com/tarantool/p2phub/blob/60a511ac80f376842ac4187bc4decc498b6abf59/src/lib/hashing.lua#L46-L65

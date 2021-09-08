@@ -1,5 +1,4 @@
 local checks = require('checks')
-local clock = require('clock')
 local fun = require('fun')
 local math = require('math')
 
@@ -36,56 +35,31 @@ local client = {}
 
 function client.open(test)
     checks('table')
-
-    assert(test.conn)
-    --local conn = net_box.connect('127.0.0.1:3301')
-    --assert(conn:ping(), true)
+    assert(test)
 end
 
 function client.setup(test)
     checks('table')
 
-    local conn = test.conn
-    assert(conn)
-    conn.schema.create_space('test', {if_not_exists = true})
-    conn.space.test:format({{name='id', type='number'}, {name='value', type='string'}})
-    conn.space.test:create_index('primary')
+    assert(test)
 end
 
 function client.invoke(test)
     checks('table')
 
-    local op = test.operation
-    local conn = test.conn
-    local space = conn.space.test
-    local ok
-    if op.f == 'write' then
-        ok = space:replace({1, op.v})
-    elseif op.f == 'read' then
-        ok = space:select(1)
-    end
-    return {
-        type = ok,
-        f = op.f,
-        time = clock.time(),
-    }
+    assert(test)
 end
 
 function client.teardown(test)
     checks('table')
 
-    local conn = test.conn
-    local space = conn.space.test
-    if space ~= nil then
-        space:drop()
-    end
+    assert(test)
 end
 
 function client.close(test)
     checks('table')
 
-    --test.conn:close()
-    test.conn = nil
+    assert(test)
 end
 
 return {

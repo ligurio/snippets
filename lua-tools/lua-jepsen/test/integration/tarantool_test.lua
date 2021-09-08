@@ -1,5 +1,6 @@
 local fio = require('fio')
 local jepsen = require('jepsen')
+local register_workload = require('test.integration.tarantool_register_workload')
 
 local t = require('luatest')
 local g = t.group()
@@ -8,7 +9,7 @@ local Process = t.Process
 local Server = t.Server
 
 local root = fio.dirname(fio.dirname(fio.abspath(package.search('test.helper'))))
-local datadir = fio.pathjoin(root, 'tmp', 'db_test')
+local datadir = fio.tempdir()
 
 local server = Server:new({
     command = fio.pathjoin(root, 'test', 'entrypoint', 'srv-basic.lua'),

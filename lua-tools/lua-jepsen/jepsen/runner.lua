@@ -1,10 +1,7 @@
 local checks = require('checks')
 local errors = require('errors')
 local fiber = require('fiber')
-local fun = require('fun')
-local inspect = require('inspect')
 local log = require('log')
-local os = require('os')
 
 local WorkloadError = errors.new_class('WorkloadError', {capture_stack = false})
 local WorkerError = errors.new_class('WorkerError', {capture_stack = false})
@@ -31,19 +28,14 @@ local function run_worker(fn_client_invoke, ch)
 end
 
 local function run_test(w, test)
-    checks({
-        'table',
-        'table',
-        'table|nil',
-        }, 'table|nil')
+    checks('table', 'table|nil')
 
-    assert(test.conn)
     if type(w.client.open) ~= 'function' or
        type(w.client.setup) ~= 'function' or
        type(w.client.invoke) ~= 'function' or
        type(w.client.teardown) ~= 'function' or
        type(w.client.close) ~= 'function' then
-        return nil, WorkloadError:new('Wrong client interface')
+        return nil, WorkloadError:new('Client has a wrong interface')
     end
 
     local _, err = pcall(w.client.setup, test)

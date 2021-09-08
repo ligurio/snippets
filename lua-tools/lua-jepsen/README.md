@@ -9,7 +9,7 @@
 
 ## How-to use
 
-```
+```sh
 $ luarocks install lua-jepsen
 $ export ETCD_PATH=$HOME/.local/bin
 $ luatest -v test/

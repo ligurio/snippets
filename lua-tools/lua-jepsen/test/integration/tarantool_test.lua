@@ -1,5 +1,5 @@
 local fio = require('fio')
-local json = require('json')
+local jepsen = require('jepsen')
 
 local t = require('luatest')
 local g = t.group()
@@ -38,5 +38,11 @@ g.after_all = function()
 end
 
 g.test_register = function()
-    t.assert_equals(1, 1)
+    local test = {
+        concurrency = 2,
+        nodes = {'127.0.0.1'},
+        time_limit = 30,
+    }
+
+    jepsen.run_test(register_workload, test)
 end

@@ -9,7 +9,11 @@
 
 ## How-to use
 
-`luarocks install lua-jepsen`
+```
+$ luarocks install lua-jepsen
+$ export ETCD_PATH=$HOME/.local/bin
+$ luatest -v test/
+```
 
 ## Prerequisites
 

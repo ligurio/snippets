@@ -1,0 +1,2 @@
+-- TODO: helpers to execute standalone consistency checkers like Elle and
+-- Knossos

@@ -5,8 +5,6 @@ local helpers = require('test.helper')
 
 local g = t.group()
 
--- {{{ Setup / teardown
-
 g.before_all(function()
     -- Show logs from the etcd transport.
     -- note: log.cfg() is not available on tarantool 1.10
@@ -42,15 +40,6 @@ end)
 g.after_each(function()
 end)
 
--- }}} Setup / teardown
-
--- {{{ Helpers
-
--- }}} Helpers
-
--- {{{ new_instance
-
-g.test_new_instance = function()
+g.test_register = function()
+    t.assert_equals(1, 1)
 end
-
--- }}} new_instance

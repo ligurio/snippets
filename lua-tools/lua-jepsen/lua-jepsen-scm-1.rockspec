@@ -5,7 +5,7 @@ source = {
     branch = 'master',
 }
 description = {
-    summary    = 'Jepsen-like Lua library',
+    summary    = 'A framework for distributed systems verification, with fault injection',
     homepage   = 'https://github.com/ligurio/lua-jepsen',
     maintainer = 'Sergey Bronnikov <sergeyb@tarantool.org>',
     license    = 'BSD2',
@@ -14,6 +14,9 @@ dependencies = {
     'tarantool >= 1.10',
     'checks',
     'errors',
+    'luafun',
+    'luasql',
+    'unreliablefs',
 }
 
 build = {

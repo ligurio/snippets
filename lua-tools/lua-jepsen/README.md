@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-- luafun https://luafun.github.io/basic.html
-- luasql https://keplerproject.github.io/luasql/manual.html
-- ssh
-    - https://github.com/hyee/dbcli/blob/master/lua/ssh.lua
-    - https://github.com/fnordpipe/lua-ssh
-- tarantool
-- unreliablefs https://github.com/ligurio/unreliablefs
+- tarantool as a Lua interpreter.
+- [luafun](https://luafun.github.io/basic.html) - Lua functional library,
+  built-in into Tarantool.
+- [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple
+  interface from Lua to a number of database management systems.
+- [unreliablefs](https://github.com/ligurio/unreliablefs) - a FUSE-based fault
+  injection filesystem.
 
 ## Workloads
 
@@ -18,7 +18,7 @@
 - `long-fork` distinguishes between parallel snapshot isolation and standard SI
 - `monotonic` looks for contradictory orders over increment-only registers
 - `register` concurrent atomic updates to a shared register
-- `sequential` looks for serializsble yet non-sequential orders on independent
+- `sequential` looks for serializable yet non-sequential orders on independent
   registers
 - `set` concurrent unique appends to a single table
 - `set-cas` appends elements via compare-and-set to a single row
@@ -346,3 +346,6 @@ visibility instead of allowing stale reads.
 - https://aphyr.com/posts/316-jepsen-etcd-and-consul
 - https://github.com/tarantool/p2phub/blob/60a511ac80f376842ac4187bc4decc498b6abf59/src/lib/hashing.lua#L46-L65
 - tutorial https://github.com/jepsen-io/jepsen/blob/main/doc/tutorial/index.md
+- remote instances via ssh
+    - https://github.com/hyee/dbcli/blob/master/lua/ssh.lua
+    - https://github.com/fnordpipe/lua-ssh

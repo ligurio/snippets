@@ -17,10 +17,13 @@
 - [luafun](https://luafun.github.io/basic.html) - Lua functional library,
   built-in into Tarantool.
 - [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple
-  interface from Lua to a number of database management systems.
+  interface from Lua to a number of database management systems (optional).
 - [unreliablefs](https://github.com/ligurio/unreliablefs) - a FUSE-based fault
-  injection filesystem.
-- Jepsen-compatible consistency checker: Elle (preffered), Knossos, Gretcha, Porcoupine.
+  injection filesystem (optional).
+- Jepsen-compatible consistency checker (optional): Elle (preffered), Knossos,
+  Gretcha, Porcoupine.
+- [luatest](https://github.com/tarantool/luatest) or any other unit-testing
+  framework (optional).
 
 ## Possible workloads
 

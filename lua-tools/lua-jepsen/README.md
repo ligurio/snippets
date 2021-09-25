@@ -364,3 +364,9 @@ visibility instead of allowing stale reads.
 - remote instances via ssh
     - https://github.com/hyee/dbcli/blob/master/lua/ssh.lua
     - https://github.com/fnordpipe/lua-ssh
+
+> Pure generators perform all generator-related computation on a single thread,
+> and create additional garbage due to their pure functional approach. However,
+> realistic generator tests yield rates over 20,000 operations/sec, which seems
+> more than sufficient for Jepsen’s purposes.
+http://jepsen-io.github.io/jepsen/jepsen.generator.html

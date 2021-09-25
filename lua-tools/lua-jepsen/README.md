@@ -19,18 +19,21 @@ $ luatest -v test/
 
 - [Tarantool](https://www.tarantool.io/en/) as a Lua interpreter (built-in
   json, http, fiber and luafun modules).
-- [checks](https://github.com/tarantool/checks) - easy, terse, readable and fast function arguments type checking.
-- [errors](https://github.com/tarantool/errors) - error objects with stack trace support.
-- [luafun](https://luafun.github.io/basic.html) - Lua functional library,
-  built-in into Tarantool.
-- [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple
-  interface from Lua to a number of database management systems (optional).
-- [luatest](https://github.com/tarantool/luatest) or any other unit-testing
-  framework (optional).
-- [unreliablefs](https://github.com/ligurio/unreliablefs) - a FUSE-based fault
-  injection filesystem (optional).
-- Jepsen-compatible consistency checker (optional): Elle (preffered), Knossos,
-  Porcoupine.
+- [checks](https://github.com/tarantool/checks) - easy, terse, readable and
+  fast function arguments type checking.
+- [errors](https://github.com/tarantool/errors) - error objects with stack
+  trace support.
+- (optional) [luafun](https://luafun.github.io/basic.html) - Lua functional
+  library, built-in into Tarantool.
+- (optional) [luasql](https://keplerproject.github.io/luasql/manual.html) - is
+  a simple interface from Lua to a number of database management systems
+  (optional).
+- (optional) [luatest](https://github.com/tarantool/luatest) or any other
+  unit-testing framework (optional).
+- (optional) [unreliablefs](https://github.com/ligurio/unreliablefs) - a
+  FUSE-based fault injection filesystem (optional).
+- (optional) Jepsen-compatible consistency checker (optional): Elle
+  (preffered), Knossos, Porcoupine.
 
 ## Possible workloads
 

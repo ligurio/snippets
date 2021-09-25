@@ -19,6 +19,8 @@ $ luatest -v test/
 
 - [Tarantool](https://www.tarantool.io/en/) as a Lua interpreter (built-in
   json, http, fiber and luafun modules).
+- [checks](https://github.com/tarantool/checks) - easy, terse, readable and fast function arguments type checking.
+- [errors](https://github.com/tarantool/errors) - error objects with stack trace support.
 - [luafun](https://luafun.github.io/basic.html) - Lua functional library,
   built-in into Tarantool.
 - [luasql](https://keplerproject.github.io/luasql/manual.html) - is a simple

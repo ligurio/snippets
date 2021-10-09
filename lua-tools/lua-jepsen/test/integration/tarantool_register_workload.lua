@@ -1,7 +1,11 @@
 local checks = require('checks')
 local clock = require('clock')
+local errors = require('errors')
 local fun = require('fun')
 local math = require('math')
+local net_box = require('net.box')
+
+local ClientError = errors.new_class('ClientError', {capture_stack = false})
 
 math.randomseed(os.time())
 
@@ -34,36 +38,47 @@ end
 
 local client = {}
 
-function client.open(test)
+local conn
+local space_name = 'register_space'
+
+function client.open()
     checks('table')
 
-    assert(test.conn)
-    --local conn = net_box.connect('127.0.0.1:3301')
-    --assert(conn:ping(), true)
+    conn = net_box.connect('127.0.0.1:3301')
+    if not conn or conn:ping() ~= true then
+        return nil, ClientError
+    end
 end
 
-function client.setup(test)
+function client.setup()
     checks('table')
 
-    local conn = test.conn
-    assert(conn)
-    conn.schema.create_space('test', {if_not_exists = true})
-    conn.space.test:format({{name='id', type='number'}, {name='value', type='string'}})
-    conn.space.test:create_index('primary')
+    if not conn or conn:ping() ~= true then
+        return nil, ClientError
+    end
+    conn.schema.create_space(space_name)
+    conn.space.space_name:format({
+        {name='id', type='number'},
+        {name='value', type='string'},
+    })
+    conn.space.space_name:create_index('pk')
 end
 
-function client.invoke(test)
+function client.invoke(op)
     checks('table')
 
-    local op = test.operation
-    local conn = test.conn
-    local space = conn.space.test
+    if op.f == nil or op.v == nil then
+        return nil, ClientError
+    end
     local ok
     if op.f == 'write' then
-        ok = space:replace({1, op.v})
+        ok = conn.space.space_name:replace({
+            1, op.v
+        })
     elseif op.f == 'read' then
-        ok = space:select(1)
+        ok = conn.space.space_name:select(1)
     end
+
     return {
         type = ok,
         f = op.f,
@@ -71,21 +86,23 @@ function client.invoke(test)
     }
 end
 
-function client.teardown(test)
+function client.teardown()
     checks('table')
 
-    local conn = test.conn
-    local space = conn.space.test
-    if space ~= nil then
-        space:drop()
+    if conn == nil then
+        return nil, ClientError
     end
+    conn.space.register_space:drop()
 end
 
-function client.close(test)
+function client.close()
     checks('table')
 
-    --test.conn:close()
-    test.conn = nil
+    if conn == nil then
+        return nil, ClientError
+    end
+    conn:close()
+    conn = nil
 end
 
 return {

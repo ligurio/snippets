@@ -28,7 +28,8 @@ g.before_all = function()
         },
         function()
             t.assert(Process.is_pid_alive(pid))
-        end)
+        end
+    )
 end
 
 g.after_all = function()
@@ -39,11 +40,15 @@ g.after_all = function()
 end
 
 g.test_register = function()
-    local test = {
-        concurrency = 2,
-        nodes = {'127.0.0.1'},
+    local test_settings = {
+        concurrency = 1,
+        nodes = {
+            '127.0.0.1'
+        },
         time_limit = 30,
     }
 
-    jepsen.run_test(register_workload, test)
+    local _, err = jepsen.run_test(register_workload, test_settings)
+    t.assert_equals(err, nil)
+
 end

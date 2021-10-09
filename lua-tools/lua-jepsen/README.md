@@ -24,16 +24,15 @@ $ luatest -v test/
 - [errors](https://github.com/tarantool/errors) - error objects with stack
   trace support.
 - (optional) [luafun](https://luafun.github.io/basic.html) - Lua functional
-  library, built-in into Tarantool.
+  library.
 - (optional) [luasql](https://keplerproject.github.io/luasql/manual.html) - is
-  a simple interface from Lua to a number of database management systems
-  (optional).
+  a simple interface from Lua to a number of database management systems.
 - (optional) [luatest](https://github.com/tarantool/luatest) or any other
-  unit-testing framework (optional).
+  unit-testing framework.
 - (optional) [unreliablefs](https://github.com/ligurio/unreliablefs) - a
-  FUSE-based fault injection filesystem (optional).
+  FUSE-based fault injection filesystem.
 - (optional) Jepsen-compatible consistency checker (optional): Elle
-  (preffered), Knossos, Porcoupine.
+  (recommended), Knossos, Porcoupine.
 
 ### Possible workloads
 
@@ -55,6 +54,7 @@ https://github.com/jepsen-io/jepsen/blob/7f3d0b1ca20b27681f3af10124a8b2d2d98c8e1
 https://github.com/fauna/jepsen/blob/b5c3b20d27166ca87796b48077ac17feec2937f9/src/jepsen/faunadb/monotonic.clj
 -->
 
+<!--
 - Multimonotonic
 
 Similar to the monotonic test, this test takes an increment-only
@@ -64,9 +64,7 @@ observe nonmonotonicity) by sacrificing some generality: all updates to
 a given register happen in a single worker, and are performed as blind
 writes to avoid triggering OCC read locks which lower throughput.
 
-<!--
 https://github.com/fauna/jepsen/blob/b5c3b20d27166ca87796b48077ac17feec2937f9/src/jepsen/faunadb/multimonotonic.clj
--->
 
 - Sequential
 
@@ -85,7 +83,6 @@ time, we expect that for any given process, and for any given register
 read by that process, the value of that register should monotonically
 increase.
 
-<!--
 Sequential consistency requires that the orders of operations observed by each
 individual client be consistent with one another. We evaluate sequential
 consistency by having one process perform two transactions, each inserting a
@@ -103,7 +100,6 @@ A serializable system could allow x and y to be inserted in either order, and
 likewise, could evaluate the reads at any point in time: reads could see
 neither, only x, only y, or both. A sequentially consistent system, however,
 can never observe y alone, since the same process inserted x prior to y.
--->
 
 - Bank
 
@@ -169,8 +165,6 @@ To test for this behavior, we insert a sequence of unique keys, and
 concurrently query for small batches of those keys, hoping to observe a
 pair of states in which the implicit order of insertion conflicts.
 
---------------
-
 Long fork is an anomaly prohibited by snapshot isolation, but allowed by
 the slightly weaker model parallel snapshot isolation. In a long fork,
 updates to independent keys become visible to reads in a way that isn't
@@ -191,19 +185,15 @@ run an n-key generalization of these transactions continuously in our
 long fork test, and look for cases where some keys are updated out of
 order.
 
---------------
-
 In snapshot isolated systems, reads should observe a state consistent
 with a total order of transactions. A long fork anomaly occurs when a
 pair of reads observes contradictory orders of events on distinct
-records---for instance, T1 observing record x before record y was
+records - for instance, T1 observing record x before record y was
 created, and T2 observing y before x. In the long fork test, we insert
 unique rows into a table, and query small groups of those rows, looking
 for cases where two reads observe incompatible orders.
 
-<!--
 https://github.com/jepsen-io/jepsen/blob/33f05048907923eae0189d29a2bec2c5e3b2641e/yugabyte/src/yugabyte/long_fork.clj#L18-L58
--->
 
 - Monotonic
 
@@ -265,9 +255,7 @@ unique element to the end of a particular list. We derive ordering
 dependencies between these transactions, and search for cycles in that
 dependency graph to identify consistency anomalies.
 
-<!--
 https://github.com/jepsen-io/jepsen/blob/bb972671c84f054426216392d99db0792947a1d2/yugabyte/src/yugabyte/ysql/append.clj#L45-L125
--->
 
 - G2
 
@@ -299,7 +287,7 @@ T2: commit
 
 This violates serializability because the value of a key could have
 changed since the transaction first read it. However, G2 doesn't just
-apply to individual keys---it covers predicates as well. For example, we
+apply to individual keys - it covers predicates as well. For example, we
 can take two tables...
 
 ```
@@ -337,7 +325,7 @@ sequentially, which implies that one sees the other's insert. Therefore,
 at most one of these transactions may succeed. Indeed, this seems to
 hold: we have never observed a case in which both of these transactions
 committed successfully. However, a closely related test, monotonic, does
-reveal a serializability violation---we'll talk about that shortly.
+reveal a serializability violation - we'll talk about that shortly.
 
 - Register
 
@@ -353,6 +341,7 @@ Set: unique integers inserted as rows in a table.
 Claim: concurrent reads should include all present values at any given
 time and at any later time. Note: a stricter variant requires immediate
 visibility instead of allowing stale reads.
+-->
 
 ### TODO
 

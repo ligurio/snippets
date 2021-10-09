@@ -1,19 +1,13 @@
 ## lua-jepsen
 
+<!--
 - Testing distributed systems is difficult.
 - Clojure is not a popular language in software industry.
 - Lua is a simple programming language and easy to learn.
 - Tarantool has a native Lua support and Clojure looks foreign for it.
 - There is a [Jecci](https://github.com/michaelzenz/jecci) that aims to
   simplify building Jepsen tests.
-
-### How-to use
-
-```sh
-$ luarocks install lua-jepsen
-$ export ETCD_PATH=$HOME/.local/bin
-$ luatest -v test/
-```
+-->
 
 ### Prerequisites
 
@@ -33,6 +27,14 @@ $ luatest -v test/
   FUSE-based fault injection filesystem.
 - (optional) Jepsen-compatible consistency checker (optional): Elle
   (recommended), Knossos, Porcoupine.
+
+### How-to use
+
+```sh
+$ luarocks install lua-jepsen
+$ export ETCD_PATH=$HOME/.local/bin
+$ luatest -v test/
+```
 
 ### Possible workloads
 

@@ -1,4 +1,4 @@
-# lua-jepsen
+## lua-jepsen
 
 - Testing distributed systems is difficult.
 - Clojure is not a popular language in software industry.
@@ -7,7 +7,7 @@
 - There is a [Jecci](https://github.com/michaelzenz/jecci) that aims to
   simplify building Jepsen tests.
 
-## How-to use
+### How-to use
 
 ```sh
 $ luarocks install lua-jepsen
@@ -15,7 +15,7 @@ $ export ETCD_PATH=$HOME/.local/bin
 $ luatest -v test/
 ```
 
-## Prerequisites
+### Prerequisites
 
 - [Tarantool](https://www.tarantool.io/en/) as a Lua interpreter (built-in
   json, http, fiber and luafun modules).
@@ -35,7 +35,7 @@ $ luatest -v test/
 - (optional) Jepsen-compatible consistency checker (optional): Elle
   (preffered), Knossos, Porcoupine.
 
-## Possible workloads
+### Possible workloads
 
 - `append` checks for dependency cycles in append/read transactions.
 - `bank` concurrent transfers between rows of a shared table.
@@ -354,7 +354,7 @@ Claim: concurrent reads should include all present values at any given
 time and at any later time. Note: a stricter variant requires immediate
 visibility instead of allowing stale reads.
 
-## TODO
+### TODO
 
 - timeout in operations
 - elle-compatible test log https://github.com/anishathalye/porcupine/tree/master/test_data/jepsen

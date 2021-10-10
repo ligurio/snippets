@@ -1,4 +1,3 @@
-local checks = require('checks')
 local clock = require('clock')
 local errors = require('errors')
 local fun = require('fun')
@@ -42,8 +41,6 @@ local conn
 local space_name = 'register_space'
 
 function client.open()
-    checks('table')
-
     conn = net_box.connect('127.0.0.1:3301')
     if not conn or conn:ping() ~= true then
         return nil, ClientError
@@ -51,8 +48,6 @@ function client.open()
 end
 
 function client.setup()
-    checks('table')
-
     if not conn or conn:ping() ~= true then
         return nil, ClientError
     end
@@ -65,8 +60,6 @@ function client.setup()
 end
 
 function client.invoke(op)
-    checks('table')
-
     if op.f == nil or op.v == nil then
         return nil, ClientError
     end
@@ -87,8 +80,6 @@ function client.invoke(op)
 end
 
 function client.teardown()
-    checks('table')
-
     if conn == nil then
         return nil, ClientError
     end
@@ -96,8 +87,6 @@ function client.teardown()
 end
 
 function client.close()
-    checks('table')
-
     if conn == nil then
         return nil, ClientError
     end

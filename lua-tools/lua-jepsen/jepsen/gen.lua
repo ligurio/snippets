@@ -4,34 +4,48 @@
 --]]
 
 local fun = require('fun')
+local fiber = require('fiber')
 local checks = require('checks')
 local inspect = require('inspect')
 local errors = require('errors')
 
-local BuildGeneratorError = errors.new_class('BuildGeneratorError', {capture_stack = false})
+local GeneratorError = errors.new_class('GeneratorError', {capture_stack = false})
 
--- Takes an operation and fills in missing fields for :type, :process, and
--- :time using context.
--- Returns :pending if no process is free.
---local function fill_in_op()
---end
+local function dump(o)
+    checks('table|string')
 
-local function stagger()
-    -- add delay to start time
+    if type(o) == 'string' then
+        return tostring(o)
+    end
+
+    local s = '{ '
+    for k, v in pairs(o) do
+        if type(k) ~= 'number' then k = '"'..k..'"' end
+        s = s .. '['..k..'] = ' .. dump(v) .. ','
+    end
+
+    return s .. '} '
 end
 
--- TODO
-local function dump(o)
-   if type(o) == 'table' then
-      local s = '{ '
-      for k,v in pairs(o) do
-         if type(k) ~= 'number' then k = '"'..k..'"' end
-         s = s .. '['..k..'] = ' .. dump(v) .. ','
-      end
-      return s .. '} '
-   else
-      return tostring(o)
-   end
+local return_if_not_empty = function(state_x, ...)
+    if state_x == nil then
+        return nil
+    end
+    return ...
+end
+
+local function proxy(gen_x, param_x, state_x)
+    checks('table', 'table', 'table')
+
+    return return_if_not_empty(gen_x(param_x, state_x))
+end
+
+local function stagger(time, gen_x, param_x, state_x)
+    checks('number', 'table', 'table', 'table')
+
+    fiber.sleep(time)
+
+    return proxy(gen_x, param_x, state_x)
 end
 
 -- mix({
@@ -56,21 +70,21 @@ local function mix(ops)
             local err
             op, err = pcall(op)
             if err ~= nil then
-                return nil, BuildGeneratorError:new('Client has a wrong interface')
+                return nil, GeneratorError:new('Client has a wrong interface')
             end
         end
         fn_body = fn_body .. string.format('(x == %d and "%s")',
 						i,
                                                 inspect.inspect(op, {newline = ' ', indent = ''}))
     end
-    print('XXXXXXXXXXXXXXXXXXXX', fn_body, 'XXXXXXXXXXXXXXXXXXXX')
     local fn = loadstring(fn_body)
 
     return fun.rands(0, #ops):map(fn)
 end
 
 local function cycle(table)
-    checks('table', 'number|nil')
+    checks('table')
+
     return fun.iter(table)
 end
 
@@ -95,13 +109,13 @@ local function map()
 end
 
 return {
+    chain = chain,
     cycle = cycle,
-    mix = mix,
+    dump = dump,
     filter = filter,
     map = map,
+    mix = mix,
+    stagger = stagger,
     take = take,
     take_while = take_while,
-    stagger = stagger,
-    chain = chain,
-    dump = dump,
 }

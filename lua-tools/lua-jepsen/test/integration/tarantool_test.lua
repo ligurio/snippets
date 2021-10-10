@@ -45,10 +45,8 @@ g.test_register = function()
         nodes = {
             '127.0.0.1'
         },
-        time_limit = 30,
     }
 
     local _, err = jepsen.run_test(register_workload, test_settings)
     t.assert_equals(err, nil)
-
 end

@@ -15,8 +15,6 @@ dependencies = {
     'checks',
     'errors',
     'luafun',
-    'luasql',
-    'unreliablefs',
 }
 
 build = {

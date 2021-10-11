@@ -25,13 +25,18 @@
   unit-testing framework.
 - (optional) [unreliablefs](https://github.com/ligurio/unreliablefs) - a
   FUSE-based fault injection filesystem.
-- (optional) Jepsen-compatible consistency checker (optional): Elle
-  (recommended), Knossos, Porcoupine.
+- (optional) Jepsen-compatible consistency checker: Elle (recommended),
+  Knossos, Porcoupine.
 
 ### How-to use
 
+Download library:
 ```sh
 $ luarocks install lua-jepsen
+```
+
+Run tests:
+```sh
 $ export ETCD_PATH=$HOME/.local/bin
 $ luatest -v test/
 ```

@@ -2,3 +2,6 @@
 -- Download Elle:
 -- curl -O -L https://clojars.org/repo/elle/elle/0.1.2/elle-0.1.2.jar
 -- https://clojars.org/elle/
+-- $ java -jar elle-0.1.2.jar
+-- Error: Could not find or load main class clojure.main
+-- Caused by: java.lang.ClassNotFoundException: clojure.main

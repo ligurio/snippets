@@ -1,3 +1,4 @@
+local math = require('math')
 local clock = require('clock')
 local checks = require('checks')
 local log = require('log')
@@ -13,15 +14,21 @@ local inspect = require('inspect')
 local function start_worker(fn_invoke_op, op_generator)
     checks('function', 'function')
 
+    local ops_done = 0 -- box.info.lsn
+    local time_begin = clock.proc()
     for _, op in op_generator() do
         log.info('[jepsen worker] :invoke   :%s      :%s', op.f, inspect.inspect(op.v))
         local ok, err = pcall(fn_invoke_op, op)
         if not ok then
             log.info(err)
         else
+            ops_done = ops_done + 1
             log.info('[jepsen worker] :ok       :%s      :%s', op.f, inspect.inspect(op.v))
         end
     end
+    local passed_sec = clock.proc() - time_begin
+    log.info('Done %d ops in time %f sec.', ops_done, passed_sec)
+    log.info('Speed %d ops/sec.', math.floor(ops_done / passed_sec))
 end
 
 local function run_test(workload, test)

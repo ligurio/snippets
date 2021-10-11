@@ -1,3 +1,5 @@
+local net_box = require('net.box')
+local fiber = require('fiber')
 local fio = require('fio')
 local jepsen = require('jepsen')
 local register_workload = require('test.integration.tarantool_register_workload')
@@ -13,8 +15,8 @@ local datadir = fio.tempdir()
 
 local server = Server:new({
     command = fio.pathjoin(root, 'test', 'entrypoint', 'srv-basic.lua'),
-    workdir = fio.pathjoin(datadir, 'common'),
-    net_box_port = 3133,
+    workdir = fio.pathjoin(datadir),
+    net_box_port = 3301,
 })
 
 g.before_all = function()
@@ -40,6 +42,10 @@ g.after_all = function()
 end
 
 g.test_register = function()
+    fiber.sleep(0.1)
+    local conn = net_box.connect('127.0.0.1:3301')
+    t.assert_equals(conn:ping(), true)
+
     local test_settings = {
         time_limit = 1,
         threads = 1,
@@ -47,7 +53,6 @@ g.test_register = function()
             '127.0.0.1'
         },
     }
-
     local _, err = jepsen.run_test(register_workload, test_settings)
     t.assert_equals(err, nil)
 end

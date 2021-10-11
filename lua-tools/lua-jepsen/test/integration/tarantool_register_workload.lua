@@ -132,7 +132,7 @@ local function generator()
                                 return (x == 0 and r()) or
                                        (x == 1 and w()) or
                                        (x == 2 and cas())
-                               end):take(2000)
+                               end):take(1000)
 end
 
 return {

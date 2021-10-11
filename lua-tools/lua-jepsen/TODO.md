@@ -1,11 +1,14 @@
 ### TODO
 
-- generators with common state
-- timeout in operations
+- support more than one fiber in workload
+- support shared state for generators
+- handle timeouts in operations
 - produce an [Elle-compatible test log](https://github.com/anishathalye/porcupine/tree/master/test_data/jepsen)
-- nemeses support
+- nemeses support (process signals, filesystem, time)
 - add more generators, see http://jepsen-io.github.io/jepsen/jepsen.generator.html
-- tutorial https://github.com/jepsen-io/jepsen/blob/main/doc/tutorial/index.md
+- add tutorial https://github.com/jepsen-io/jepsen/blob/main/doc/tutorial/index.md
+- integration test with etcd
+- integration test with simple socket server
 - https://aphyr.com/posts/316-jepsen-etcd-and-consul
 - add remote setup using ssh:
     - https://github.com/hyee/dbcli/blob/master/lua/ssh.lua

@@ -28,7 +28,7 @@ local function start_worker(fn_invoke_op, op_generator)
     end
     local passed_sec = clock.proc() - time_begin
     log.info('Done %d ops in time %f sec.', ops_done, passed_sec)
-    log.info('Speed %d ops/sec.', math.floor(ops_done / passed_sec))
+    log.info('Speed is %d ops/sec.', math.floor(ops_done / passed_sec))
 end
 
 local function run_test(workload, test)
@@ -52,31 +52,31 @@ local function run_test(workload, test)
     )
 
     local client = workload.client
-    log.info('Open a connection')
+    log.info('Open a connection.')
     local ok, err = pcall(client.open, test)
     if not ok then
         return nil, err
     end
 
-    log.info('Setup a client')
+    log.info('Setup a client.')
     ok, err = pcall(client.setup, test)
     if not ok then
         return nil, err
     end
 
-    log.info('Start a worker')
+    log.info('Start a worker.')
     ok, err = pcall(start_worker, client.invoke, workload.generator)
     if not ok then
         return nil, err
     end
 
-    log.info('Close a client')
+    log.info('Close a client.')
     ok, err = pcall(client.close, test)
     if not ok then
         return nil, err
     end
 
-    log.info('Teardown a client')
+    log.info('Teardown a client.')
     ok, err = pcall(client.teardown, test)
     if not ok then
         return nil, err

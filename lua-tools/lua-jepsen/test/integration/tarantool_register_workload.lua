@@ -1,3 +1,4 @@
+local checks = require('checks')
 local clock = require('clock')
 local errors = require('errors')
 local fun = require('fun')
@@ -10,7 +11,6 @@ math.randomseed(os.time())
 
 local function r()
     return {
-        type = 'invoke',
         f = 'read',
         v = nil,
     }
@@ -18,7 +18,6 @@ end
 
 local function w()
     return {
-        type = 'invoke',
         f = 'write',
         v = math.random(1, 10),
     }
@@ -26,7 +25,6 @@ end
 
 local function cas()
     return {
-        type = 'invoke',
         f = 'cas',
         v = {
             math.random(1, 10), -- old value
@@ -35,71 +33,89 @@ local function cas()
     }
 end
 
-local client = {}
-
-local conn
 local space_name = 'register_space'
 
-function client.open()
-    conn = net_box.connect('127.0.0.1:3301')
+local function open()
+    local conn = net_box.connect('127.0.0.1:3301')
     if not conn or conn:ping() ~= true then
         return nil, ClientError
     end
 end
 
-function client.setup()
+local function setup()
+    local conn = net_box.connect('127.0.0.1:3301')
     if not conn or conn:ping() ~= true then
         return nil, ClientError
     end
     conn.schema.create_space(space_name)
     conn.space.space_name:format({
-        {name='id', type='number'},
-        {name='value', type='string'},
+        {
+            name='id', type='number'
+        },
+        {
+            name='value', type='string'
+        },
     })
     conn.space.space_name:create_index('pk')
 end
 
-function client.invoke(op)
-    if op.f == nil or op.v == nil then
-        return nil, ClientError
-    end
-    local ok
+local function invoke(op)
+    checks({
+        f = 'string',
+        v = '?'
+    })
+
+    local conn = net_box.connect('127.0.0.1:3301')
     if op.f == 'write' then
-        ok = conn.space.space_name:replace({
+        --[[
+        conn.space.space_name:insert({
             1, op.v
         })
+        ]]
     elseif op.f == 'read' then
-        ok = conn.space.space_name:select(1)
+        conn.space.space_name:get(1)
+    elseif op.f == 'cas' then
+        -- TODO
     end
 
     return {
-        type = ok,
         f = op.f,
         time = clock.time(),
     }
 end
 
-function client.teardown()
+local function teardown()
+    local conn = net_box.connect('127.0.0.1:3301')
     if conn == nil then
         return nil, ClientError
     end
-    conn.space.register_space:drop()
+    -- FIXME: conn.space.register_space:drop()
 end
 
-function client.close()
+local function close()
+    local conn = net_box.connect('127.0.0.1:3301')
     if conn == nil then
         return nil, ClientError
     end
     conn:close()
-    conn = nil
+end
+
+local function generator()
+    return fun.rands(0, 3):map(function(x)
+                                return (x == 0 and r()) or
+                                       (x == 1 and w()) or
+                                       (x == 2 and cas())
+                               end):take(50)
 end
 
 return {
-    client = client,
-    generator = fun.rands(0, 3):map(function(x)
-                                        return (x == 0 and r()) or
-                                               (x == 1 and w()) or
-                                               (x == 2 and cas())
-                                    end):take(50),
+    client = {
+        open = open,
+        setup = setup,
+        invoke = invoke,
+        teardown = teardown,
+        close = close,
+    },
+    generator = generator,
     checker = nil,
 }

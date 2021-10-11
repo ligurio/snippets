@@ -41,7 +41,8 @@ end
 
 g.test_register = function()
     local test_settings = {
-        concurrency = 1,
+        time_limit = 1,
+        threads = 1,
         nodes = {
             '127.0.0.1'
         },

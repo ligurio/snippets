@@ -1,2 +1,4 @@
--- TODO: helpers to execute standalone consistency checkers like Elle and
--- Knossos
+-- Helpers to execute standalone consistency checkers like Elle and Knossos.
+-- Download Elle:
+-- curl -O -L https://clojars.org/repo/elle/elle/0.1.2/elle-0.1.2.jar
+-- https://clojars.org/elle/

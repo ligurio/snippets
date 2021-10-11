@@ -13,7 +13,7 @@ all: test
 # ldoc using tarantool.
 apidoc:
 	ldoc -c $(PROJECT_DIR)/doc/ldoc/config.ld \
-             -d $(PROJECT_DIR)/doc/apidoc/ expirationd.lua
+             -d $(PROJECT_DIR)/doc/apidoc/ $(PROJECT_DIR)/jepsen
 
 check: luacheck
 

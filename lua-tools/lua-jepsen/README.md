@@ -1,12 +1,31 @@
-## Jepsen written in Lua
+## Jepsen library written in Lua
 
 <!--
-- Testing distributed systems is difficult.
-- Clojure is not a popular language in software industry.
-- Lua is a simple programming language and easy to learn.
-- Tarantool has a native Lua support and Clojure looks foreign for it.
-- There is a [Jecci](https://github.com/michaelzenz/jecci) that aims to
-  simplify building Jepsen tests.
+There is a library [Jepsen](https://github.com/jepsen-io/jepsen) designed for
+breaking distributed systems. Unfortunately it has a number of limitations and
+disadvantages so I wrote similar library written in Lua.
+
+Jepsen is a Clojure library. Clojure is not a popular language in software
+industry in common and software testing particular and learning yet another
+language for testing distruibuted systems is overkill. Lua is not so popular
+language too, but is quite simple programming language with imperative paradigm
+and easy to learn. Yet another reasons to choose Lua are: LuaJIT, that is
+really fast in Lua compilation, FFI, that is quite useful for using C/C++
+libraries.
+
+Jepsen mixes a test framework with library itself for testing distributed systems
+(generators, library to set up a distributed system, run a bunch of operations
+against that system, and verify that the history of those operations makes
+sense).
+
+Jepsen tests written for distributed systsems and databases are not generic and
+Kyle Kingsbury reimplements tests for every distributed system and database
+from scratch and these tests often contains duplicate code. See subdirectories
+for databases-specific tests in [Jepsen](https://github.com/jepsen-io/jepsen).
+It is probably good when you a consultant but it is not when you are
+software engineer. Library [Jecci](https://github.com/michaelzenz/jecci)
+partially solves a problem and makes tests more generic. Jecci aims to
+simplify building Jepsen tests.
 -->
 
 ### Prerequisites
@@ -30,7 +49,7 @@
 
 ### How-to use
 
-Download library:
+Download library using LuaRocks:
 ```sh
 $ luarocks install lua-jepsen
 ```

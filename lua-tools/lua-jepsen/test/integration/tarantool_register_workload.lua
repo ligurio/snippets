@@ -9,6 +9,26 @@ local ClientError = errors.new_class('ClientError', {capture_stack = false})
 
 math.randomseed(os.time())
 
+--[[ Function implements a CAS (Compare And Set) operation, which takes a key,
+old value, and new value and sets the key to the new value if and only if the
+old value matches what's currently there, and returns a detailed response
+map. If the CaS fails, it returns false.
+]]
+local function cas(space, id, old_value, new_value)
+    local rc = false
+    box.begin()
+    local tuple = space:get{id}
+    if tuple then
+        if tuple[2] == old_value then
+            space:update({id}, {{'=', 2, new_value}})
+            rc = true
+        end
+    end
+    box.commit()
+
+    return rc
+end
+
 local function r()
     return {
         f = 'read',
@@ -65,17 +85,16 @@ local function invoke(op)
         v = '?'
     })
 
+    local tuple_id = 1
     local conn = net_box.connect('127.0.0.1:3301')
+    local space = conn.space.space_name
+    assert(space ~= nil)
     if op.f == 'write' then
-        --[[
-        conn.space.space_name:insert({
-            1, op.v
-        })
-        ]]
+        space:replace{tuple_id, op.v}
     elseif op.f == 'read' then
-        conn.space.space_name:get(1)
+        space:get(tuple_id)
     elseif op.f == 'cas' then
-        -- TODO
+        cas(space, tuple_id, op.v[1], op.v[2])
     end
 
     return {

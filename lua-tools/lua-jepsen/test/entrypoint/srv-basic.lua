@@ -29,7 +29,7 @@ function cas(space_name, tuple_id, old_value, new_value)
     local space = box.space[space_name]
     box.begin()
     local tuple = space:get{tuple_id}
-    if tuple.value ~= old_value then
+    if not tuple or tuple.value ~= old_value then
         box.commit()
         return old_value, false
     end

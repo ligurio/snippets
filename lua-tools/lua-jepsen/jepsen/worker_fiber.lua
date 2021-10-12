@@ -1,3 +1,5 @@
+-- https://www.tarantool.io/en/doc/latest/reference/reference_lua/fiber/
+
 local checks = require('checks')
 local log = require('log')
 

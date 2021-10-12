@@ -1,6 +1,7 @@
-local net_box = require('net.box')
 local fiber = require('fiber')
 local fio = require('fio')
+local net_box = require('net.box')
+
 local jepsen = require('jepsen')
 local register_workload = require('test.integration.tarantool_register_workload')
 
@@ -47,13 +48,13 @@ g.test_register = function()
     t.assert_equals(conn:wait_connected(0.5), true)
     t.assert_equals(conn:ping(), true)
 
-    local test_settings = {
+    local test_options = {
         time_limit = 1,
         threads = 1,
         nodes = {
-            '127.0.0.1'
+            '127.0.0.1',
         },
     }
-    local _, err = jepsen.run_test(register_workload, test_settings)
+    local _, err = jepsen.run_test(register_workload, test_options)
     t.assert_equals(err, nil)
 end

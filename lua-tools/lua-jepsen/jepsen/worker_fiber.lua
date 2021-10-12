@@ -42,6 +42,32 @@ local function start_worker(invoke_func, ops_generator)
     return ops_done
 end
 
+local function start()
+end
+
+local function stop()
+end
+
+local mt = {
+    __type = 'worker',
+    __newindex = function()
+        error('Worker object is immutable.', 2)
+    end,
+    __index = {
+        start = start,
+        stop = stop,
+    },
+}
+
+local function new(id, client, opts)
+    return setmetatable({
+        id = id,
+        opts = opts,
+        client = client,
+    }, mt)
+end
+
 return {
     start_worker = start_worker,
+    new = new,
 }

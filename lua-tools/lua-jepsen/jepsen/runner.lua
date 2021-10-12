@@ -56,15 +56,12 @@ local function start_worker(invoke_func, ops_generator)
     checks('function', 'function')
 
     local ops_done = 0 -- box.info.lsn
-    local total_time_begin = clock.proc()
     for _, op in ops_generator() do
         execute_op(invoke_func, op)
         ops_done = ops_done + 1
     end
 
-    local total_passed_sec = clock.proc() - total_time_begin
-    log.info('Done %d ops in time %f sec.', ops_done, total_passed_sec)
-    log.info('Speed is %d ops/sec.', math.floor(ops_done / total_passed_sec))
+    return ops_done
 end
 
 local function run_test(workload, test)
@@ -101,9 +98,17 @@ local function run_test(workload, test)
     end
 
     log.info('Start a worker.')
+    local total_time_begin = clock.proc()
     ok, err = pcall(start_worker, client.invoke, workload.generator)
     if not ok then
         return nil, err
+    end
+    local total_passed_sec = clock.proc() - total_time_begin
+    local ops_done = err
+
+    if ops_done then
+        log.info('Done %d ops in time %f sec.', ops_done, total_passed_sec)
+        log.info('Speed is %d ops/sec.', math.floor(ops_done / total_passed_sec))
     end
 
     log.info('Close a client.')

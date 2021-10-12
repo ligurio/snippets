@@ -20,3 +20,5 @@
 > more than sufficient for Jepsen’s purposes.
 [Source](http://jepsen-io.github.io/jepsen/jepsen.generator.html)
 - pseudo-random generator, see https://github.com/tarantool/p2phub/blob/60a511ac80f376842ac4187bc4decc498b6abf59/src/lib/hashing.lua#L46-L65
+- support Lua lanes (https://lualanes.github.io/lanes/)
+- support Lua coroutines

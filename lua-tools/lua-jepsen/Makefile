@@ -21,13 +21,13 @@ luacheck:
 	luacheck --config .luacheckrc --codes .
 
 test:
-	luatest -v
+	luatest -v --coverage
 
 $(LUACOV_STATS): test
 
 coverage: $(LUACOV_STATS)
 	sed -i -e 's@'"$$(realpath .)"'/@@' $(LUACOV_STATS)
-	cd $(PROJECT_DIR) && luacov .
+	cd $(PROJECT_DIR) && luacov ^jepsen
 	grep -A999 '^Summary' $(LUACOV_REPORT)
 
 coveralls: $(LUACOV_STATS)

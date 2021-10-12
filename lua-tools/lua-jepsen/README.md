@@ -1,5 +1,7 @@
 ## Jepsen library written in Lua
 
+is a framework for distributed systems verification, with fault injection.
+
 <!--
 There is a library [Jepsen](https://github.com/jepsen-io/jepsen) designed for
 breaking distributed systems. Unfortunately it has a number of limitations and
@@ -36,6 +38,8 @@ simplify building Jepsen tests.
   fast function arguments type checking.
 - [errors](https://github.com/tarantool/errors) - error objects with stack
   trace support.
+- [inspect](https://github.com/kikito/inspect.lua) - transforms any Lua value
+  into a human-readable representation.
 - (optional) [luafun](https://luafun.github.io/basic.html) - Lua functional
   library.
 - (optional) [luasql](https://keplerproject.github.io/luasql/manual.html) - is

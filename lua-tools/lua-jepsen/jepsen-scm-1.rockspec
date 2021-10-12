@@ -14,6 +14,7 @@ dependencies = {
     'tarantool >= 1.10',
     'checks',
     'errors',
+    'inspect',
     'luafun',
 }
 

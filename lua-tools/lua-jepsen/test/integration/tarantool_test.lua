@@ -44,6 +44,7 @@ end
 g.test_register = function()
     fiber.sleep(0.1)
     local conn = net_box.connect('127.0.0.1:3301')
+    t.assert_equals(conn:wait_connected(0.5), true)
     t.assert_equals(conn:ping(), true)
 
     local test_settings = {

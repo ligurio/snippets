@@ -3,7 +3,6 @@ local clock = require('clock')
 local log = require('log')
 local math = require('math')
 
-local utils = require('jepsen.utils')
 local workload_lib = require('jepsen.workload')
 
 local function run_test(workload, opts)

@@ -33,4 +33,5 @@ include_files = {
 
 exclude_files = {
     '.rocks',
+    'relay-1mops.lua',
 }

@@ -11,6 +11,7 @@ local g = t.group()
 local Process = t.Process
 local Server = t.Server
 
+-- luacheck: no global
 local root = fio.dirname(fio.dirname(fio.abspath(package.search('test.helper'))))
 local datadir = fio.tempdir()
 

@@ -1,6 +1,5 @@
 local checks = require('checks')
 local inspect = require('inspect')
-local log = require('log')
 
 local function op_to_string(op)
     checks({

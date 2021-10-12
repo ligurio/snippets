@@ -25,7 +25,7 @@ space:create_index('pk')
 -- old value, and new value and sets the key to the new value if and only if
 -- the old value matches what's currently there, and returns a status of
 -- operation and old value in case of fail and a new value in case of success.
-function cas(space_name, tuple_id, old_value, new_value)
+local function cas(space_name, tuple_id, old_value, new_value) -- luacheck: ignore
     local space = box.space[space_name]
     box.begin()
     local tuple = space:get{tuple_id}

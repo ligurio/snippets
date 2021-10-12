@@ -75,7 +75,7 @@ local function invoke(op)
     local space = conn.space[space_name]
     assert(space ~= nil)
     local tuple_value
-    local state = false
+    local state
     if op.f == 'write' then
         tuple_value = space:replace({tuple_id, op.v}, {timeout = 0.05})
         tuple_value = tuple_value.value

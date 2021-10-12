@@ -1,34 +1,50 @@
-local math = require('math')
-local clock = require('clock')
 local checks = require('checks')
-local log = require('log')
+local clock = require('clock')
 local inspect = require('inspect')
+local log = require('log')
+local math = require('math')
 
--- [jepsen worker 3] jepsen.util: 3  :ok     :transfer       {:from 8, :to 2, :amount 3}
--- [jepsen worker 0] jepsen.util: 0  :ok     :transfer       {:from 1, :to 9, :amount 1}
--- [jepsen worker 0] jepsen.util: 0  :invoke :transfer       {:from 3, :to 9, :amount 5}
--- [jepsen worker 4] jepsen.util: 4  :ok     :read   {0 5, 1 10, 2 12, 3 10, 4 11, 5 5, 6 20, 7 0, 8 10, 9 17}
--- [jepsen worker 4] jepsen.util: 4  :invoke :read   nil
--- [jepsen worker 3] jepsen.util: 3  :ok     :read   {0 5, 1 9, 2 12, 3 10, 4 11, 5 5, 6 20, 7 0, 8 10, 9 18}
--- [jepsen worker 3] jepsen.util: 3  :invoke :read   nil
-local function start_worker(fn_invoke_op, op_generator)
+local function log_operation(op, err)
+    checks({
+            f = 'string',
+            v = '?',
+            state = 'string',
+        },
+        'nil|string'
+    )
+    log.info('%-10s %-10s %-10s', op.state, op.f, inspect.inspect(op.v))
+    if err ~= nil then
+        log.info(err)
+    end
+end
+
+-- 3  :ok     :transfer       {:from 8, :to 2, :amount 3}
+-- 0  :ok     :transfer       {:from 1, :to 9, :amount 1}
+-- 0  :invoke :transfer       {:from 3, :to 9, :amount 5}
+-- 4  :ok     :read   {0 5, 1 10, 2 12, 3 10, 4 11, 5 5, 6 20, 7 0, 8 10, 9 17}
+-- 4  :invoke :read   nil
+-- 3  :ok     :read   {0 5, 1 9, 2 12, 3 10, 4 11, 5 5, 6 20, 7 0, 8 10, 9 18}
+-- 3  :invoke :read   nil
+local function start_worker(fn_invoke_op, ops_generator)
     checks('function', 'function')
 
     local ops_done = 0 -- box.info.lsn
-    local time_begin = clock.proc()
-    for _, op in op_generator() do
-        log.info('[jepsen worker] :invoke   :%s      :%s', op.f, inspect.inspect(op.v))
-        local ok, err = pcall(fn_invoke_op, op)
+    local total_time_begin = clock.proc()
+    for _, op in ops_generator() do
+        log_operation(op)
+        local ok, res = pcall(fn_invoke_op, op)
         if not ok then
-            log.info(err)
+            op.state = 'fail'
+            log_operation(op, res)
         else
-            ops_done = ops_done + 1
-            log.info('[jepsen worker] :ok       :%s      :%s', op.f, inspect.inspect(op.v))
+            res.state = 'ok'
+            log_operation(res)
         end
+        ops_done = ops_done + 1
     end
-    local passed_sec = clock.proc() - time_begin
-    log.info('Done %d ops in time %f sec.', ops_done, passed_sec)
-    log.info('Speed is %d ops/sec.', math.floor(ops_done / passed_sec))
+    local total_passed_sec = clock.proc() - total_time_begin
+    log.info('Done %d ops in time %f sec.', ops_done, total_passed_sec)
+    log.info('Speed is %d ops/sec.', math.floor(ops_done / total_passed_sec))
 end
 
 local function run_test(workload, test)

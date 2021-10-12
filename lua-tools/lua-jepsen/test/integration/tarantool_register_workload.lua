@@ -9,30 +9,34 @@ local ClientError = errors.new_class('ClientError', {capture_stack = false})
 
 math.randomseed(os.time())
 
---[[ Function implements a CAS (Compare And Set) operation, which takes a key,
-old value, and new value and sets the key to the new value if and only if the
-old value matches what's currently there, and returns a detailed response
-map. If the CaS fails, it returns false.
-]]
+-- Function implements a CAS (Compare And Set) operation, which takes a key,
+-- old value, and new value and sets the key to the new value if and only if
+-- the old value matches what's currently there, and returns a status of
+-- operation and old value in case of fail and a new value in case of success.
 local function cas(space, tuple_id, old_value, new_value)
-    local rc = false
+    local ok = false
+    local val = old_value
     box.begin()
     local tuple = space:get{tuple_id}
-    if tuple then
-        if tuple.value == old_value then
-            space:update({tuple_id}, {{'=', 2, new_value}})
-            rc = true
-        end
+    if tuple.value ~= old_value then
+        box.commit()
+        return val, ok
     end
+
+    local tuple = space:update(tuple_id, {{'=', 2, new_value}}, {timeout = 0.05})
+    assert(tuple ~= nil)
+    val = tuple.value
+    ok = true
     box.commit()
 
-    return rc
+    return val, ok
 end
 
 local function r()
     return {
         f = 'read',
         v = nil,
+        state = 'invoke',
     }
 end
 
@@ -40,6 +44,7 @@ local function w()
     return {
         f = 'write',
         v = math.random(1, 10),
+        state = 'invoke',
     }
 end
 
@@ -49,14 +54,13 @@ local function cas()
         v = {
             math.random(1, 10), -- old value
             math.random(1, 10), -- new value
-        }
+        },
+        state = 'invoke',
     }
 end
 
 local space_name = 'register_space'
 local conn = net_box.connect('127.0.0.1:3301')
---assert(conn:wait_connected(0.5) == true)
---assert(conn:is_connected() == true)
 
 local function open()
     if not conn or conn:ping() ~= true then
@@ -70,6 +74,9 @@ local function setup()
         return nil, ClientError
     end
     --[[
+    assert(conn:wait_connected(0.5) == true)
+    assert(conn:is_connected() == true)
+
     conn.schema.create_space(space_name)
     conn.space.space_name:format({
         {
@@ -86,28 +93,32 @@ end
 local function invoke(op)
     checks({
         f = 'string',
-        v = '?'
+        v = '?',
+        state = 'string',
     })
 
     local tuple_id = 1
     local conn = net_box.connect('127.0.0.1:3301')
-    assert(conn ~= nil)
-    assert(conn.space ~= nil)
     local space = conn.space[space_name]
-    assert(space ~= nil)
+    local cur_value = op.v
     if op.f == 'write' then
-        space:replace({tuple_id, op.v}, {timeout = 0.5})
+        cur_value = space:replace({tuple_id, op.v}, {timeout = 0.05})
+        cur_value = cur_value.value
     elseif op.f == 'read' then
-        space:get({tuple_id}, {timeout = 0.5})
+        cur_value = space:get(tuple_id, {timeout = 0.05})
+        if cur_value ~= nil then
+            cur_value = cur_value.value
+        end
     elseif op.f == 'cas' then
         local old_value = op.v[1]
         local new_value = op.v[2]
-        cas(space, tuple_id, old_value, new_value)
+        cur_value = cas(space, tuple_id, old_value, new_value)
+        cur_value = cur_value.value
     end
 
     return {
+        v = cur_value,
         f = op.f,
-        time = clock.time(),
     }
 end
 
@@ -132,7 +143,7 @@ local function generator()
                                 return (x == 0 and r()) or
                                        (x == 1 and w()) or
                                        (x == 2 and cas())
-                               end):take(1000)
+                               end):take(2000)
 end
 
 return {

@@ -26,6 +26,10 @@ local function op_to_string(op)
 end
 
 local function execute_op(func, op)
+    checks('function', {
+        f = 'string',
+        v = '?'
+    })
     log.info('[jepsen worker] %s', op_to_string(op))
     local ok, res = pcall(func, op)
     if not ok then

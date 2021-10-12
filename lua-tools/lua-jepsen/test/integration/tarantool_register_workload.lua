@@ -32,12 +32,13 @@ local function cas()
     }
 end
 
+local addr = '127.0.0.1:3301'
 local space_name = 'register_space'
-local conn = net_box.connect('127.0.0.1:3301')
+local conn = net_box.connect(addr)
 
 local function open()
     if not conn or conn:ping() ~= true then
-        return nil, ClientError
+        return nil, ClientError:new('Failed connect to %s', addr)
     end
 end
 
@@ -73,51 +74,50 @@ local function invoke(op)
     local conn = net_box.connect('127.0.0.1:3301')
     local space = conn.space[space_name]
     assert(space ~= nil)
-    local cur_value = op.v
+    local tuple_value
     local state = false
     if op.f == 'write' then
-        cur_value = space:replace({tuple_id, op.v}, {timeout = 0.05})
-        cur_value = cur_value.value
+        tuple_value = space:replace({tuple_id, op.v}, {timeout = 0.05})
+        tuple_value = tuple_value.value
         state = true
     elseif op.f == 'read' then
-        cur_value = space:get(tuple_id, {timeout = 0.05})
-        if cur_value ~= nil then
-            cur_value = cur_value.value
+        tuple_value = space:get(tuple_id, {timeout = 0.05})
+        if tuple_value ~= nil then
+            tuple_value = tuple_value.value
         end
         state = true
     elseif op.f == 'cas' then
         local old_value = op.v[1]
         local new_value = op.v[2]
-        cur_value, state = conn:call('cas', {
+        tuple_value, state = conn:call('cas', {
             space_name,
             tuple_id,
             old_value,
             new_value
         }, {timeout = 0.5})
     else
-        -- Unknown operation.
-        return nil, ClientError
+        return nil, ClientError:new('Unknown operation (%s)', op.f)
     end
 
     return {
-        v = cur_value,
+        v = tuple_value,
         f = op.f,
         state = state,
     }
 end
 
 local function teardown()
-    local conn = net_box.connect('127.0.0.1:3301')
+    local conn = net_box.connect(addr)
     if conn == nil then
-        return nil, ClientError
+        return nil, ClientError:new('Failed connect to %s', addr)
     end
     -- FIXME: conn.space.register_space:drop()
 end
 
 local function close()
-    local conn = net_box.connect('127.0.0.1:3301')
+    local conn = net_box.connect(addr)
     if conn == nil then
-        return nil, ClientError
+        return nil, ClientError:new('Failed connect to %s', addr)
     end
     conn:close()
 end

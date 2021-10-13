@@ -26,30 +26,34 @@ local function execute_op(id, func, op)
     end
 end
 
+-- FIXME: Run setup on each node.
+local function setup(client_setup_func)
+    checks('function')
+
+    log.info('Setting up DB')
+    local ok, err = pcall(client_setup_func)
+    if not ok then
+        return nil, err
+    end
+
+    return true
+end
+
 local function open(id, client)
     checks('number', 'table')
 
-    log.info('%s Opening connection.', worker_prefix(id))
+    log.info('%s Opening a connection', worker_prefix(id))
     local ok, err = pcall(client.open)
     if not ok then
         return nil, err
     end
-end
 
-local function setup(id, client)
-    checks('number', 'table')
-
-    log.info('%s Setting up DB.', worker_prefix(id))
-    local ok, err = pcall(client.setup)
-    if not ok then
-        return nil, err
-    end
+    return true
 end
 
 local function start(id, client, ops_generator)
     checks('number', 'table', 'function')
 
-    log.info('Running worker %d', id)
     local ops_done = 0 -- box.info.lsn
     for _, op in ops_generator() do
         execute_op(id, client.invoke, op)
@@ -62,21 +66,26 @@ end
 local function close(id, client)
     checks('number', 'table')
 
-    log.info('%s Closing connection', worker_prefix(id))
+    log.info('%s Closing a connection', worker_prefix(id))
     local ok, err = pcall(client.close)
     if not ok then
         return nil, err
     end
+
+    return true
 end
 
-local function teardown(id, client)
-    checks('number', 'table')
+-- FIXME: Run teardown on each node.
+local function teardown(client_teardown_func)
+    checks('function')
 
-    log.info('%s Tearing down DB', worker_prefix(id))
-    local ok, err = pcall(client.teardown)
+    log.info('Tearing down DB')
+    local ok, err = pcall(client_teardown_func)
     if not ok then
         return nil, err
     end
+
+    return true
 end
 
 return {

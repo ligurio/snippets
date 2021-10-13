@@ -50,7 +50,7 @@ g.test_register = function()
 
     local test_options = {
         time_limit = 1000,
-        threads = 10,
+        threads = 5,
         nodes = {
             '127.0.0.1',
         },

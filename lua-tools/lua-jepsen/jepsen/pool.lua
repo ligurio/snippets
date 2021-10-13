@@ -5,18 +5,6 @@ local checks = require('checks')
 local worker = require('jepsen.worker_fiber')
 local wrap = require('jepsen.client_wraps')
 
--- Starts a fiber that reads a generator and put operations to a shared
--- channel, starts a number of fibers that read operations from a channel and
--- execute them.
-local function _start(invoke_func, ops_generator)
-    checks('function', 'function')
-
-    local ok, err = pcall(worker.start, invoke_func, ops_generator)
-    if not ok then
-        return nil, err
-    end
-end
-
 local function wait_completion(self)
     local pool = rawget(self, 'pool')
     if pool == box.NULL then
@@ -51,9 +39,7 @@ end
 local function run(self)
     -- FIXME: check return code
     self.execute(self, wrap.open)
-    self.execute(self, wrap.setup)
     self.execute(self, wrap.start)
-    self.execute(self, wrap.teardown)
     self.execute(self, wrap.close)
 end
 
@@ -87,6 +73,5 @@ local function new(client, generator, opts)
 end
 
 return {
-    start = _start,
     new = new,
 }

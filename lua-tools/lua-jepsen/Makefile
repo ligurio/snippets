@@ -3,8 +3,12 @@
 # `make -f /path/to/project/Makefile`.
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 PROJECT_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
+
 LUACOV_REPORT := $(PROJECT_DIR)/luacov.report.out
 LUACOV_STATS := $(PROJECT_DIR)/luacov.stats.out
+
+CLEANUP_FILES  = ${LUACOV_STATS}
+CLEANUP_FILES += ${LUACOV_REPORT}
 
 all: test
 
@@ -33,5 +37,8 @@ coverage: $(LUACOV_STATS)
 coveralls: $(LUACOV_STATS)
 	echo "Send code coverage data to the coveralls.io service"
 	luacov-coveralls --include ^jepsen --verbose --repo-token ${GITHUB_TOKEN}
+
+clean:
+	rm -f ${CLEANUP_FILES}
 
 .PHONY: test coveralls coverage luacheck check apidoc

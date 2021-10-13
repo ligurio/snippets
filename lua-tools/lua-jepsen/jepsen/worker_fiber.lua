@@ -1,27 +1,5 @@
 -- https://www.tarantool.io/en/doc/latest/reference/reference_lua/fiber/
-
-local checks = require('checks')
-local log = require('log')
-local fiber = require('fiber')
-
-local utils = require('jepsen.utils')
-
-local function execute_op(func, op)
-    checks('function', {
-        f = 'string',
-        v = '?'
-    })
-    log.info('[jepsen worker] %s', utils.op_to_string(op))
-    local ok, res = pcall(func, op)
-    if not ok then
-        log.info(res)
-    else
-        assert(res.state ~= nil)
-        assert(res.f ~= nil)
-        log.info('[jepsen worker] %s',  utils.op_to_string(res))
-    end
-end
-
+--
 -- 3  :ok     :transfer   {:from 8, :to 2, :amount 3}
 -- 0  :ok     :transfer   {:from 1, :to 9, :amount 1}
 -- 0  :invoke :transfer   {:from 3, :to 9, :amount 5}
@@ -33,17 +11,10 @@ end
 -- state can be nil (invoke), true (ok) or false (fail)
 -- f is defined by user
 -- v is defined by user
-local function _start(invoke_func, ops_generator)
-    checks('function', 'function')
 
-    local ops_done = 0 -- box.info.lsn
-    for _, op in ops_generator() do
-        execute_op(invoke_func, op)
-        ops_done = ops_done + 1
-    end
-
-    return ops_done
-end
+local checks = require('checks')
+local log = require('log')
+local fiber = require('fiber')
 
 local function create(self, func)
     log.debug('worker.create()')
@@ -76,7 +47,7 @@ local function wait_completion(self)
         fiber.yield()
     end -- the loop is needed for backward compatibility with 1.7
     ]]
-    for i = 1, 100000 do
+    for _ = 1, 100000 do
         fiber.yield()
     end
 end
@@ -104,6 +75,8 @@ local mt = {
 local function new(id, client, ops_generator)
     checks('number', 'table', 'function')
 
+    log.info('Running worker %d', id)
+
     return setmetatable({
         id = id,
         fiber_obj = box.NULL,
@@ -113,6 +86,5 @@ local function new(id, client, ops_generator)
 end
 
 return {
-    start = _start,
     new = new,
 }

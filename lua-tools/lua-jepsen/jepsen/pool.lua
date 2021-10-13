@@ -6,18 +6,21 @@ local worker = require('jepsen.worker_fiber')
 local wrap = require('jepsen.client_wraps')
 
 local function wait_completion(self)
+    checks('table')
+
     local pool = rawget(self, 'pool')
-    if pool == box.NULL then
-        return
-    end
     local opts = rawget(self, 'opts')
     for i = 1, opts.threads do
         pool[i]:wait_completion()
         pool[i]:yield()
     end
+
+    return true
 end
 
 local function execute(self, func)
+    checks('table', 'function')
+
     local opts = rawget(self, 'opts')
     local pool = rawget(self, 'pool')
     for i = 1, opts.threads do
@@ -25,22 +28,43 @@ local function execute(self, func)
         pool[i]:yield()
     end
 
-    self.wait_completion(self)
+    return true
 end
 
 local function terminate(self)
+    checks('table')
+
     local opts = rawget(self, 'opts')
     local pool = rawget(self, 'pool')
     for i = 1, opts.threads do
         pool[i]:terminate()
     end
+
+    return true
 end
 
 local function run(self)
-    -- FIXME: check return code
-    self.execute(self, wrap.open)
-    self.execute(self, wrap.start)
-    self.execute(self, wrap.close)
+    checks('table')
+
+    -- FIXME: Probably we need to open connection inside a worker.
+    self:execute(wrap.open)
+    local ok, err = self:wait_completion()
+    if not ok then
+        return nil, err
+    end
+
+    self:execute(wrap.start)
+    ok, err = self:wait_completion()
+    if not ok then
+        return nil, err
+    end
+
+    -- FIXME: Probably we need to close connection inside a worker.
+    self:execute(wrap.close)
+    ok, err = self:wait_completion()
+    if not ok then
+        return nil, err
+    end
 end
 
 local mt = {

@@ -72,6 +72,11 @@ local function invoke(op)
 
     local tuple_id = 1
     local conn = net_box.connect('127.0.0.1:3301')
+    if not conn or conn:ping() ~= true then
+        return nil, ClientError
+    end
+    assert(conn:is_connected() == true)
+
     local space = conn.space[space_name]
     assert(space ~= nil)
     local tuple_value

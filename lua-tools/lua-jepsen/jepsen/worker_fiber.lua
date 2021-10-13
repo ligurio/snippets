@@ -2,6 +2,7 @@
 
 local checks = require('checks')
 local log = require('log')
+local fiber = require('fiber')
 
 local utils = require('jepsen.utils')
 
@@ -32,7 +33,7 @@ end
 -- state can be nil (invoke), true (ok) or false (fail)
 -- f is defined by user
 -- v is defined by user
-local function start_worker(invoke_func, ops_generator)
+local function _start(invoke_func, ops_generator)
     checks('function', 'function')
 
     local ops_done = 0 -- box.info.lsn
@@ -44,32 +45,74 @@ local function start_worker(invoke_func, ops_generator)
     return ops_done
 end
 
-local function start()
+local function create(self, func)
+    log.debug('worker.create()')
+    local id = rawget(self, 'id')
+    local ops_generator = rawget(self, 'ops_generator')
+    local client = rawget(self, 'client')
+    local fiber_obj = fiber.create(func, id, client, ops_generator)
+    if fiber_obj:status() ~= 'dead' then
+        fiber_obj:wakeup() -- needed for backward compatibility with 1.7
+        rawset(self, 'fiber_obj', fiber_obj)
+    end
 end
 
-local function stop()
+local function yield(self)
+    log.debug('worker.yield()')
+    fiber.yield()
+end
+
+local function terminate(self)
+    log.debug('worker.terminate()')
+    local fiber_obj = rawget(self, 'fiber_obj')
+    fiber_obj:kill()
+end
+
+local function wait_completion(self)
+    log.debug('worker.wait_completion')
+    --[[
+    local fiber_obj = rawget(self, 'fiber_obj')
+    while fiber_obj:status() ~= 'dead' do
+        fiber.yield()
+    end -- the loop is needed for backward compatibility with 1.7
+    ]]
+    for i = 1, 100000 do
+        fiber.yield()
+    end
+end
+
+local function status(self)
+    log.debug('worker.status()')
+    local fiber_obj = rawget(self, 'fiber_obj')
+    return fiber_obj:status()
 end
 
 local mt = {
-    __type = 'worker',
+    __type = 'Worker',
     __newindex = function()
         error('Worker object is immutable.', 2)
     end,
     __index = {
-        start = start,
-        stop = stop,
+        create = create,
+        terminate = terminate,
+        status = status,
+        wait_completion = wait_completion,
+        yield = yield,
     },
 }
 
-local function new(id, client, opts)
+local function new(id, client, ops_generator)
+    checks('number', 'table', 'function')
+
     return setmetatable({
         id = id,
-        opts = opts,
+        fiber_obj = box.NULL,
+        ops_generator = ops_generator,
         client = client,
     }, mt)
 end
 
 return {
-    start_worker = start_worker,
+    start = _start,
     new = new,
 }

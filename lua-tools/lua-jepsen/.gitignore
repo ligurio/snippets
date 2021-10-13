@@ -1,1 +1,4 @@
+*.swp
 .rocks
+luacov.report.out
+luacov.stats.out

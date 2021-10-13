@@ -49,8 +49,8 @@ g.test_register = function()
     t.assert_equals(conn:ping(), true)
 
     local test_options = {
-        time_limit = 1,
-        threads = 1,
+        time_limit = 1000,
+        threads = 10,
         nodes = {
             '127.0.0.1',
         },

@@ -1,9 +1,9 @@
 local checks = require('checks')
-local clock = require('clock')
+--local clock = require('clock')
 local log = require('log')
-local math = require('math')
+--local math = require('math')
 
-local workload_lib = require('jepsen.workload')
+local pool = require('jepsen.pool')
 
 local function run_test(workload, opts)
     checks(
@@ -25,6 +25,8 @@ local function run_test(workload, opts)
         }
     )
 
+    opts.threads = opts.threads or 1
+--[[
     local client = workload.client
     log.info('Open a connection.')
     local ok, err = pcall(client.open, opts)
@@ -40,7 +42,7 @@ local function run_test(workload, opts)
 
     log.info('Start a workload.')
     local total_time_begin = clock.proc()
-    ok, err = workload_lib.start_workload(client.invoke, workload.generator, opts)
+    ok, err = pool.start(client.invoke, workload.generator, opts)
     if not ok then
         return nil, err
     end
@@ -62,6 +64,20 @@ local function run_test(workload, opts)
     if not ok then
         return nil, err
     end
+    ]]
+
+    log.info('Start workload:')
+    log.info('threads: %d', opts.threads)
+    log.info('time limit: %d', opts.time_limit)
+    local p = pool.new(workload.client, workload.generator, opts)
+    assert(p ~= nil)
+    local ok, err = p:run()
+    if not ok then
+        return nil, err
+    end
+
+    --log.info('Done %d ops in time %f sec.', ops_done, total_passed_sec)
+    --log.info('Speed is %d ops/sec.', math.floor(ops_done / total_passed_sec))
 end
 
 return {

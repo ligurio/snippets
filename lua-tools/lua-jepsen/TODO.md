@@ -10,7 +10,7 @@
 - nemeses support (process signals, filesystem, time)
 - handle timeouts in operations
 - integration test with etcd
-- integration test with simple socket server
+- integration test with simple socket server https://www.tarantool.io/en/doc/latest/reference/reference_lua/socket/
 - support shared state for generators
 - https://aphyr.com/posts/316-jepsen-etcd-and-consul
 - add remote setup using ssh:

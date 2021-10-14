@@ -1,33 +1,27 @@
-local gen = require('jepsen.gen')
+local gen_lib = require('jepsen.gen')
 local fun = require('fun')
-local fiber = require('fiber')
 local clock = require('clock')
 local math = require('math')
 
 local t = require('luatest')
 local g = t.group()
 
-g.test_cycle = function()
-    gen.cycle({1, 2, 3})
-end
+g.test_mix = function()
 
-g.test_mix_tables = function()
-    t.skip('unsupported')
 
-    local r = { f = 'read' }
-    local w = { f = 'write' }
-    for _, op in gen.mix({r, w}):take(4) do
-        t.assert(op.f == 'read' or op.f == 'write')
-    end
-end
+    local gen, param, state = gen_lib.mix(
+        fun.duplicate('a'),
+        fun.duplicate('b'),
+        fun.duplicate('c')
+        --{1, 2, 3},
+        --{4, 4, 4},
+        --{5, 5, 5}
 
-g.test_mix_functions = function()
-    t.skip('unsupported')
+    ):take(4)
 
-    local function r() return { f = 'read' } end
-    local function w() return { f = 'write' } end
-    for _, op in gen.mix({r, w}):take(4) do
-        t.assert(op.f == 'read' or op.f == 'write')
+    for _, op in gen, param, state do
+        print(op)
+        --t.assert(op.f == 'read' or op.f == 'write')
     end
 end
 

@@ -1,5 +1,7 @@
 ### TODO
 
+- associate connection with Client
+- fix space setup in Client
 - run workload with timeout
 - add more generators, see http://jepsen-io.github.io/jepsen/jepsen.generator.html
 - produce an [Elle-compatible test log](https://github.com/anishathalye/porcupine/tree/master/test_data/jepsen)

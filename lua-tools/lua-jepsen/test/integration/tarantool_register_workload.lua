@@ -26,8 +26,8 @@ local function cas()
     return {
         f = 'cas',
         v = {
-            math.random(1, 10), -- old value
-            math.random(1, 10), -- new value
+            math.random(1, 10), -- Old value.
+            math.random(1, 10), -- New value.
         },
     }
 end
@@ -128,11 +128,12 @@ local function close()
 end
 
 local function generator()
+    local n = 5000
     return fun.rands(0, 3):map(function(x)
-                                return (x == 0 and r()) or
-                                       (x == 1 and w()) or
-                                       (x == 2 and cas())
-                               end):take(5000)
+                                   return (x == 0 and r()) or
+                                          (x == 1 and w()) or
+                                          (x == 2 and cas())
+                               end):take(n)
 end
 
 return {

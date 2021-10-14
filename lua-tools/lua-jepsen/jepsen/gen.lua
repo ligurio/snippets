@@ -7,22 +7,6 @@ local fun = require('fun')
 local fiber = require('fiber')
 local checks = require('checks')
 
-local function dump(o)
-    checks('table|string')
-
-    if type(o) == 'string' then
-        return tostring(o)
-    end
-
-    local s = '{ '
-    for k, v in pairs(o) do
-        if type(k) ~= 'number' then k = '"'..k..'"' end
-        s = s .. '['..k..'] = ' .. dump(v) .. ','
-    end
-
-    return s .. '} '
-end
-
 local return_if_not_empty = function(state_x, ...)
     if state_x == nil then
         return nil
@@ -81,7 +65,6 @@ end
 return {
     chain = chain,
     cycle = cycle,
-    dump = dump,
     filter = filter,
     map = map,
     mix = mix,

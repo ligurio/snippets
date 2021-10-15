@@ -4,18 +4,22 @@ source = {
     url    = 'git://github.com/ligurio/lua-jepsen',
     branch = 'master',
 }
+
 description = {
     summary    = 'A framework for distributed systems verification, with fault injection',
     homepage   = 'https://github.com/ligurio/lua-jepsen',
     maintainer = 'Sergey Bronnikov <sergeyb@tarantool.org>',
     license    = 'BSD2',
 }
+
 dependencies = {
-    'tarantool >= 1.10',
-    'checks',
-    'errors',
-    'inspect',
-    'luafun',
+    --'tarantool >= 1.10',
+    'checks == 3.1.0-1',
+    'errors == 2.2.0-1',
+    'http == 1.1.0-1',
+    'inspect == 3.1.1-0',
+    'lua >= 5.1',
+    'luafun == 0.1.3-1',
 }
 
 build = {

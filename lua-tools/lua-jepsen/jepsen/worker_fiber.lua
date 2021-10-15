@@ -59,7 +59,7 @@ local function wait_completion(self)
 end
 
 local mt = {
-    __type = 'Worker',
+    __type = '<worker>',
     __newindex = function()
         error('Worker object is immutable.', 2)
     end,

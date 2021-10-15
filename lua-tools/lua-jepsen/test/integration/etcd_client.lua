@@ -1,13 +1,13 @@
 -- Simple etcd client written in Lua.
 -- Source: https://github.com/anibali/etcd.lua
--- TODO: use socket https://www.tarantool.io/en/doc/latest/reference/reference_lua/socket/
+-- TODO: replace ltn12 with luafun
 
 local json = require('json')
 local http = require('http')
 local ltn12 = require('ltn12')
 
 local M = {}
-local Etcd = {}
+local etcd = {}
 
 local function to_query(data)
     local entries = {}
@@ -19,7 +19,7 @@ local function to_query(data)
     return table.concat(entries, '&')
 end
 
-function Etcd:request(opts)
+function etcd:request(opts)
     local http_opts = {
         url = self.addr .. opts.path,
         headers = {}
@@ -54,7 +54,7 @@ function Etcd:request(opts)
     end
 end
 
-function Etcd:keys_get(key, params)
+function etcd:keys_get(key, params)
     return self:request{
         path = '/v2/keys/' .. key,
         method = 'GET',
@@ -62,7 +62,7 @@ function Etcd:keys_get(key, params)
     }
 end
 
-function Etcd:keys_put(key, params)
+function etcd:keys_put(key, params)
     return self:request{
         path = '/v2/keys/' .. key,
         method = 'PUT',
@@ -70,7 +70,7 @@ function Etcd:keys_put(key, params)
     }
 end
 
-function Etcd:keys_delete(key, params)
+function etcd:keys_delete(key, params)
     return self:request{
         path = '/v2/keys/' .. key,
         method = 'DELETE',
@@ -78,7 +78,7 @@ function Etcd:keys_delete(key, params)
     }
 end
 
-function Etcd:keys_post(key, params)
+function etcd:keys_post(key, params)
     return self:request{
         path = '/v2/keys/' .. key,
         method = 'POST',
@@ -86,14 +86,14 @@ function Etcd:keys_post(key, params)
     }
 end
 
-function Etcd:stats_leader()
+function etcd:stats_leader()
     return self:request{
         path = '/v2/stats/leader',
         method = 'GET'
     }
 end
 
-function Etcd:stats_self()
+function etcd:stats_self()
     return self:request{
         path = '/v2/stats/self',
         method = 'GET'
@@ -104,7 +104,7 @@ function M.new(addr)
     local self = {}
     self.addr = addr or 'http://127.0.0.1:2379'
 
-    setmetatable(self, {__index = Etcd})
+    setmetatable(self, {__index = etcd})
     return self
 end
 

@@ -1,0 +1,1 @@
+-- https://github.com/tarantool/luatest/blob/master/luatest/ffi_io.lua

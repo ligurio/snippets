@@ -1,12 +1,9 @@
 local checks = require('checks')
 local errors = require('errors')
-local fun = require('fun')
 local math = require('math')
 local net_box = require('net.box')
 
 local ClientError = errors.new_class('ClientError', {capture_stack = false})
-
-math.randomseed(os.time())
 
 local function r()
     return {
@@ -32,21 +29,29 @@ local function cas()
     }
 end
 
-local addr = '127.0.0.1:3301'
 local space_name = 'register_space'
-local conn = net_box.connect(addr)
+local addr = '127.0.0.1:3301' -- FIXME
 
-local function open()
-    if not conn or conn:ping() ~= true then
+local function open(self)
+    checks('table')
+
+    local conn = net_box.connect(addr)
+    rawset(self, 'conn', conn)
+    if conn:ping() ~= true then
         return nil, ClientError:new('Failed connect to %s', addr)
     end
+
+    return true
 end
 
-local function setup()
-    local conn = net_box.connect('127.0.0.1:3301')
-    if not conn or conn:ping() ~= true then
+local function setup(self)
+    checks('table')
+
+    local conn = rawget(self, 'conn')
+    if conn:ping() ~= true then
         return nil, ClientError
     end
+
     --[[
     assert(conn:wait_connected(0.5) == true)
     assert(conn:is_connected() == true)
@@ -62,21 +67,22 @@ local function setup()
     })
     conn.space.space_name:create_index('pk')
     ]]
+
+    return true
 end
 
-local function invoke(op)
-    checks({
+local function invoke(self, op)
+    checks('table', {
         f = 'string',
         v = '?',
     })
 
-    local tuple_id = 1
-    local conn = net_box.connect('127.0.0.1:3301')
-    if not conn or conn:ping() ~= true then
+    local conn = rawget(self, 'conn')
+    if conn:ping() ~= true then
         return nil, ClientError
     end
-    assert(conn:is_connected() == true)
 
+    local tuple_id = 1
     local space = conn.space[space_name]
     assert(space ~= nil)
     local tuple_value
@@ -111,39 +117,55 @@ local function invoke(op)
     }
 end
 
-local function teardown()
-    local conn = net_box.connect(addr)
-    if conn == nil then
+local function teardown(self)
+    checks('table')
+
+    local conn = rawget(self, 'conn')
+    if conn:ping() ~= true then
         return nil, ClientError:new('Failed connect to %s', addr)
     end
     -- FIXME: conn.space.register_space:drop()
+
+    return true
 end
 
-local function close()
-    local conn = net_box.connect(addr)
-    if conn == nil then
+local function close(self)
+    checks('table')
+
+    local conn = rawget(self, 'conn')
+    if conn:ping() ~= true then
         return nil, ClientError:new('Failed connect to %s', addr)
     end
     conn:close()
+
+    return true
 end
 
-local function generator()
-    local n = 5000
-    return fun.rands(0, 3):map(function(x)
-                                   return (x == 0 and r()) or
-                                          (x == 1 and w()) or
-                                          (x == 2 and cas())
-                               end):take(n)
-end
-
-return {
-    client = {
+local client_mt = {
+    __tostring = '<client>';
+    __index = {
         open = open,
         setup = setup,
         invoke = invoke,
         teardown = teardown,
         close = close,
     },
-    generator = generator,
-    checker = nil,
+    __newindex = function()
+        error('Client object is immutable.', 2)
+    end
+}
+
+local function new()
+    return setmetatable({
+        conn = box.NULL,
+    }, client_mt)
+end
+
+return {
+    new = new,
+    ops = {
+       r = r,
+       w = w,
+       cas = cas,
+    }
 }

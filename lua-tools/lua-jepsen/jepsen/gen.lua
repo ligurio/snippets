@@ -12,8 +12,8 @@
 --                      end):take(n)
 
 local fun = require('fun')
-local checks = require('checks')
-local math = require('math')
+--local checks = require('checks')
+--local math = require('math')
 
 local methods = fun
 

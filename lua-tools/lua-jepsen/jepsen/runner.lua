@@ -1,7 +1,7 @@
 local checks = require('checks')
 local clock = require('clock')
 local log = require('log')
---local math = require('math')
+local math = require('math')
 
 local wrap = require('jepsen.client_wraps')
 local pool = require('jepsen.pool')
@@ -9,13 +9,7 @@ local pool = require('jepsen.pool')
 local function run_test(workload, opts)
     checks(
         {
-            client = {
-                open = 'function',
-                setup = 'function',
-                invoke = 'function',
-                teardown = 'function',
-                close = 'function'
-            },
+            client = 'function',
             generator = 'function',
             checker = 'function|nil',
         },
@@ -29,7 +23,7 @@ local function run_test(workload, opts)
     opts.threads = opts.threads or 1
 
     -- Setup DB.
-    local ok, err = wrap.setup(workload.client.setup, opts)
+    local ok, err = wrap.setup(workload.client)
     if not ok then
         return err
     end
@@ -45,7 +39,7 @@ local function run_test(workload, opts)
     local total_passed_sec = clock.proc() - total_time_begin
 
     -- Teardown DB.
-    ok, err = wrap.teardown(workload.client.teardown, opts)
+    ok, err = wrap.teardown(workload.client)
     if not ok then
         return err
     end

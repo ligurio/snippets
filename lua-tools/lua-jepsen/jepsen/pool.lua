@@ -18,13 +18,11 @@ local function wait_completion(self)
     return true
 end
 
-local function execute(self, func)
-    checks('table', 'function')
+local function execute(pool, opts)
+    checks('table', 'table')
 
-    local opts = rawget(self, 'opts')
-    local pool = rawget(self, 'pool')
     for i = 1, opts.threads do
-        pool[i]:create(func)
+        pool[i]:create(wrap.start)
         pool[i]:yield()
     end
 
@@ -46,21 +44,13 @@ end
 local function run(self)
     checks('table')
 
-    -- FIXME: Probably we need to open connection inside a worker.
-    self:execute(wrap.open)
-    local ok, err = self:wait_completion()
+    local opts = rawget(self, 'opts')
+    local pool = rawget(self, 'pool')
+    local ok, err = execute(pool, opts)
     if not ok then
         return nil, err
     end
 
-    self:execute(wrap.start)
-    ok, err = self:wait_completion()
-    if not ok then
-        return nil, err
-    end
-
-    -- FIXME: Probably we need to close connection inside a worker.
-    self:execute(wrap.close)
     ok, err = self:wait_completion()
     if not ok then
         return nil, err
@@ -68,20 +58,19 @@ local function run(self)
 end
 
 local mt = {
-    __type = 'Workload',
+    __type = '<pool>',
     __newindex = function()
         error('Workload object is immutable.', 2)
     end,
     __index = {
         terminate = terminate,
         wait_completion = wait_completion,
-        execute = execute,
         run = run,
     },
 }
 
 local function new(client, generator, opts)
-    checks('table', 'function', 'table')
+    checks('function', 'function', 'table')
 
     local pool = {}
     for i = 1, opts.threads do

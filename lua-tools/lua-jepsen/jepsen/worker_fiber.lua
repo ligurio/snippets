@@ -72,7 +72,7 @@ local mt = {
 }
 
 local function new(id, client, ops_generator)
-    checks('number', 'table', 'function')
+    checks('number', 'function', 'function')
 
     log.info('Running worker %d', id)
 

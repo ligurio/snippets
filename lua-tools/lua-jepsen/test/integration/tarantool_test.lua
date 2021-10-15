@@ -1,9 +1,11 @@
 local fiber = require('fiber')
 local fio = require('fio')
+local fun = require('fun')
 local net_box = require('net.box')
+local log = require('log')
 
 local jepsen = require('jepsen')
-local register_workload = require('test.integration.tarantool_register_workload')
+local cas_register_client = require('test.integration.tarantool_cas_register_client')
 
 local t = require('luatest')
 local g = t.group()
@@ -20,6 +22,7 @@ local server = Server:new({
     net_box_port = 3301,
 })
 
+-- TODO: Parameterize with single instance and a cluster.
 g.before_all = function()
     fio.rmtree(datadir)
     fio.mktree(server.workdir)
@@ -48,6 +51,31 @@ g.test_register = function()
     t.assert_equals(conn:wait_connected(0.5), true)
     t.assert_equals(conn:ping(), true)
 
+    local seed = os.time()
+    math.randomseed(seed)
+    log.info('Random seed: %s', seed)
+
+    local r = cas_register_client.ops.r
+    local w = cas_register_client.ops.w
+    local cas = cas_register_client.ops.cas
+    --[[
+    local function generator()
+        local n = 10000
+        return fun.rands(0, 3):map(function(x)
+                                       return (x == 0 and r()) or
+                                              (x == 1 and w()) or
+                                              (x == 2 and cas())
+                                   end):take(n)
+    end
+    ]]
+    local function generator()
+        return fun.cycle(fun.iter({
+            r(),
+            w(),
+            cas(),
+        })):take(1000)
+    end
+
     local test_options = {
         time_limit = 1000,
         threads = 5,
@@ -55,6 +83,11 @@ g.test_register = function()
             '127.0.0.1',
         },
     }
-    local _, err = jepsen.run_test(register_workload, test_options)
+    local ok, err = jepsen.run_test({
+        client = cas_register_client.new,
+        generator = generator,
+        checker = nil,
+    }, test_options)
+    t.assert_equals(ok, true)
     t.assert_equals(err, nil)
 end

@@ -9,17 +9,19 @@ box.cfg({
     net_msg_max = 2 * 1024,
 })
 
-box.schema.user.grant('guest', 'create, read, write, execute, drop', 'universe')
-box.schema.user.grant('guest', 'create', 'space')
-box.schema.user.grant('guest', 'write', 'space', '_schema')
-box.schema.user.grant('guest', 'write', 'space', '_space')
+local function bootstrap()
+    local space = box.schema.space.create('register_space')
+    space:format({
+	{ name='id', type='number' },
+	{ name='value', type='number' },
+    })
+    space:create_index('pk')
 
-local space = box.schema.space.create('register_space')
-space:format({
-    { name='id', type='number' },
-    { name='value', type='number' },
-})
-space:create_index('pk')
+    box.schema.user.grant('guest', 'create,read,write,execute,drop', 'universe')
+    --box.schema.user.grant('guest', 'write', 'space', '_schema')
+    --box.schema.user.grant('guest', 'write', 'space', '_space')
+end
+box.once('lua-jepsen', bootstrap)
 
 -- Function implements a CAS (Compare And Set) operation, which takes a key,
 -- old value, and new value and sets the key to the new value if and only if

@@ -59,6 +59,9 @@ end
 
 local mt = {
     __type = '<pool>',
+    __tostring = function(self)
+        return '<pool>'
+    end,
     __newindex = function()
         error('Workload object is immutable.', 2)
     end,

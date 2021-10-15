@@ -58,22 +58,12 @@ g.test_register = function()
     local r = cas_register_client.ops.r
     local w = cas_register_client.ops.w
     local cas = cas_register_client.ops.cas
-    --[[
-    local function generator()
-        local n = 10000
-        return fun.rands(0, 3):map(function(x)
-                                       return (x == 0 and r()) or
-                                              (x == 1 and w()) or
-                                              (x == 2 and cas())
-                                   end):take(n)
-    end
-    ]]
     local function generator()
         return fun.cycle(fun.iter({
             r(),
             w(),
             cas(),
-        })):take(1000)
+        })):take(10000)
     end
 
     local test_options = {
@@ -88,6 +78,7 @@ g.test_register = function()
         generator = generator,
         checker = nil,
     }, test_options)
+
     t.assert_equals(ok, true)
     t.assert_equals(err, nil)
 end

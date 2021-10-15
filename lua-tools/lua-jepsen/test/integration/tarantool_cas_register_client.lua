@@ -36,10 +36,12 @@ local function open(self)
     checks('table')
 
     local conn = net_box.connect(addr)
-    rawset(self, 'conn', conn)
     if conn:ping() ~= true then
         return nil, ClientError:new('Failed connect to %s', addr)
     end
+    assert(conn:wait_connected(0.5) == true)
+    assert(conn:is_connected() == true)
+    rawset(self, 'conn', conn)
 
     return true
 end
@@ -52,10 +54,7 @@ local function setup(self)
         return nil, ClientError
     end
 
-    --[[
-    assert(conn:wait_connected(0.5) == true)
-    assert(conn:is_connected() == true)
-
+--[[
     conn.schema.create_space(space_name)
     conn.space.space_name:format({
         {
@@ -66,7 +65,7 @@ local function setup(self)
         },
     })
     conn.space.space_name:create_index('pk')
-    ]]
+]]
 
     return true
 end
@@ -142,7 +141,10 @@ local function close(self)
 end
 
 local client_mt = {
-    __tostring = '<client>';
+    __type = '<client>',
+    __tostring = function(self)
+        return '<client>'
+    end,
     __index = {
         open = open,
         setup = setup,

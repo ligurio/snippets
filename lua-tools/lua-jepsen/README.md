@@ -3,6 +3,9 @@
 is a framework for distributed systems verification, with fault injection.
 
 <!--
+
+### Why?
+
 There is a library [Jepsen](https://github.com/jepsen-io/jepsen) designed for
 breaking distributed systems. Unfortunately it has a number of limitations and
 disadvantages so I wrote similar library written in Lua.
@@ -40,8 +43,7 @@ simplify building Jepsen tests.
   trace support.
 - [inspect](https://github.com/kikito/inspect.lua) - transforms any Lua value
   into a human-readable representation.
-- (optional) [luafun](https://luafun.github.io/basic.html) - Lua functional
-  library.
+- [luafun](https://luafun.github.io/basic.html) - Lua functional library.
 - (optional) [luasql](https://keplerproject.github.io/luasql/manual.html) - is
   a simple interface from Lua to a number of database management systems.
 - (optional) [luatest](https://github.com/tarantool/luatest) or any other

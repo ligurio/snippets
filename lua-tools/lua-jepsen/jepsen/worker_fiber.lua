@@ -60,6 +60,9 @@ end
 
 local mt = {
     __type = '<worker>',
+    __tostring = function(self)
+        return '<worker>'
+    end,
     __newindex = function()
         error('Worker object is immutable.', 2)
     end,

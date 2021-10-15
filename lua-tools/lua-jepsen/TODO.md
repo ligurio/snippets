@@ -1,13 +1,31 @@
 ### TODO
 
-- associate connection with Client
++ associate connection with Client
 - fix space setup in Client
+- execute setup() on every instance
 - run workload with timeout
+- fixture with cluster
 - add more generators, see http://jepsen-io.github.io/jepsen/jepsen.generator.html
+    - sleep
+    - log
+    - randomize operations (mix()?)
+    - stagger, take total rates, rather than the rate per thread.
+    - To wait for the write to complete first:
+      (gen/phases {:f :write, :value 3} {:f :read})
+    - gen/each-thread [{:f :inc} {:f :read}]
+    - Reserve 5 threads for reads, 10 threads for increments, and the remaining threads reset a counter.
+      (gen/reserve 5 (repeat {:f :read}) 10 (repeat {:f :inc}) (repeat {:f :reset}))
+    - gen/time-limit 30
+    - Contexts
+        :time           The current Jepsen linear time, in nanoseconds
+        :free-threads   A collection of idle threads which could perform work
+        :workers        A map of thread identifiers to process identifiers
 - produce an [Elle-compatible test log](https://github.com/anishathalye/porcupine/tree/master/test_data/jepsen)
 - impement code to run checkers
 - add tutorial https://github.com/jepsen-io/jepsen/blob/main/doc/tutorial/index.md
-- nemeses support (process signals, filesystem, time)
+- nemeses support
+        - signals to processes
+        - filesystem
 - handle timeouts in operations
 - integration test with etcd
 - integration test with simple socket server https://www.tarantool.io/en/doc/latest/reference/reference_lua/socket/

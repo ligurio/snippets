@@ -1,7 +1,17 @@
 -- Helpers to execute standalone consistency checkers like Elle and Knossos.
--- Download Elle:
--- curl -O -L https://clojars.org/repo/elle/elle/0.1.2/elle-0.1.2.jar
--- https://clojars.org/elle/
--- $ java -jar elle-0.1.2.jar
--- Error: Could not find or load main class clojure.main
--- Caused by: java.lang.ClassNotFoundException: clojure.main
+--
+-- $ git clone https://github.com/jepsen-io/elle
+-- $ cd elle
+-- $ lein deps
+-- $ lein uberjar
+-- Created /home/sergeyb/sources/elle/target/elle-0.1.3-SNAPSHOT.jar
+-- Created /home/sergeyb/sources/elle/target/elle-0.1.3-SNAPSHOT-standalone.jar
+-- $ java -jar target/elle-0.1.3-SNAPSHOT-standalone.jar
+-- Clojure 1.2.1
+-- user=> (require '[elle.list-append :as a])
+-- user=>
+-- => (def h [{:type :ok, :value [[:append :x 1] [:r :y [1]]]}
+--            {:type :ok, :value [[:append :x 2] [:append :y 1]]}
+--            {:type :ok, :value [[:r :x [1 2]]]}])
+-- h
+-- => (pprint (a/check {:consistency-models [:serializable], :directory "out"} h))

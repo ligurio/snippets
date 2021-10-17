@@ -5,31 +5,21 @@ local net_box = require('net.box')
 
 local ClientError = errors.new_class('ClientError', {capture_stack = false})
 
-local function r()
+local function read()
     return {
         f = 'read',
         v = nil,
     }
 end
 
-local function w()
+local function transfer()
     return {
         f = 'write',
         v = math.random(1, 10),
     }
 end
 
-local function cas()
-    return {
-        f = 'cas',
-        v = {
-            math.random(1, 10), -- Old value.
-            math.random(1, 10), -- New value.
-        },
-    }
-end
-
-local space_name = 'register_space'
+local space_name = 'bank_space'
 local addr = '127.0.0.1:3301' -- FIXME
 
 local function open(self)
@@ -65,6 +55,20 @@ local function setup(self)
         },
     })
     conn.space.space_name:create_index('pk')
+
+           (info (str "Creating table " table-name))
+           (j/execute! conn [(str "CREATE TABLE IF NOT EXISTS " table-name
+                             "(id INT NOT NULL PRIMARY KEY,
+                             balance INT NOT NULL)")])
+           (j/execute! conn [(str "SELECT LUA('return box.space."
+                                  (clojure.string/upper-case table-name)
+                                  ":alter{ is_sync = true } or 1')")])
+           (doseq [a (:accounts test)]
+               (info "Populating account")
+               (sql/insert! conn table-name {:id      a
+                                             :balance (if (= a (first (:accounts test)))
+                                                       (:total-amount test)
+                                                       0)})))
     ]]
 
     return true
@@ -86,25 +90,29 @@ local function invoke(self, op)
     assert(space ~= nil)
     local tuple_value
     local state
-    if op.f == 'write' then
+    if op.f == 'transfer' then
         tuple_value = space:replace({tuple_id, op.v}, {timeout = 0.05})
         tuple_value = tuple_value.value
         state = true
+        --[[
+        :transfer
+        (let [{:keys [from to amount]} (:value op)
+              con (cl/open (first (db/primaries test)) test)
+              table (clojure.string/upper-case table-name)
+              r (-> con
+                    (sql/query [(str "SELECT _WITHDRAW('" table "'," from "," to "," amount ")")])
+                    first
+                    :COLUMN_1)]
+          (if (false? r)
+                (assoc op :type :fail, :value {:from from :to to :amount amount})
+                (assoc op :type :ok))))))
+        ]]
     elseif op.f == 'read' then
         tuple_value = space:get(tuple_id, {timeout = 0.05})
         if tuple_value ~= nil then
             tuple_value = tuple_value.value
         end
         state = true
-    elseif op.f == 'cas' then
-        local old_value = op.v[1]
-        local new_value = op.v[2]
-        tuple_value, state = conn:call('cas', {
-            space_name,
-            tuple_id,
-            old_value,
-            new_value
-        }, {timeout = 0.5})
     else
         return nil, ClientError:new('Unknown operation (%s)', op.f)
     end
@@ -166,8 +174,7 @@ end
 return {
     new = new,
     ops = {
-       r = r,
-       w = w,
-       cas = cas,
+       read = read,
+       transfer = transfer,
     }
 }

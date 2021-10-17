@@ -18,11 +18,14 @@ local function wait_completion(self)
     return true
 end
 
-local function execute(pool, opts)
+local function spawn_worker(pool, opts)
     checks('table', 'table')
 
     for i = 1, opts.threads do
-        pool[i]:create(wrap.start)
+        local ok, err = pool[i]:create(wrap.start)
+        if not ok then
+            return nil, err
+        end
         pool[i]:yield()
     end
 
@@ -41,20 +44,19 @@ local function terminate(self)
     return true
 end
 
-local function run(self)
+local function spawn(self)
     checks('table')
 
     local opts = rawget(self, 'opts')
     local pool = rawget(self, 'pool')
-    local ok, err = execute(pool, opts)
+    local ok, err = pcall(spawn_worker, pool, opts)
     if not ok then
         return nil, err
     end
 
-    ok, err = self:wait_completion()
-    if not ok then
-        return nil, err
-    end
+    self:wait_completion()
+
+    return true
 end
 
 local mt = {
@@ -68,7 +70,7 @@ local mt = {
     __index = {
         terminate = terminate,
         wait_completion = wait_completion,
-        run = run,
+        spawn = spawn,
     },
 }
 

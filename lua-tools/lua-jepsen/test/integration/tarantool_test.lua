@@ -30,12 +30,16 @@ g.before_all = function()
     local pid = server.process.pid
     t.helpers.retrying(
         {
-            timeout = 0.5
+            timeout = 0.5,
         },
         function()
             t.assert(Process.is_pid_alive(pid))
         end
     )
+    fiber.sleep(0.1)
+    local conn = net_box.connect('127.0.0.1:3301')
+    t.assert_equals(conn:wait_connected(2), true)
+    t.assert_equals(conn:ping(), true)
 end
 
 g.after_all = function()
@@ -45,12 +49,7 @@ g.after_all = function()
     fio.rmtree(datadir)
 end
 
-g.test_register = function()
-    fiber.sleep(0.1)
-    local conn = net_box.connect('127.0.0.1:3301')
-    t.assert_equals(conn:wait_connected(0.5), true)
-    t.assert_equals(conn:ping(), true)
-
+g.test_cas_register = function()
     local seed = os.time()
     math.randomseed(seed)
     log.info('Random seed: %s', seed)
@@ -70,7 +69,7 @@ g.test_register = function()
         time_limit = 1000,
         threads = 5,
         nodes = {
-            '127.0.0.1',
+            '127.0.0.1:3301',
         },
     }
     local ok, err = jepsen.run_test({
@@ -78,7 +77,6 @@ g.test_register = function()
         generator = generator,
         checker = nil,
     }, test_options)
-
     t.assert_equals(ok, true)
     t.assert_equals(err, nil)
 end

@@ -6,31 +6,45 @@ is a framework for distributed systems verification, with fault injection.
 
 ### Why?
 
-There is a library [Jepsen](https://github.com/jepsen-io/jepsen) designed for
+There is a [Jepsen](https://github.com/jepsen-io/jepsen) library designed for
 breaking distributed systems. Unfortunately it has a number of limitations and
 disadvantages so I wrote similar library written in Lua.
 
-Jepsen is a Clojure library. Clojure is not a popular language in software
-industry in common and software testing particular and learning yet another
-language for testing distruibuted systems is overkill. Lua is not so popular
-language too, but is quite simple programming language with imperative paradigm
-and easy to learn. Yet another reasons to choose Lua are: LuaJIT, that is
-really fast in Lua compilation, FFI, that is quite useful for using C/C++
-libraries.
+**Language** Jepsen is written in Clojure. Clojure is not a popular language in
+software industry in common and software testing particular and learning yet
+another language for testing distruibuted systems is overkill. Lua is not so
+popular language too, but is quite simple programming language with imperative
+paradigm and easy to learn. Yet another reasons to choose Lua are: LuaJIT, that
+is really fast in Lua compilation, FFI, that is quite useful for using C/C++
+libraries and very simple syntax.
 
-Jepsen mixes a test framework with library itself for testing distributed systems
-(generators, library to set up a distributed system, run a bunch of operations
-against that system, and verify that the history of those operations makes
-sense).
+**Preemptive multitasking** There are many problems related to multi-threading,
+most obviously that it’s difficult to get right. Most proponents of fibers make
+false claims about how this problem goes away when you use fibers because you
+don’t have parallel threads of execution. Instead, you have these cooperatively
+scheduled fibers which yield to each other. This means it’s not possible to
+race data, dead lock, live lock, etc.
 
-Jepsen tests written for distributed systsems and databases are not generic and
-Kyle Kingsbury reimplements tests for every distributed system and database
-from scratch and these tests often contains duplicate code. See subdirectories
-for databases-specific tests in [Jepsen](https://github.com/jepsen-io/jepsen).
-It is probably good when you a consultant but it is not when you are
-software engineer. Library [Jecci](https://github.com/michaelzenz/jecci)
-partially solves a problem and makes tests more generic. Jecci aims to
-simplify building Jepsen tests.
+**Low generators rate**
+> Pure generators perform all generator-related computation on a single thread,
+> and create additional garbage due to their pure functional approach. However,
+> realistic generator tests yield rates over 20,000 operations/sec, which seems
+> more than sufficient for Jepsen’s purposes.
+See Jepsen [documentation](http://jepsen-io.github.io/jepsen/jepsen.generator.html).
+
+**Poor test management** Jepsen mixes a test framework with library itself for
+testing distributed systems (generators, library to set up a distributed
+system, run a bunch of operations against that system, and verify that the
+history of those operations makes sense).
+
+**Code duplication** Jepsen tests written for distributed systsems and
+databases are not generic and Kyle Kingsbury reimplements tests for every
+distributed system and database from scratch and these tests often contains
+duplicate code. See subdirectories for databases-specific tests in
+[Jepsen](https://github.com/jepsen-io/jepsen). It is probably good when you a
+consultant but it is not when you are software engineer. Library
+[Jecci](https://github.com/michaelzenz/jecci) partially solves a problem and
+makes tests more generic. Jecci aims to simplify building Jepsen tests.
 -->
 
 ### Prerequisites

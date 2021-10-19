@@ -1,8 +1,9 @@
-local checks = require('checks')
 local inspect = require('inspect')
 
+local dev_checks = require('jepsen.dev_checks')
+
 local function decode_op_state(state)
-    checks('?boolean')
+    dev_checks('?boolean')
 
     local state_type = {
         [true] = 'ok',
@@ -13,7 +14,7 @@ local function decode_op_state(state)
 end
 
 local function op_to_string(op)
-    checks({
+    dev_checks({
             f = 'string',
             v = '?',
             state = 'nil|boolean',

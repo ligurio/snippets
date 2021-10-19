@@ -1,4 +1,4 @@
-local checks = require('checks')
+local dev_checks = require('checks')
 local errors = require('errors')
 local math = require('math')
 local net_box = require('net.box')
@@ -30,15 +30,13 @@ local function cas()
 end
 
 local space_name = 'register_space'
-local ipaddr = '127.0.0.1:3301' -- FIXME
 
-local function open(self, addr)
-    checks('table', '?string')
+local function open(self)
+    dev_checks('table')
 
-    local addr = addr or ipaddr -- FIXME
-    local conn = net_box.connect(addr)
+    local conn = net_box.connect(self.addr)
     if conn:ping() ~= true then
-        return nil, ClientError:new('Failed connect to %s', addr)
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
     assert(conn:wait_connected(0.5) == true)
     assert(conn:is_connected() == true)
@@ -48,11 +46,10 @@ local function open(self, addr)
 end
 
 local function setup(self)
-    checks('table')
+    dev_checks('table')
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
 
     --[[
@@ -72,18 +69,17 @@ local function setup(self)
 end
 
 local function invoke(self, op)
-    checks('table', {
+    dev_checks('table', {
         f = 'string',
         v = '?',
     })
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
 
     local tuple_id = 1
-    local space = conn.space[space_name]
+    local space = self.conn.space[space_name]
     assert(space ~= nil)
     local tuple_value
     local state
@@ -100,7 +96,7 @@ local function invoke(self, op)
     elseif op.f == 'cas' then
         local old_value = op.v[1]
         local new_value = op.v[2]
-        tuple_value, state = conn:call('cas', {
+        tuple_value, state = self.conn:call('cas', {
             space_name,
             tuple_id,
             old_value,
@@ -118,11 +114,10 @@ local function invoke(self, op)
 end
 
 local function teardown(self)
-    checks('table')
+    dev_checks('table')
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError:new('Connection is dead.')
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
     -- FIXME: conn.space.register_space:drop()
 
@@ -130,14 +125,11 @@ local function teardown(self)
 end
 
 local function close(self)
-    checks('table')
+    dev_checks('table')
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        -- Connection is dead.
-        return true
+    if self.conn:ping() == true then
+        self.conn:close()
     end
-    conn:close()
 
     return true
 end
@@ -159,9 +151,11 @@ local client_mt = {
     end
 }
 
-local function new()
+local function new(addr)
+    dev_checks('string')
+
     return setmetatable({
-        conn = box.NULL,
+        addr = addr,
     }, client_mt)
 end
 

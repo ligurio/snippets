@@ -30,6 +30,13 @@ local function bootstrap()
     })
     space:create_index('pk')
 
+    local space = box.schema.space.create('bank_space')
+    space:format({
+	{ name='id', type='number' },
+	{ name='balance', type='number' },
+    })
+    space:create_index('pk')
+
     --box.schema.user.grant('guest', 'create,read,write,execute,drop', 'universe')
     box.schema.user.grant('guest', 'create,read,write,execute,drop,alter,replication', 'universe')
     box.schema.user.grant('guest', 'read,write', 'space', '_index')
@@ -80,16 +87,16 @@ local function withdraw(space_name, tuple_id_source, tuple_id_dest, amount) -- l
     local space = box.space[space_name]
 
     box.begin()
-        local tuple_source = space:get(tuple_id_source)
-        local tuple_dest = space:get(tuple_id_dest)
-        local b1 = tuple_source['balance'] - amount
-        local b2 = tuple_dest['balance'] + amount
-        if b1 < 0 or b2 < 0 then
-          box.rollback()
-          return false
-        end
-        space:update(tuple_id_source, {{'-', 'BALANCE', amount}})
-        space:update(tuple_id_dest, {{'+', 'BALANCE', amount}})
+    local tuple_source = space:get(tuple_id_source)
+    local tuple_dest = space:get(tuple_id_dest)
+    local b1 = tuple_source['balance'] - amount
+    local b2 = tuple_dest['balance'] + amount
+    if b1 < 0 or b2 < 0 then
+      box.rollback()
+      return false
+    end
+    space:update(tuple_id_source, {{'-', 'BALANCE', amount}})
+    space:update(tuple_id_dest, {{'+', 'BALANCE', amount}})
     box.commit()
 
     return true
@@ -103,16 +110,16 @@ local function withdraw_multitable(space_name_source, space_name_dest, amount) -
     local tuple_id = 0
 
     box.begin()
-        local tuple_source = space_source:get(tuple_id)
-        local tuple_dest = space_dest:get(tuple_id)
-        local bal_source = tuple_source['balance'] - amount
-        local bal_dest = tuple_dest['balance'] + amount
-        if bal_source < 0 or bal_dest < 0 then
-            box.rollback()
-            return false
-        end
-        space_source:update(tuple_id, {{'-', 'BALANCE', amount}})
-        space_dest:update(tuple_id, {{'+', 'BALANCE', amount}})
+    local tuple_source = space_source:get(tuple_id)
+    local tuple_dest = space_dest:get(tuple_id)
+    local bal_source = tuple_source['balance'] - amount
+    local bal_dest = tuple_dest['balance'] + amount
+    if bal_source < 0 or bal_dest < 0 then
+        box.rollback()
+        return false
+    end
+    space_source:update(tuple_id, {{'-', 'BALANCE', amount}})
+    space_dest:update(tuple_id, {{'+', 'BALANCE', amount}})
     box.commit()
 
     return true

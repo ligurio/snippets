@@ -1,12 +1,11 @@
 -- Pool creates a specified number of workers, start them and stop.
 
-local checks = require('checks')
-
+local dev_checks = require('jepsen.dev_checks')
 local worker = require('jepsen.worker_fiber')
 local wrap = require('jepsen.client_wraps')
 
 local function wait_completion(self)
-    checks('table')
+    dev_checks('table')
 
     for i = 1, self.opts.threads do
         self.pool[i]:wait_completion()
@@ -16,7 +15,7 @@ local function wait_completion(self)
 end
 
 local function terminate(self)
-    checks('table')
+    dev_checks('table')
 
     for i = 1, self.opts.threads do
         self.pool[i]:terminate()
@@ -26,7 +25,7 @@ local function terminate(self)
 end
 
 local function spawn(self)
-    checks('table')
+    dev_checks('table')
 
     for i = 1, self.opts.threads do
         local ok, err = self.pool[i]:spawn(wrap.start)
@@ -34,7 +33,6 @@ local function spawn(self)
             return nil, err
         end
     end
-
     self:wait_completion()
 
     return true
@@ -56,7 +54,7 @@ local mt = {
 }
 
 local function new(client, generator, opts)
-    checks('function', 'function', 'table')
+    dev_checks('function', 'function', 'table')
 
     local pool = {}
     for i = 1, opts.threads do

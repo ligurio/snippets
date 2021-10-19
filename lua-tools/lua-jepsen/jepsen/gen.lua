@@ -16,7 +16,7 @@
 -- gen.map(w, gen.rands(1, 10):take(50))
 
 local fun = require('fun')
---local checks = require('checks')
+--local dev_checks = require('jepsen.dev_checks')
 --local math = require('math')
 
 local methods = {}

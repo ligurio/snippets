@@ -20,14 +20,13 @@ local function transfer()
 end
 
 local space_name = 'bank_space'
-local addr = '127.0.0.1:3301' -- FIXME
 
 local function open(self)
     checks('table')
 
-    local conn = net_box.connect(addr)
-    if conn:ping() ~= true then
-        return nil, ClientError:new('Failed connect to %s', addr)
+    local conn = net_box.connect(self.addr)
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
     assert(conn:wait_connected(0.5) == true)
     assert(conn:is_connected() == true)
@@ -39,9 +38,8 @@ end
 local function setup(self)
     checks('table')
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
 
     --[[
@@ -80,32 +78,23 @@ local function invoke(self, op)
         v = '?',
     })
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
 
     local tuple_id = 1
-    local space = conn.space[space_name]
+    local space = self.conn.space[space_name]
     assert(space ~= nil)
     local tuple_value
-    local state
+    local state = false
     if op.f == 'transfer' then
         tuple_value = space:replace({tuple_id, op.v}, {timeout = 0.05})
         tuple_value = tuple_value.value
         state = true
         --[[
-        :transfer
-        (let [{:keys [from to amount]} (:value op)
-              con (cl/open (first (db/primaries test)) test)
-              table (clojure.string/upper-case table-name)
-              r (-> con
-                    (sql/query [(str "SELECT _WITHDRAW('" table "'," from "," to "," amount ")")])
-                    first
-                    :COLUMN_1)]
           (if (false? r)
                 (assoc op :type :fail, :value {:from from :to to :amount amount})
-                (assoc op :type :ok))))))
+                (assoc op :type :ok))
         ]]
     elseif op.f == 'read' then
         tuple_value = space:get(tuple_id, {timeout = 0.05})
@@ -127,11 +116,10 @@ end
 local function teardown(self)
     checks('table')
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError:new('Failed connect to %s', addr)
+    if self.conn:ping() ~= true then
+        return nil, ClientError:new('No connection to %s', self.addr)
     end
-    -- FIXME: conn.space.register_space:drop()
+    -- FIXME: conn.space.bank_space:drop()
 
     return true
 end
@@ -139,11 +127,9 @@ end
 local function close(self)
     checks('table')
 
-    local conn = rawget(self, 'conn')
-    if conn:ping() ~= true then
-        return nil, ClientError:new('Failed connect to %s', addr)
+    if self.conn:ping() == true then
+        self.conn:close()
     end
-    conn:close()
 
     return true
 end
@@ -165,9 +151,11 @@ local client_mt = {
     end
 }
 
-local function new()
+local function new(addr)
+    checks('string')
+
     return setmetatable({
-        conn = box.NULL,
+        addr = addr,
     }, client_mt)
 end
 

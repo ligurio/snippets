@@ -1,20 +1,20 @@
-local checks = require('checks')
-local log = require('log')
 local os = require('os')
 
+local dev_checks = require('jepsen.dev_checks')
+local log = require('jepsen.log')
 local utils = require('jepsen.utils')
 
 local function prefix_str(id)
-    checks('number')
+    dev_checks('number')
 
     return string.format('%s [%d]', os.date("%m/%d/%Y %H:%M:%S"), id)
 end
 
 local function setup(client, addr)
-    checks('function', 'string')
+    dev_checks('function', 'string')
 
-    local c = client()
-    local ok, err = pcall(c.open, c, addr)
+    local c = client(addr)
+    local ok, err = pcall(c.open, c)
     if not ok then
         return nil, err
     end
@@ -34,9 +34,10 @@ local function setup(client, addr)
 end
 
 local function start(id, client, ops_generator)
-    checks('number', 'function', 'function')
+    dev_checks('number', 'function', 'function')
 
-    local c = client()
+    local addr = '127.0.0.1:3301' -- FIXME
+    local c = client(addr)
     local ok, err = pcall(c.open, c)
     if not ok then
         return nil, err
@@ -61,10 +62,10 @@ local function start(id, client, ops_generator)
 end
 
 local function teardown(client, addr)
-    checks('function', 'string')
+    dev_checks('function', 'string')
 
-    local c = client()
-    local ok, err = pcall(c.open, c, addr)
+    local c = client(addr)
+    local ok, err = pcall(c.open, c)
     if not ok then
         return nil, err
     end

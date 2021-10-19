@@ -1,10 +1,10 @@
 local checks = require('checks')
 local clock = require('clock')
-local log = require('log')
 local math = require('math')
 
-local wrap = require('jepsen.client_wraps')
+local log = require('jepsen.log')
 local pool = require('jepsen.pool')
+local wrap = require('jepsen.client_wraps')
 
 -- checks...............: 100.00% 34467         0
 -- data_received........: 0 B     0 B/s

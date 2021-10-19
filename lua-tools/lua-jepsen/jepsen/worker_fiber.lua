@@ -12,12 +12,13 @@
 -- f is defined by user
 -- v is defined by user
 
-local checks = require('checks')
-local log = require('log')
 local fiber = require('fiber')
 
+local dev_checks = require('jepsen.dev_checks')
+local log = require('jepsen.log')
+
 local function spawn(self, func)
-    checks('table', 'function')
+    dev_checks('table', 'function')
 
     local id = self.id
     local ops_generator = self.ops_generator
@@ -34,7 +35,7 @@ local function spawn(self, func)
 end
 
 local function yield(self)
-    checks('table')
+    dev_checks('table')
 
     if self.fiber_obj ~= nil and self.fiber_obj:status() ~= 'dead' then
         fiber.yield()
@@ -44,7 +45,7 @@ local function yield(self)
 end
 
 local function terminate(self)
-    checks('table')
+    dev_checks('table')
 
     if self.fiber_obj ~= nil and self.fiber_obj:status() ~= 'dead' then
         self.fiber_obj:kill()
@@ -54,7 +55,7 @@ local function terminate(self)
 end
 
 local function wait_completion(self)
-    checks('table')
+    dev_checks('table')
 
     if self.fiber_obj ~= nil and self.fiber_obj:status() ~= 'dead' then
         self.fiber_obj:join()
@@ -80,7 +81,7 @@ local mt = {
 }
 
 local function new(id, client, ops_generator)
-    checks('number', 'function', 'function')
+    dev_checks('number', 'function', 'function')
 
     log.info('Running a worker %d', id)
 

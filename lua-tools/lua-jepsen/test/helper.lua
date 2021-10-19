@@ -5,9 +5,17 @@ local digest = require('digest')
 local helpers = table.copy(require('test-helpers'))
 local t = require('luatest')
 
-t.configure({shuffle = 'group'})
+t.configure({
+    shuffle = 'group'
+})
 
 helpers.project_root = fio.dirname(debug.sourcedir())
+
+--[[
+if os.getenv('DEV') == nil then
+    os.setenv('DEV', 'ON')
+end
+]]
 
 local __fio_tempdir = fio.tempdir
 fio.tempdir = function(base)

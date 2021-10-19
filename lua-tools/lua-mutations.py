@@ -4,6 +4,7 @@ https://github.com/boolangery/py-lua-parser
 garbage collector
 https://www.lua.org/wshop18/Ierusalimschy.pdf
 http://www.lua.org/manual/5.2/manual.html#2.5
+LuaJIT bugs https://github.com/tarantool/tarantool/wiki/Vanilla-LuaJIT-sync-status
 
 LuaFish
   - https://github.com/davidm/lua-fish

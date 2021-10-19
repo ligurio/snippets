@@ -1,10 +1,10 @@
 local checks = require('checks')
 local clock = require('clock')
+local log = require('log')
 local math = require('math')
 
-local log = require('jepsen.log')
 local pool = require('jepsen.pool')
-local wrap = require('jepsen.client_wraps')
+local wrapper = require('jepsen.client_wrappers')
 
 -- checks...............: 100.00% 34467         0
 -- data_received........: 0 B     0 B/s
@@ -68,7 +68,7 @@ local function run_test(workload, opts)
 
     -- Setup DB.
     for _, addr in pairs(opts.nodes) do
-        local ok, err = wrap.setup(workload.client, addr)
+        local ok, err = wrapper.setup(workload.client, addr)
         if not ok then
             return nil, err
         end
@@ -85,7 +85,7 @@ local function run_test(workload, opts)
 
     -- Teardown DB.
     for _, addr in pairs(opts.nodes) do
-        local ok, err = wrap.teardown(workload.client, addr)
+        local ok, err = wrapper.teardown(workload.client, addr)
         if not ok then
             return nil, err
         end

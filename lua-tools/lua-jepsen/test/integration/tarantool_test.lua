@@ -18,6 +18,7 @@ local Server = t.Server
 
 local seed = os.time()
 math.randomseed(seed)
+log.info('Random seed: %s', seed)
 
 local root = fio.dirname(fio.dirname(fio.abspath(package.search('test.helper'))))
 local datadir = fio.tempdir()
@@ -79,7 +80,6 @@ g.test_bank = function()
     }, test_options)
     t.assert_equals(ok, true)
     t.assert_equals(err, nil)
-    log.info('Random seed: %s', seed)
 end
 
 g.test_cas_register = function()
@@ -106,7 +106,7 @@ g.test_cas_register = function()
         generator = generator,
     }, test_options)
     require('jit.p').stop() -- Performance.
+
     t.assert_equals(ok, true)
     t.assert_equals(err, nil)
-    log.info('Random seed: %s', seed)
 end

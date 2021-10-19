@@ -33,6 +33,18 @@ local function setup(client, addr)
     return true
 end
 
+-- 3  :ok     :transfer   {:from 8, :to 2, :amount 3}
+-- 0  :ok     :transfer   {:from 1, :to 9, :amount 1}
+-- 0  :invoke :transfer   {:from 3, :to 9, :amount 5}
+-- 4  :ok     :read       {0 5, 1 10, 2 12, 3 10, 4 11, 5 5, 6 20, 7 0, 8 10, 9 17}
+-- 4  :invoke :read       nil
+-- 3  :ok     :read       {0 5, 1 9, 2 12, 3 10, 4 11, 5 5, 6 20, 7 0, 8 10, 9 18}
+-- 3  :invoke :read       nil
+--
+-- state can be nil (invoke), true (ok) or false (fail)
+-- f is defined by user
+-- v is defined by user
+--
 local function start(id, client, ops_generator)
     dev_checks('number', 'function', 'function')
 

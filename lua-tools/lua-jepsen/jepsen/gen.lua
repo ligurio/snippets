@@ -15,7 +15,6 @@
 -- local w = function(x) return { f = 'w', v = x } end
 -- gen.map(w, gen.rands(1, 10):take(50))
 
-local clock = require('clock')
 local fun = require('fun')
 --local checks = require('checks')
 --local math = require('math')
@@ -91,43 +90,12 @@ local export0 = function(fun)
     end
 end
 
--- Tools.
-
-local call_if_not_empty = function(state_x, ...)
-    if state_x == nil then
-        return nil
-    end
-    return state_x
-end
-
-local return_if_not_empty = function(state_x, ...)
-    if state_x == nil then
-        return nil
-    end
-    return ...
-end
-
--- A special hack for zip/chain to skip last two state, if a wrapped iterator
--- has been passed.
-local numargs = function(...)
-    local n = select('#', ...)
-    if n >= 3 then
-        -- Fix last argument
-        local it = select(n - 2, ...)
-        if type(it) == 'table' and getmetatable(it) == iterator_mt and
-           it.param == select(n - 1, ...) and it.state == select(n, ...) then
-            return n - 2
-        end
-    end
-    return n
-end
-
 -- Basic Functions.
 local iter = function(...) return wrap(fun.iter(...):unwrap()) end
 methods.iter = iter
 exports.iter = iter
 
-local each = function(...) return wrap(fun.each(...):unwrap()) end
+--local each = function(...) return wrap(fun.each(...):unwrap()) end
 --methods.each = each
 --exports.each = each
 --methods.for_each = each
@@ -141,7 +109,7 @@ methods.range = range
 exports.range = range
 
 -- Generators: Infinity Generators.
-local duplicate = function(...) return wrap(unwrap(fun.duplicate(...))) end
+--local duplicate = function(...) return wrap(unwrap(fun.duplicate(...))) end
 --methods.duplicate = duplicate
 --exports.duplicate = duplicate
 --methods.xrepeat = duplicate
@@ -149,38 +117,14 @@ local duplicate = function(...) return wrap(unwrap(fun.duplicate(...))) end
 --methods.replicate = duplicate
 --exports.replicate = duplicate
 
-local tabulate = function(...) return wrap(fun.tabulate(...)) end
+--local tabulate = function(...) return wrap(fun.tabulate(...)) end
 --methods.tabulate = tabulate
 --exports.tabulate = tabulate
-
-local zeros = function(...) return wrap(fun.zeros(...)) end
---methods.zeros = zeros
---exports.zeros = zeros
-
-local ones = function(...) return wrap(fun.ones(...)) end
---methods.ones = ones
---exports.ones = ones
 
 -- Generators: Random sampling.
 local rands = function(...) return wrap(fun.rands(...):unwrap()) end
 methods.rands = rands
 exports.rands = rands
-
--- Slicing: Basic.
-local nth = function(...) return wrap(fun.nth(...)) end
---methods.nth = nth
---exports.nth = nth
-
-local head = function(...) return wrap(fun.head(...)) end
---methods.head = head
---exports.head = head
---methods.car = head
---exports.car = head
-
-local tail = function(...) return wrap(fun.tail(...)) end
---methods.tail = tail
---exports.tail = tail
---exports.cdr = tail
 
 -- Slicing: Subsequences.
 local take_n = function(...) return wrap(fun.take_n(...):unwrap()) end
@@ -201,19 +145,19 @@ end
 methods.take = take
 exports.take = take
 
-local drop_n = function(...) return wrap(fun.drop_n(...)) end
+--local drop_n = function(...) return wrap(fun.drop_n(...)) end
 --methods.drop_n = drop_n
 --exports.drop_n = drop_n
 
-local drop_while = function(...) return wrap(fun.drop_while(...)) end
+--local drop_while = function(...) return wrap(fun.drop_while(...)) end
 --methods.drop_while = drop_while
 --exports.drop_while = drop_while
 
-local drop = function(...) return wrap(fun.drop(...)) end
+--local drop = function(...) return wrap(fun.drop(...)) end
 --methods.drop = drop
 --exports.drop = drop
 
-local span = function(...) return wrap(fun.span(...)) end
+--local span = function(...) return wrap(fun.span(...)) end
 --methods.span = span
 --exports.span = span
 --methods.split = span
@@ -222,7 +166,7 @@ local span = function(...) return wrap(fun.span(...)) end
 --exports.split_at = span
 
 -- Indexing.
-local index = function(...) return wrap(fun.index(...)) end
+--local index = function(...) return wrap(fun.index(...)) end
 --methods.index = index
 --exports.index = index
 --methods.index_of = index
@@ -230,7 +174,7 @@ local index = function(...) return wrap(fun.index(...)) end
 --methods.elem_index = index
 --exports.elem_index = index
 
-local indexes = function(...) return wrap(fun.indexes(...)) end
+--local indexes = function(...) return wrap(fun.indexes(...)) end
 --methods.indexes = indexes
 --exports.indexes = indexes
 --methods.indices = indexes
@@ -241,17 +185,17 @@ local indexes = function(...) return wrap(fun.indexes(...)) end
 --exports.elem_indices = indexes
 
 -- Filtering.
-local filter = function(...) return wrap(fun.filter(...)) end
+--local filter = function(...) return wrap(fun.filter(...)) end
 --methods.filter = filter
 --exports.filter = filter
 --methods.remove_if = remove_if
 --exports.remove_if = remove_if
 
-local grep = function(...) return wrap(fun.grep(...)) end
+--local grep = function(...) return wrap(fun.grep(...)) end
 --methods.grep = grep
 --exports.grep = grep
 
-local partition = function(...) return wrap(fun.partition(...)) end
+--local partition = function(...) return wrap(fun.partition(...)) end
 --methods.partition = partition
 --exports.partition = partition
 
@@ -266,7 +210,7 @@ methods.length = length
 exports.length = length
 
 local totable = function(gen_x, param_x, state_x)
-    local tab, key, val = {}
+    local tab, val = {}
     while true do
         state_x, val = gen_x(param_x, state_x)
         if state_x == nil then
@@ -279,67 +223,34 @@ end
 methods.totable = method0(totable)
 exports.totable = export0(totable)
 
-local tomap = function()
-end
+--local tomap = function()
+--end
 --methods.tomap = method0(tomap)
 --exports.tomap = export0(tomap)
 
 -- Reducing: Predicates.
-local is_prefix_of = function(...) return wrap(fun.is_prefix_of(...)) end
+--local is_prefix_of = function(...) return wrap(fun.is_prefix_of(...)) end
 --methods.is_prefix_of = is_prefix_of
 --exports.is_prefix_of = is_prefix_of
 
-local is_null = function(...) return wrap(fun.is_null(...)) end
+--local is_null = function(...) return wrap(fun.is_null(...)) end
 --methods.is_null = is_null
 --exports.is_null = is_null
 
-local all = function(...) return wrap(fun.all(...)) end
+--local all = function(...) return wrap(fun.all(...)) end
 --methods.all = all
 --exports.all = all
 --methods.every = all
 --exports.every = all
 
-local any = function(...) return wrap(fun.any(...)) end
+--local any = function(...) return wrap(fun.any(...)) end
 --methods.any = any
 --exports.any = any
 --methods.some = any
 --exports.some = any
 
--- Reducing: Special folds.
-local sum = function(...) return wrap(fun.sum(...)) end
---methods.sum = sum
---exports.sum = sum
-
-local product = function(...) return wrap(fun.product(...)) end
---methods.product = product
---exports.product = product
-
-local min = function(...) return wrap(fun.min(...)) end
---methods.min = min
---exports.min = min
---methods.minimum = min
---exports.minimum = min
-
-local min_by = function(...) return wrap(fun.min_by(...)) end
---methods.min_by = min_by
---exports.min_by = min_by
---methods.minimum_by = min_by
---exports.minimum_by = min_by
-
-local max = function(...) return wrap(fun.max(...)) end
---methods.max = max
---exports.max = max
---methods.maximum = max
---exports.maximum = max
-
-local max_by = function(...) return wrap(fun.max_by(...)) end
---methods.max_by = max_by
---exports.max_by = max_by
---methods.maximum_by = max_by
---exports.maximum_by = max_by
-
 -- Transformations.
-local map = function(...) return wrap(fun.map(...):unwrap()) end
+--local map = function(...) return wrap(fun.map(...):unwrap()) end
 local map = function(...)
     local function x(obj, ...)
         if type(obj) == 'table' then
@@ -356,30 +267,31 @@ local map = function(...)
 
     return x(fun.map(...))
 end
---methods.map = map
---exports.map = map
+methods.map = map
+exports.map = map
 
-local enumerate = function(...) return wrap(fun.enumerate(...)) end
+--local enumerate = function(...) return wrap(fun.enumerate(...)) end
 --methods.enumerate = enumerate
 --exports.enumerate = enumerate
 
-local intersperse = function(...) return wrap(fun.intersperse(...)) end
+--local intersperse = function(...) return wrap(fun.intersperse(...)) end
 --methods.intersperse = intersperse
 --exports.intersperse = intersperse
 
 -- Compositions.
-local zip = function(...) return wrap(fun.zip(...)) end
+--local zip = function(...) return wrap(fun.zip(...)) end
 --methods.zip = zip
 --exports.zip = zip
 
-local cycle = function(...) return wrap(fun.cycle(...)) end
+--local cycle = function(...) return wrap(fun.cycle(...)) end
 --methods.cycle = cycle
 --exports.cycle = cycle
 
-local chain = function(...) return wrap(fun.chain(...)) end
+--local chain = function(...) return wrap(fun.chain(...)) end
 --methods.chain = chain
 --exports.chain = chain
 
+--[[
 local mix_gen_r1
 local mix_gen_r2 = function(param, state, state_x, ...)
     if state_x == nil then
@@ -421,18 +333,19 @@ local function mix(...)
 
     return wrap(mix_gen_r1, param, {1, param[3]})
 end
+]]
 --methods.mix = mix
 --exports.mix = mix
 
-local function stagger()
+--local function stagger()
     -- TODO
-end
+--end
 --methods.stagger = stagger
 --exports.stagger = stagger
 
-local function time_limit(timeout, gen, param, state)
+--local function time_limit(timeout, gen, param, state)
     -- TODO
-end
+--end
 --methods.time_limit = time_limit
 --exports.time_limit = time_limit
 

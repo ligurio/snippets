@@ -8,25 +8,8 @@ local wrap = require('jepsen.client_wraps')
 local function wait_completion(self)
     checks('table')
 
-    local pool = rawget(self, 'pool')
-    local opts = rawget(self, 'opts')
-    for i = 1, opts.threads do
-        pool[i]:wait_completion()
-        pool[i]:yield()
-    end
-
-    return true
-end
-
-local function spawn_worker(pool, opts)
-    checks('table', 'table')
-
-    for i = 1, opts.threads do
-        local ok, err = pool[i]:create(wrap.start)
-        if not ok then
-            return nil, err
-        end
-        pool[i]:yield()
+    for i = 1, self.opts.threads do
+        self.pool[i]:wait_completion()
     end
 
     return true
@@ -35,10 +18,8 @@ end
 local function terminate(self)
     checks('table')
 
-    local opts = rawget(self, 'opts')
-    local pool = rawget(self, 'pool')
-    for i = 1, opts.threads do
-        pool[i]:terminate()
+    for i = 1, self.opts.threads do
+        self.pool[i]:terminate()
     end
 
     return true
@@ -47,11 +28,14 @@ end
 local function spawn(self)
     checks('table')
 
-    local opts = rawget(self, 'opts')
-    local pool = rawget(self, 'pool')
-    local ok, err = pcall(spawn_worker, pool, opts)
-    if not ok then
-        return nil, err
+    local opts = self.opts
+    local pool = self.pool
+    for i = 1, opts.threads do
+        local ok, err = pool[i]:spawn(wrap.start)
+        if not ok then
+            return nil, err
+        end
+        --pool[i]:yield()
     end
 
     self:wait_completion()

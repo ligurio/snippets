@@ -6,6 +6,13 @@ local math = require('math')
 local wrap = require('jepsen.client_wraps')
 local pool = require('jepsen.pool')
 
+-- checks...............: 100.00% 34467         0
+-- data_received........: 0 B     0 B/s
+-- data_sent............: 0 B     0 B/s
+-- iteration_duration...: avg=143.57µs min=0s med=0s max=43.24ms p(90)=519.2µs p(95)=985.47µs
+-- iterations...........: 34467   6812.032587/s
+-- https://k6.io/blog/load-testing-sql-databases-with-k6/
+--
 -- Running 30s test @ 127.0.0.1:8080
 --   12 threads and 400 connections
 --   Thread Stats   Avg      Stdev     Max   +/- Stdev
@@ -25,14 +32,19 @@ local pool = require('jepsen.pool')
 -- See also:
 -- - https://github.com/wg/wrk/blob/master/src/stats.c
 -- - https://github.com/wg/wrk/blob/master/scripts/report.lua
-local function print_summary(total_time, nodes, ops_done)
-    log.info('Running %ds test @:', total_time)
-    for _, node in pairs(nodes) do
-        log.info('%s', node)
+-- - https://github.com/libmoon/libmoon/blob/master/lua/histogram.lua
+local function print_summary(total_time, ops_done, opts)
+    checks('number', 'number', 'table')
+
+    log.info('Running test %.3fs with %d thread(s) @:', total_time, opts.threads)
+    for _, addr in pairs(opts.nodes) do
+        log.info('%s', addr)
     end
     if ops_done ~= nil then
-        log.info('Done %d ops in time %f sec.', ops_done, total_time)
-        log.info('Speed is %d ops/sec.', math.floor(ops_done / total_time))
+        local rps = math.floor(ops_done / total_time)
+        log.info('Total requests: %12d', ops_done)
+        log.info('Requests/sec: %15d', rps)
+        log.info('Requests with errors:') -- FIXME
     end
 end
 
@@ -55,9 +67,11 @@ local function run_test(workload, opts)
     opts.threads = opts.threads or 1
 
     -- Setup DB.
-    local ok, err = wrap.setup(workload.client)
-    if not ok then
-        return err
+    for _, addr in pairs(opts.nodes) do
+        local ok, err = wrap.setup(workload.client, addr)
+        if not ok then
+            return nil, err
+        end
     end
 
     -- Start workload.
@@ -67,22 +81,19 @@ local function run_test(workload, opts)
     if not ok then
         return nil, err
     end
-
-    local ok, err = p:spawn()
-    if not ok then
-        return nil, err
-    end
     local total_passed_sec = clock.proc() - total_time_begin
 
     -- Teardown DB.
-    ok, err = wrap.teardown(workload.client)
-    if not ok then
-        return err
+    for _, addr in pairs(opts.nodes) do
+        local ok, err = wrap.teardown(workload.client, addr)
+        if not ok then
+            return nil, err
+        end
     end
 
     -- Summary.
     local ops_done = 1000 -- FIXME
-    print_summary(total_passed_sec, opts.nodes, ops_done)
+    print_summary(total_passed_sec, ops_done, opts)
 
     return true
 end

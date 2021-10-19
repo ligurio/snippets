@@ -16,16 +16,16 @@ local checks = require('checks')
 local log = require('log')
 local fiber = require('fiber')
 
-local function create(self, func)
+local function spawn(self, func)
     checks('table', 'function')
 
-    local id = rawget(self, 'id')
-    local ops_generator = rawget(self, 'ops_generator')
-    local client = rawget(self, 'client')
+    local id = self.id
+    local ops_generator = self.ops_generator
+    local client = self.client
     local fiber_obj = fiber.create(func, id, client, ops_generator)
-    if fiber_obj ~= box.NULL and fiber_obj:status() ~= 'dead' then
-        local name = string.format('jepsen worker %d', id)
-        fiber_obj:name(name)
+    if fiber_obj:status() ~= 'dead' then
+        fiber_obj:name(string.format('worker %d', id))
+        fiber_obj:set_joinable(true)
         fiber_obj:wakeup() -- needed for backward compatibility with 1.7
         rawset(self, 'fiber_obj', fiber_obj)
     end
@@ -36,25 +36,29 @@ end
 local function yield(self)
     checks('table')
 
-    fiber.yield()
+    if self.fiber_obj ~= nil and self.fiber_obj:status() ~= 'dead' then
+        fiber.yield()
+    end
+
+    return true
 end
 
 local function terminate(self)
     checks('table')
 
-    local fiber_obj = rawget(self, 'fiber_obj')
-    fiber_obj:kill()
+    if self.fiber_obj ~= nil and self.fiber_obj:status() ~= 'dead' then
+        self.fiber_obj:kill()
+    end
+
+    return true
 end
 
--- FIXME: Add timeout.
 local function wait_completion(self)
     checks('table')
 
-    local fiber_obj = rawget(self, 'fiber_obj')
-    assert(fiber_obj ~= box.NULL)
-    while fiber_obj:status() ~= 'dead' do
-        fiber.yield()
-    end  -- the loop is needed for backward compatibility with 1.7
+    if self.fiber_obj ~= nil and self.fiber_obj:status() ~= 'dead' then
+        self.fiber_obj:join()
+    end
 
     return true
 end
@@ -68,7 +72,7 @@ local mt = {
         error('Worker object is immutable.', 2)
     end,
     __index = {
-        create = create,
+        spawn = spawn,
         terminate = terminate,
         wait_completion = wait_completion,
         yield = yield,
@@ -78,11 +82,10 @@ local mt = {
 local function new(id, client, ops_generator)
     checks('number', 'function', 'function')
 
-    log.info('Running worker %d', id)
+    log.info('Running a worker %d', id)
 
     return setmetatable({
         id = id,
-        fiber_obj = box.NULL,
         ops_generator = ops_generator,
         client = client,
     }, mt)

@@ -1,10 +1,12 @@
 local fiber = require('fiber')
 local fio = require('fio')
-local fun = require('fun')
 local net_box = require('net.box')
 local log = require('log')
 
 local jepsen = require('jepsen')
+--local gen = require('jepsen.gen')
+local fun = require('fun') -- FIXME: Use our own generators.
+
 local cas_register_client = require('test.integration.tarantool_cas_register_client')
 
 local t = require('luatest')
@@ -62,12 +64,11 @@ g.test_cas_register = function()
             r(),
             w(),
             cas(),
-        })):take(10000)
+        })):take(5000)
     end
 
     local test_options = {
-        time_limit = 1000,
-        threads = 5,
+        threads = 10,
         nodes = {
             '127.0.0.1:3301',
         },
@@ -75,7 +76,6 @@ g.test_cas_register = function()
     local ok, err = jepsen.run_test({
         client = cas_register_client.new,
         generator = generator,
-        checker = nil,
     }, test_options)
     t.assert_equals(ok, true)
     t.assert_equals(err, nil)

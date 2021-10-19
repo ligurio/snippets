@@ -30,11 +30,12 @@ local function cas()
 end
 
 local space_name = 'register_space'
-local addr = '127.0.0.1:3301' -- FIXME
+local ipaddr = '127.0.0.1:3301' -- FIXME
 
-local function open(self)
-    checks('table')
+local function open(self, addr)
+    checks('table', '?string')
 
+    local addr = addr or ipaddr -- FIXME
     local conn = net_box.connect(addr)
     if conn:ping() ~= true then
         return nil, ClientError:new('Failed connect to %s', addr)
@@ -121,7 +122,7 @@ local function teardown(self)
 
     local conn = rawget(self, 'conn')
     if conn:ping() ~= true then
-        return nil, ClientError:new('Failed connect to %s', addr)
+        return nil, ClientError:new('Connection is dead.')
     end
     -- FIXME: conn.space.register_space:drop()
 
@@ -133,7 +134,8 @@ local function close(self)
 
     local conn = rawget(self, 'conn')
     if conn:ping() ~= true then
-        return nil, ClientError:new('Failed connect to %s', addr)
+        -- Connection is dead.
+        return true
     end
     conn:close()
 

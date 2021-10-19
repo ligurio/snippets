@@ -28,14 +28,11 @@ end
 local function spawn(self)
     checks('table')
 
-    local opts = self.opts
-    local pool = self.pool
-    for i = 1, opts.threads do
-        local ok, err = pool[i]:spawn(wrap.start)
+    for i = 1, self.opts.threads do
+        local ok, err = self.pool[i]:spawn(wrap.start)
         if not ok then
             return nil, err
         end
-        --pool[i]:yield()
     end
 
     self:wait_completion()

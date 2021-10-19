@@ -58,6 +58,7 @@ for i, x in ipairs(modes) do
         end
 
         local msg = tostring(...)
+        --[[
         local info = debug.getinfo(2, "Sl")
         local lineinfo = info.short_src .. ":" .. info.currentline
 
@@ -78,6 +79,7 @@ for i, x in ipairs(modes) do
             fp:write(str)
             fp:close()
         end
+        ]]
     end
 end
 

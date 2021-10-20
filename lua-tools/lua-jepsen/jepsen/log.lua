@@ -8,6 +8,8 @@
 --
 -- Source: https://github.com/rxi/log.lua
 
+local clock = require('clock')
+
 local log = { _version = "0.1.0" }
 
 log.usecolor = true
@@ -28,27 +30,6 @@ for i, v in ipairs(modes) do
     levels[v.name] = i
 end
 
-local round = function(x, increment)
-    increment = increment or 1
-    x = x / increment
-    return (x > 0 and math.floor(x + .5) or math.ceil(x - .5)) * increment
-end
-
-local _tostring = tostring
-
-local tostring = function(...)
-    local t = {}
-    for i = 1, select('#', ...) do
-        local x = select(i, ...)
-        if type(x) == "number" then
-            x = round(x, .01)
-        end
-        t[#t + 1] = _tostring(x)
-    end
-
-    return table.concat(t, " ")
-end
-
 for i, x in ipairs(modes) do
     local nameupper = x.name:upper()
     log[x.name] = function(...)
@@ -57,13 +38,15 @@ for i, x in ipairs(modes) do
           return
         end
 
-        local msg = tostring(...)
-        --[[
-        local info = debug.getinfo(2, "Sl")
-        local lineinfo = info.short_src .. ":" .. info.currentline
+        local msg = string.format(...)
+        local lineinfo = ''
+        if log.level == 'debug' then
+            local info = debug.getinfo(2, "Sl")
+            lineinfo = info.short_src .. ":" .. info.currentline
+        end
 
         -- Output to console
-        io.write(string.format("%s[%-6s%s]%s %s: %s",
+        io.write(string.format("%s[%-6s%s]%s %s: %s\n",
                                log.usecolor and x.color or "",
                                nameupper,
                                os.date("%H:%M:%S"),
@@ -79,7 +62,6 @@ for i, x in ipairs(modes) do
             fp:write(str)
             fp:close()
         end
-        ]]
     end
 end
 

@@ -1,14 +1,6 @@
-local os = require('os')
-
 local dev_checks = require('jepsen.dev_checks')
 local log = require('jepsen.log')
 local utils = require('jepsen.utils')
-
-local function prefix_str(id)
-    dev_checks('number')
-
-    return string.format('%s [%d]', os.date("%m/%d/%Y %H:%M:%S"), id)
-end
 
 local function setup(client, addr)
     dev_checks('function', 'string')
@@ -58,14 +50,14 @@ local function start(id, client, ops_generator)
     local ops_done = 0 -- box.info.lsn
     for _, op in ops_generator() do
         assert(type(op.f) == 'string')
-        log.info('%s %s', prefix_str(id), utils.op_to_string(op))
+        log.info('[%d] %s', id, utils.op_to_string(op))
         local ok, res = pcall(c.invoke, c, op)
         if not ok then
             log.info(res)
         else
             assert(res.state ~= nil)
             assert(res.f ~= nil)
-            log.info('%s %-50s', prefix_str(id), utils.op_to_string(res))
+            log.info('[%d] %-50s', id, utils.op_to_string(res))
         end
         ops_done = ops_done + 1
     end

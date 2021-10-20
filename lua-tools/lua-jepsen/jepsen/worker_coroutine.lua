@@ -5,8 +5,6 @@
 -- http://lua-users.org/files/wiki_insecure/users/twrensch/play.lua
 -- https://mode13h.io/coroutines-scheduler-in-lua/
 
-local fiber = require('fiber')
-
 local dev_checks = require('jepsen.dev_checks')
 local log = require('jepsen.log')
 

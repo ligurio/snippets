@@ -1,8 +1,8 @@
 local checks = require('checks')
 local clock = require('clock')
-local log = require('log')
 local math = require('math')
 
+local log = require('jepsen.log')
 local pool = require('jepsen.pool')
 local wrapper = require('jepsen.client_wrappers')
 

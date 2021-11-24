@@ -1,10 +1,15 @@
 """
+https://github.com/lunarmodules/luacheck/blob/master/src/luacheck/parser.lua
+https://github.com/lunarmodules/luacheck/blob/master/src/luacheck/lexer.lua
+
 https://github.com/andremm/lua-parser
 https://github.com/boolangery/py-lua-parser
 garbage collector
 https://www.lua.org/wshop18/Ierusalimschy.pdf
 http://www.lua.org/manual/5.2/manual.html#2.5
 LuaJIT bugs https://github.com/tarantool/tarantool/wiki/Vanilla-LuaJIT-sync-status
+
+https://code.google.com/archive/p/lua-checker/
 
 LuaFish
   - https://github.com/davidm/lua-fish

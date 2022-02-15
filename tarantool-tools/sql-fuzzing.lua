@@ -117,29 +117,33 @@ local mysql = locale {
                       V "space"^0 *
                       V "select_expr")^0,
 
-  select_expr = P "*" + ( V "table_name" * P "." * P "*" ) + V "column_item",  -- TODO sql function
+  select_expr = P "*" + (
+                    V "table_name" *
+                    P "." *
+                    P "*") +
+                V "column_item",  -- TODO sql function
 
   -- TODO
   table_references = P "table1",
 
   where_condition = V "expr",
 
-  column_item = ( V "expr" *
-                  V "space"^0 *
-                  K "AS" *
-                  V "space"^0 *
-                  V "column_alias" +
-                  V "expr" *
-                  V "space"^0 *
-                  V "column_alias" +
-                  V "expr" ),
+  column_item = (V "expr" *
+                 V "space"^0 *
+                 K "AS" *
+                 V "space"^0 *
+                 V "column_alias" +
+                 V "expr" *
+                 V "space"^0 *
+                 V "column_alias" +
+                 V "expr"),
 
   -- See expr in http://www.sqlite.org/lang_select.html
   -- See http://dev.mysql.com/doc/refman/5.5/en/expressions.html
   expr = (V "atomic_expr" * (V "space"^0 *
-           V "binary_operator" *
-           V "space"^0 *
-           V "expr"
+              V "binary_operator" *
+              V "space"^0 *
+              V "expr"
           )^-1),
 
   atomic_expr = (V "literal_value" +

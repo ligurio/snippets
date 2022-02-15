@@ -1,36 +1,38 @@
 --[[
 -- TODO:
 -- https://in2test.lsi.uniovi.es/sqlmutation/
--- https://github.com/tclh123/lpeg-sql
 -- https://clickhouse.com/blog/en/2021/fuzzing-clickhouse/
 -- https://in2test.lsi.uniovi.es/sqlmutation/
 ]]
 
 local lpeg = require("lpeg")
-local locale = lpeg.locale;
-local P = lpeg.P;
-local R = lpeg.R;
-local S = lpeg.S;
-local V = lpeg.V;
-local C = lpeg.C;
-local Cb = lpeg.Cb;
-local Cc = lpeg.Cc;
-local Cf = lpeg.Cf;
-local Cg = lpeg.Cg;
-local Cp = lpeg.Cp;
-local Cs = lpeg.Cs;
-local Ct = lpeg.Ct;
-local Cmt = lpeg.Cmt;
+local locale = lpeg.locale
+local P = lpeg.P
+--local R = lpeg.R
+--local S = lpeg.S
+local V = lpeg.V
+local C = lpeg.C
+--local Cb = lpeg.Cb
+--local Cc = lpeg.Cc
+--local Cf = lpeg.Cf
+--local Cg = lpeg.Cg
+--local Cp = lpeg.Cp
+--local Cs = lpeg.Cs
+--local Ct = lpeg.Ct
+--local Cmt = lpeg.Cmt
 
 ---
 -- Returns a pattern which matches the literal string caselessly.
 --
 -- @param literal A literal string to match case-insensitively.
 -- @return An LPeg pattern.
-function caseless (literal)
+--
+local function caseless(literal)
     local caseless = lpeg.Cf((lpeg.P(1) / function (a)
             return lpeg.S(a:lower() .. a:upper())
-        end)^1, function (a, b) return a * b end)
+        end)^1, function (a, b)
+            return a * b
+        end)
     return assert(caseless:match(literal))
 end
 
@@ -57,93 +59,159 @@ end
 -- @param printer A printf-style formatting printer function to use.
 --                Default: stdnse.debug1
 -- @return The modified grammar.
-function debug (grammar, printer)
+--
+local function debug(grammar, printer)
     printer = printer or printf
     for k, p in pairs(grammar) do
         local enter = lpeg.Cmt(lpeg.P(true), function(s, p, ...)
-            printer("ENTER %s", k) return p end)
+            printer("ENTER %s", k)
+            return p
+        end)
         local leave = lpeg.Cmt(lpeg.P(true), function(s, p, ...)
-            printer("LEAVE %s", k) return p end) * (lpeg.P("k") - lpeg.P "k");
+            printer("LEAVE %s", k)
+            return p
+        end) * (lpeg.P("k") - lpeg.P "k")
         grammar[k] = lpeg.Cmt(enter * p + leave, function(s, p, ...)
-            printer("---%s---", k) printer("pos: %d, [%s]", p, s:sub(1, p-1)) return p end)
+            printer("---%s---", k)
+            printer("pos: %d, [%s]", p, s:sub(1, p-1))
+            return p
+        end)
     end
 
     return grammar
 end
 
 local mysql = locale {
-  V "sql_stmt",
-  sql_stmt = V "space"^0 * ( V "select_stmt" + V "update_stmt" ) * V "space"^0 * (P ";" + -1),
-  select_stmt = K "SELECT" * V "space"^0 * V "select_expr_list" * V "space"^0 * V "from_clause"^-1,
-  from_clause = K "FROM" * V "space"^0 * V "table_references" * V "space"^0 * V "where_clause"^-1,
-  where_clause = K "WHERE" * V "space"^0 * V "where_condition",
-  update_stmt = K "UPDATE" * V "space"^0 * P "t set id = 1", -- TODO
 
-  select_expr_list = V "select_expr" * V "space"^0 * ( P "," * V "space"^0 * V "select_expr" )^0,
+  V "sql_stmt",
+
+  sql_stmt = V "space"^0 * (
+                V "select_stmt" +
+                V "update_stmt") *
+             V "space"^0 * (
+                P ";" + -1),
+
+  select_stmt = K "SELECT" *
+                V "space"^0 *
+                V "select_expr_list" *
+                V "space"^0 *
+                V "from_clause"^-1,
+
+  from_clause = K "FROM" *
+                V "space"^0 *
+                V "table_references" *
+                V "space"^0 *
+                V "where_clause"^-1,
+
+  where_clause = K "WHERE" *
+                 V "space"^0 *
+                 V "where_condition",
+
+  update_stmt = K "UPDATE" *
+                V "space"^0 *
+                P "t set id = 1", -- TODO
+
+  select_expr_list = V "select_expr" *
+                     V "space"^0 *
+                     (P "," *
+                      V "space"^0 *
+                      V "select_expr")^0,
+
   select_expr = P "*" + ( V "table_name" * P "." * P "*" ) + V "column_item",  -- TODO sql function
 
   -- TODO
   table_references = P "table1",
+
   where_condition = V "expr",
 
-  column_item = ( V "expr" * V "space"^0 * K "AS" * V "space"^0 * V "column_alias"
-                 + V "expr" * V "space"^0 * V "column_alias"
-                 + V "expr" ),
+  column_item = ( V "expr" *
+                  V "space"^0 *
+                  K "AS" *
+                  V "space"^0 *
+                  V "column_alias" +
+                  V "expr" *
+                  V "space"^0 *
+                  V "column_alias" +
+                  V "expr" ),
 
   -- See expr in http://www.sqlite.org/lang_select.html
   -- See http://dev.mysql.com/doc/refman/5.5/en/expressions.html
-  expr = ( V "atomic_expr" * ( V "space"^0 * V "binary_operator" * V "space"^0 * V "expr" )^-1
-          ),
-  atomic_expr = (
-                 V "literal_value"
-                 + V "variable"
-                 + V "column_expr"
-                 + V "unary_operator" * V "space"^0 * V "expr"
-                 ),
+  expr = (V "atomic_expr" * (V "space"^0 *
+           V "binary_operator" *
+           V "space"^0 *
+           V "expr"
+          )^-1),
 
-  column_expr = ( V "schema_name" * P "." * V "table_name" * P "." * V "column_name"
-                 + V "table_name" * P "." * V "column_name"
-                 + V "column_name" ),
+  atomic_expr = (V "literal_value" +
+                 V "variable" +
+                 V "column_expr" +
+                 V "unary_operator" *
+                 V "space"^0 *
+                 V "expr"),
+
+  column_expr = (V "schema_name" *
+                 P "." *
+                 V "table_name" *
+                 P "." *
+                 V "column_name" +
+                 V "table_name" *
+                 P "." *
+                 V "column_name" +
+                 V "column_name"),
 
   schema_name = V "name",
   column_alias = V "name",
   column_name = V "name",
   table_name = V "name",
 
-  binary_operator = (K "OR"
-                     + P "||"
-                     + K "XOR"
-                     + K "AND"
-                     + P "&&"
+  binary_operator = (K "OR" +
+                     P "||" +
+                     K "XOR" +
+                     K "AND" +
+                     P "&&"
                      ) + V "comparison_operator",
-  comparison_operator = ( P "="
-                         + P ">="
-                         + P ">"
-                         + P "<="
-                         + P "<"
-                         + P "<>"
-                         + P "!="
-                         ),
 
-  unary_operator = ( K "NOT"
-                    + P "!" ),
+  comparison_operator = (P "=" +
+                         P ">=" +
+                         P ">" +
+                         P "<=" +
+                         P "<" +
+                         P "<>" +
+                         P "!="),
+
+  unary_operator = (K "NOT" +
+                    P "!"),
 
   variable = V "name",
 
-  literal_value = V "numeric_literal" + V "string_literal" + P "NULL" + P "CURRENT_TIME" + P "CURRENT_DATE" + P "CURRENT_TIMESTAMP",  -- see http://dev.mysql.com/doc/refman/5.5/en/literals.html
-  numeric_literal = V "digit"^1,  -- not enough, see http://dev.mysql.com/doc/refman/5.5/en/number-literals.html
-  string_literal = ( P "_" * V "charset_name" + caseless "n" )^-1 * V "real_string_literal",
-  real_string_literal = P '"' * ( 1 - P '"' )^0 * P '"' + P "'" * ( 1 - P "'" )^0 * P "'",  -- not enough, see http://dev.mysql.com/doc/refman/5.5/en/string-literals.html
+  literal_value = V "numeric_literal" +
+                  V "string_literal" +
+                  P "NULL" +
+                  P "CURRENT_TIME" +
+                  P "CURRENT_DATE" +
+                  P "CURRENT_TIMESTAMP",  -- see http://dev.mysql.com/doc/refman/5.5/en/literals.html
+
+  -- not enough, see http://dev.mysql.com/doc/refman/5.5/en/number-literals.html
+  numeric_literal = V "digit"^1,
+
+  string_literal = (P "_" *
+                    V "charset_name" +
+                    caseless "n")^-1 * V "real_string_literal",
+
+  -- not enough, see http://dev.mysql.com/doc/refman/5.5/en/string-literals.html
+  real_string_literal = P '"' * (1 - P '"')^0 * P '"' + P "'" * (1 - P "'")^0 * P "'",
+
   charset_name = V "name",
 
   name = P "`"^-1 * ( V "alnum" + P "_" )^1 * P "`"^-1,
 }
 
-mysql_grammar = P(C(mysql))
+local mysql_grammar = P(C(mysql))
 
 local res = mysql_grammar:match("SELECT * FROM table1 WHERE a = 1")
-print(res)
-if not res then
+if res then
+    print(res)
+else
     mysql_grammar_debug = P(debug(mysql))
     local res = mysql_grammar_debug:match("SELECT * FROM table1 WHERE a = 1")
     print(res)

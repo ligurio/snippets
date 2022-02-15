@@ -3,7 +3,9 @@ Lua parsers
 
 - Lua https://github.com/lunarmodules/luacheck/blob/master/src/luacheck/parser.lua
 - Lua https://github.com/lunarmodules/luacheck/blob/master/src/luacheck/lexer.lua
-- Lua https://github.com/andremm/lua-parser
+- Lua https://github.com/andremm/lua-parser (lpeglabel)
+- Lua https://github.com/fab13n/metalua-parser (lpeglabel)
+- Lua https://github.com/thenumbernine/lua-parser
 - Python https://github.com/SirAnthony/slpp
 - Python https://github.com/boolangery/py-lua-parser
 - C tree-sitter https://github.com/Azganoth/tree-sitter-lua
@@ -14,6 +16,7 @@ References:
 - Fuzzili https://github.com/googleprojectzero/fuzzilli/blob/main/Sources/Fuzzilli/Mutators/OperationMutator.swift
 - MongoDB https://engineering.mongodb.com/post/mongodbs-javascript-fuzzer-creating-chaos
 - MongoDB https://engineering.mongodb.com/post/mongodbs-javascript-fuzzer-harnessing-havoc
+- JS https://github.com/MashaSamoylova/DFuzzer
 
 https://www.lua.org/wshop18/Ierusalimschy.pdf
 http://www.lua.org/manual/5.2/manual.html#2.5
@@ -64,14 +67,16 @@ from argparse import ArgumentParser
 import difflib
 import sys
 
-def generate_str_diff(str1, str2):
+def generate_str_diff(str1, str2, filename):
     """Return a unified diff of two strings."""
 
     lines1 = str1.splitlines()
     lines2 = str2.splitlines()
-    return difflib.unified_diff(lines1, lines2, 'str1', 'str2',
+    return difflib.unified_diff(lines1, lines2,
+                                filename, filename,
                                 "(original)", "(updated)",
-                                lineterm="")
+                                n=3,
+                                lineterm="\n")
 
 parser = ArgumentParser()
 parser.add_argument("-f", "--file", dest="filename",
@@ -126,4 +131,9 @@ for node in ast.walk(tree):
         # print("{} --> {}".format(old_value, new_value))
         node.n = new_value
 
-print("Updated source code:", ast.to_lua_source(tree))
+mutated_src = ast.to_lua_source(tree)
+print("Updated source code:", mutated_src)
+print("Unified diff")
+udiff = generate_str_diff(src, mutated_src, args.filename)
+# sys.stdout.writelines(udiff)
+print(''.join(udiff))

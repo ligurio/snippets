@@ -1,3 +1,4 @@
+--[[
 buffer = require 'buffer'
 msgpack = require 'msgpack'
 ffi = require 'ffi'
@@ -17,3 +18,8 @@ b = decimal.new('1e-38')
 c = decimal.new('1')
 d = decimal.new('0.1234567')
 e = decimal.new('123.4567')
+]]
+
+local a = 4
+local b = 3
+local c = a + b

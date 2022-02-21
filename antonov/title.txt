@@ -1,0 +1,10 @@
+---
+title: Десять раз сначала
+rights:
+language: ru-RU
+pagetitle: Десять раз сначала
+creator:
+- role: author
+  text: Олег Антонов
+publisher: Сергей Бронников
+---

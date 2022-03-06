@@ -33,10 +33,12 @@ require('console').start()
 
 1. Install AFL https://afl-1.readthedocs.io/en/latest/INSTALL.html#install
 2. Build Tarantool with AFL
-	CC=~/sources/AFLplusplus/afl-cc CXX=~/sources/AFLplusplus/afl-g++ cmake -DENABLE_GCOV=ON ..
-	make -j
+```
+CC=~/sources/AFLplusplus/afl-cc CXX=~/sources/AFLplusplus/afl-g++ cmake -DENABLE_GCOV=ON ..
+make -j
+```
 See quickstart guide https://afl-1.readthedocs.io/en/latest/quick_start.html
-3. tarantool config.lua && jq -M .payload.hex < dump_datetime | sed 's/"//g' | xxd -r -p | nc localhost 3013
+3. `tarantool config.lua && jq -M .payload.hex < dump_datetime | sed 's/"//g' | xxd -r -p | nc localhost 3013`
 
 ```sh
 $ cat dump_datetime 

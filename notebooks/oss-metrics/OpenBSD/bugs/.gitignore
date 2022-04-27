@@ -1,0 +1,7 @@
+.fslckout
+bugs.conf
+bugs.fossil
+data/
+openbsd-issues.json
+scraping-processed-csv.json
+scraping-processed-xml.json

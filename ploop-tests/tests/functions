@@ -1,0 +1,25 @@
+SPACE=/vz/ploop
+[ ! -e $SPACE ] && mkdir -p $SPACE
+
+PLOOP_DEV=/dev/ploop0
+[ ! -e $PLOOP_DEV ] && mknod $PLOOP_DEV b 182 0
+
+PLOOP_MNT=$SPACE/ploop-mnt.$$
+[ ! -e $PLOOP_MNT ] && mkdir -p $PLOOP_MNT
+
+PLOOP_IMG=$SPACE/ploop-img.$$
+
+PLOOP_DDXML=$SPACE/DiskDescriptor.xml
+
+test_cleanup()
+{
+	if [ -f $PLOOP_IMG ]; then
+		ploop umount $PLOOP_DDXML 2>/dev/null || true
+		rm -rf $PLOOP_IMG $PLOOP_DDXML $PLOOP_MNT
+	fi
+}
+
+progress()
+{
+	printf "%s %d/%d (%2d%%)\015" $1 $2 $3 $(($2*100/$3))
+}

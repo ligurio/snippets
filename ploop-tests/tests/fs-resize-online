@@ -1,0 +1,88 @@
+#!/bin/bash
+
+. tests/functions
+
+V=2
+BLOCKSIZE=2048
+DELTA=10000
+SIZE=1048576000
+if [ -f /sys/module/ploop/parameters/large_disk_support ]; then
+	SIZENEW=10485760000
+else
+	SIZENEW=2147482624
+fi
+
+while [ "${#}" -gt 0 ]; do
+case "${1}" in
+	"--online")
+		OFFLINE="no"
+		shift
+		;;
+	"--offline")
+		OFFLINE="yes"
+		shift
+		;;
+	"-v")
+		V=${2}
+		shift
+		shift
+		;;
+	*)
+		shift
+		;;
+	esac
+done
+
+test_cleanup
+
+ploop init -v $V -b $BLOCKSIZE -s ${SIZE}k -t ext4 $PLOOP_IMG
+ploop mount -d $PLOOP_DEV -m $PLOOP_MNT $PLOOP_DDXML
+
+let bs=$BLOCKSIZE/2
+dd if=/dev/urandom bs=${bs}k count=1 of=$SPACE/data
+
+size=$SIZE
+for ((i = 0; i < size; i += bs*DELTA)); do
+	progress Writing $i $size
+	dd if=$SPACE/data of=$PLOOP_MNT/$i bs=1k >/dev/null 2>&1
+done
+echo
+
+if [ "$OFFLINE" = yes ]; then
+	echo "Offline resize"
+	ploop umount $PLOOP_DDXML
+else
+	echo "Online resize"
+fi
+ploop resize -s ${SIZENEW}k $PLOOP_DDXML
+
+if [ "$OFFLINE" != yes ]; then
+	ploop umount $PLOOP_DDXML
+fi
+ploop mount -d $PLOOP_DEV -m $PLOOP_MNT $PLOOP_DDXML
+
+size=${SIZENEW}
+for ((; i < size; i += bs*DELTA)); do
+	progress Writing $i $size
+	dd if=$SPACE/data of=$PLOOP_MNT/$i bs=1k >/dev/null 2>&1
+done
+echo
+
+ploop umount $PLOOP_DDXML
+ploop mount -d $PLOOP_DEV $PLOOP_DDXML
+
+fsck -f $PLOOP_DEV
+
+ploop umount $PLOOP_DDXML
+ploop mount -d $PLOOP_DEV -m $PLOOP_MNT $PLOOP_DDXML
+
+rm -f $PLOOP_MNT/* || true
+
+ploop resize -s ${SIZE}k $PLOOP_DDXML
+
+test_cleanup
+
+rm -f $SPACE/data_out
+rm -f $SPACE/data
+
+echo "FINISHED"

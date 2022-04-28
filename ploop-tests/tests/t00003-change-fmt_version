@@ -1,0 +1,82 @@
+#!/bin/bash
+
+. tests/functions
+
+BLOCKSIZE=2048
+SIZE=2048576000
+DELTA=1000
+FROM=1
+TO=2;
+NEXT_SNAP=0
+
+while [ "${#}" -gt 0 ]; do
+case "${1}" in
+	"--from")
+		FROM="${2}"
+		shift
+		shift
+		;;
+	"--to")
+		TO="${2}"
+		shift
+		shift
+		;;
+	"--size")
+		SIZE="${2}"
+		shift
+		shift
+		;;
+	"--snapshot")
+		SNAPSHOT="${2}"
+		let SNAP_DELTA=$SIZE/$SNAPSHOT
+		NEXT_SNAP=$SNAP_DELTA
+		shift
+		shift
+		;;
+	*)
+		shift
+		;;
+	esac
+done
+
+test_cleanup
+
+ploop init -v ${FROM} -b $BLOCKSIZE -s ${SIZE}k -t ext4 $PLOOP_IMG
+ploop mount -d $PLOOP_DEV -m $PLOOP_MNT $PLOOP_DDXML
+
+let bs=$BLOCKSIZE/2
+dd if=/dev/urandom bs=${bs}k count=1 of=$SPACE/data
+
+for ((i = 0; i < SIZE; i += bs*DELTA)); do
+	progress Writing $i $SIZE
+	dd if=$SPACE/data of=$PLOOP_MNT/$i bs=1k >/dev/null 2>&1
+	if [ "$NEXT_SNAP" != 0 -a $i -gt $NEXT_SNAP ]; then
+		echo
+		ploop snapshot $PLOOP_DDXML
+		let NEXT_SNAP+=$SNAP_DELTA
+	fi
+done
+echo
+
+ploop umount $PLOOP_DDXML
+
+ploop convert -v ${TO} $PLOOP_DDXML
+ploop mount -d $PLOOP_DEV -m $PLOOP_MNT $PLOOP_DDXML
+
+echo "Read"
+for ((i = 0; i < SIZE; i += bs*DELTA)); do
+	progress Reading $i $SIZE
+	cmp $SPACE/data $PLOOP_MNT/$i
+done
+echo
+
+umount $PLOOP_MNT
+
+fsck -f -C $PLOOP_DEV
+
+ploop umount $PLOOP_DDXML
+
+ploop check -f $PLOOP_IMG
+
+rm -f $SPACE/data
+test_cleanup

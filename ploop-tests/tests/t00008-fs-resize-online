@@ -1,0 +1,3 @@
+#!/bin/bash
+
+tests/fs-resize-online --online

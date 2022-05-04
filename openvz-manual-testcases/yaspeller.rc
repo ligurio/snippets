@@ -1,0 +1,12 @@
+{
+  "excludeFiles": [
+    ".git"
+  ],
+  "lang": "ru",
+  "fileExtensions": [
+    ".yaml"
+  ],
+  "dictionary": [
+  "openvz"
+  ]
+}

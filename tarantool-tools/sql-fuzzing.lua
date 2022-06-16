@@ -2,7 +2,10 @@
 -- TODO:
 -- https://in2test.lsi.uniovi.es/sqlmutation/
 -- https://clickhouse.com/blog/en/2021/fuzzing-clickhouse/
--- https://in2test.lsi.uniovi.es/sqlmutation/
+-- https://cosette.cs.washington.edu/
+-- https://www.cs.cmu.edu/~15811/papers/db.pdf
+-- https://github.com/uwdb/Cosette
+-- https://github.com/sqlancer/sqlancer
 ]]
 
 local lpeg = require("lpeg")

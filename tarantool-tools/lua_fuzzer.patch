@@ -1,0 +1,56 @@
+diff --git a/test/fuzz/lua_fuzzer/CMakeLists.txt b/test/fuzz/lua_fuzzer/CMakeLists.txt
+index ca30dd4eb..e615421b9 100644
+--- a/test/fuzz/lua_fuzzer/CMakeLists.txt
++++ b/test/fuzz/lua_fuzzer/CMakeLists.txt
+@@ -15,8 +15,6 @@ foreach(lib ${LPM_LIBRARIES})
+     find_library(${lib} REQUIRED_FILES)
+ endforeach(lib)
+ 
+-find_library(LuaJIT REQUIRED)
+-
+ protobuf_generate(LANGUAGE cpp
+                   TARGET lua_grammar-proto
+                   PROTOS lua_grammar.proto)
+@@ -27,9 +25,9 @@ target_link_libraries(lua_grammar-proto
+ 
+ target_link_libraries(lua_fuzzer 
+                       PUBLIC 
+-                      box 
+-                      core 
+                       lua_grammar-proto 
+                       ${LPM_LIBRARIES} 
+                       ${LUAJIT_LIBRARIES} 
+                       fuzzer_config)
++
++add_dependencies(lua_fuzzer libluajit)
+diff --git a/test/fuzz/lua_fuzzer/lua_fuzzer.cc b/test/fuzz/lua_fuzzer/lua_fuzzer.cc
+index d3ef478ec..63f94dafd 100644
+--- a/test/fuzz/lua_fuzzer/lua_fuzzer.cc
++++ b/test/fuzz/lua_fuzzer/lua_fuzzer.cc
+@@ -15,17 +15,21 @@ extern "C"
+ DEFINE_PROTO_FUZZER(const lua_grammar::LuaBlock &message)
+ {
+     lua_State *L = luaL_newstate();
+-    if (L == NULL)
+-        abort();
++    if (!L)
++		return;
+ 
+     std::string code = LuaBlockToString(message);
+ 
++    /* See https://luajit.org/running.html
++     * https://github.com/tarantool/tarantool/issues/6782
++     */
++    const char *jit_opts = "jit.opt.start('hotloop=1', 'hotexit=1', 'recunroll=1', 'callunroll=1')";
++    luaL_dostring(L, jit_opts);
+     luaL_openlibs(L);
+     int status = luaL_loadbuffer(L, code.c_str(), code.size(), "fuzz_test");
+     if (status == 0)
+         lua_pcall(L, 0, LUA_MULTRET, 0);
+ 
+     std::cerr << "Generated code:\n" << code << std::endl;
+-
+     lua_settop(L, 0);
+-}
+\ No newline at end of file
++}

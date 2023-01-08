@@ -2,6 +2,8 @@
 
 ### Learning
 
+- Книга Daniel Jackson "Software Abstractions".
+Amazon: https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/0262017156
 - http://alloytools.org/documentation.html - документация по Alloy.
 - [Alloy Models](https://github.com/AlloyTools/models) - a public repository to host Alloy models.
 - [Alloy Documentation](https://alloy.readthedocs.io/) - 3rd party Alloy documentation written by Hillel Waine.

@@ -18,11 +18,19 @@ Amazon: https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/
 
 #### Integrations
 
-- [Alloy instances in TypeScript](https://github.com/alloy-js/alloy-ts) - using Alloy visualization with Typescript.
-- [Sterling](https://alloy-js.github.io/tour/) - Alloy with browser-based visualizations.
-- Alloy LSP server and CLI (WIP) https://alloytools.discourse.group/t/commandline-options-clash/214
 - VSCode (Alloy 6) https://marketplace.visualstudio.com/items?itemName=ArashSahebolamri.alloy
 - VSCode (Alloy 5) https://marketplace.visualstudio.com/items?itemName=ArashSahebolamri.alloy5
 - Vim syntax highlighting https://github.com/runoshun/vim-alloy
 - Emacs support https://github.com/dwwmmn/alloy-mode
 - Sublime https://github.com/corbanmailloux/sublime-mit-alloy
+
+#### Extensions
+
+- [Alloy instances in TypeScript](https://github.com/alloy-js/alloy-ts) - using
+  Alloy visualization with Typescript.
+- [Sterling](https://alloy-js.github.io/tour/) - Alloy with browser-based visualizations.
+- [Alloy\*](https://github.com/aleksandarmilicevic/hola) is a fully automatic
+  higher-order solver over finite relational domains.
+- Profiling Alloy models - https://github.com/WatForm/profiling-alloy-models -
+  Project contains a number of scripts used to investigate the characteristics
+  and patterns of use of Alloy Models.

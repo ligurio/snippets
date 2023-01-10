@@ -23,3 +23,6 @@ Amazon: https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/
 - Alloy LSP server and CLI (WIP) https://alloytools.discourse.group/t/commandline-options-clash/214
 - VSCode (Alloy 6) https://marketplace.visualstudio.com/items?itemName=ArashSahebolamri.alloy
 - VSCode (Alloy 5) https://marketplace.visualstudio.com/items?itemName=ArashSahebolamri.alloy5
+- Vim syntax highlighting https://github.com/runoshun/vim-alloy
+- Emacs support https://github.com/dwwmmn/alloy-mode
+- Sublime https://github.com/corbanmailloux/sublime-mit-alloy

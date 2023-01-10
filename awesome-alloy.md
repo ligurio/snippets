@@ -28,6 +28,7 @@ Amazon: https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/
 
 - [Alloy instances in TypeScript](https://github.com/alloy-js/alloy-ts) - using
   Alloy visualization with Typescript.
+- [αRby](https://aleksandarmilicevic.github.io/arby) - an embedding of Alloy in Ruby.
 - [Sterling](https://alloy-js.github.io/tour/) - Alloy with browser-based visualizations.
 - [Alloy\*](https://github.com/aleksandarmilicevic/hola) is a fully automatic
   higher-order solver over finite relational domains.

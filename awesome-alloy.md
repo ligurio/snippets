@@ -11,6 +11,7 @@
 - [Formal Software Design with Alloy 6](https://haslab.github.io/formal-software-design/index.html) - 3rd-party Alloy 6 documentation.
 - [Alloy Cheatsheet](https://blackmesatech.com/2013/07/alloy/slides/cheatsheet.pdf) - Alloy 4 cheatsheet.
 - [Alloy Quick Reference](https://www.monperrus.net/martin/alloy-quick-ref.pdf) ([source code](https://github.com/monperrus/alloy-quick-reference)) - 3rd party quick reference.
+- [A Guide to Alloy](https://www.doc.ic.ac.uk/project/examples/2007/271j/suprema_on_alloy/Web/index.php)
 - [A hands-on introduction to Alloy](https://blackmesatech.com/2013/07/alloy/)
 - [Обзорный курс по model-checking/model-finding, читаемый осенью 2020 для студентов 2-го курса МФТИ](https://github.com/vasil-sd/engineering-sw-hw-model-checking-letures)
 - https://homepage.divms.uiowa.edu/~tinelli/classes/181/Fall17/lectures.shtml -

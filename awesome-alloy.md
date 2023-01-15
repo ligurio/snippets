@@ -28,6 +28,7 @@ Amazon: https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/
 
 #### Extensions
 
+- [Electrum](http://haslab.github.io/Electrum/) - a model checker for relational first-order temporal specifications.
 - [Alloy instances in TypeScript](https://github.com/alloy-js/alloy-ts) - using
   Alloy visualization with Typescript.
 - [αRby](https://aleksandarmilicevic.github.io/arby) - an embedding of Alloy in Ruby.

@@ -2,7 +2,7 @@
 
 ### Learning
 
-- Книга Daniel Jackson "Software Abstractions" ([Amazon](https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/0262017156))
+- Книга Daniel Jackson "Software Abstractions" ([MIT Press](https://mitpress.mit.edu/9780262528900/software-abstractions/))
 - http://alloytools.org/documentation.html - документация по Alloy.
 - [Alloy in 90 minutes](https://people.csail.mit.edu/dnj/talks/re05-tutorial/alloy-90.pdf) - Daniel Jackson
 - [Daniel Jackson: Recent Talks](https://people.csail.mit.edu/dnj/talks/)

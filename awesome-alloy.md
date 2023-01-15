@@ -2,16 +2,14 @@
 
 ### Learning
 
-- Книга Daniel Jackson "Software Abstractions".
-Amazon: https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/0262017156
+- Книга Daniel Jackson "Software Abstractions" ([Amazon](https://www.amazon.com/Software-Abstractions-Logic-Language-Analysis/dp/0262017156))
 - http://alloytools.org/documentation.html - документация по Alloy.
 - [Alloy in 90 minutes](https://people.csail.mit.edu/dnj/talks/re05-tutorial/alloy-90.pdf) - Daniel Jackson
 - [Daniel Jackson: Recent Talks](https://people.csail.mit.edu/dnj/talks/)
 - [Alloy Models](https://github.com/AlloyTools/models) - a public repository to host Alloy models.
-- [Alloy Documentation](https://alloy.readthedocs.io/) - 3rd party Alloy documentation written by Hillel Waine.
-- [Formal Software Design with Alloy 6](https://haslab.github.io/formal-software-design/index.html) - 3rd party Alloy 6 documentation.
-- [Alloy Cheatsheet](https://esb-dev.github.io/mat/alloy-cheatsheet.pdf) - 3rd party cheatsheet.
-- [Alloy Cheatsheet](https://blackmesatech.com/2013/07/alloy/slides/cheatsheet.pdf) - 3rd party cheatsheet.
+- [Alloy Documentation](https://alloy.readthedocs.io/) - 3rd-party Alloy documentation written by Hillel Waine.
+- [Formal Software Design with Alloy 6](https://haslab.github.io/formal-software-design/index.html) - 3rd-party Alloy 6 documentation.
+- [Alloy Cheatsheet](https://blackmesatech.com/2013/07/alloy/slides/cheatsheet.pdf) - Alloy 4 cheatsheet.
 - [Alloy Quick Reference](https://www.monperrus.net/martin/alloy-quick-ref.pdf) ([source code](https://github.com/monperrus/alloy-quick-reference)) - 3rd party quick reference.
 - [A hands-on introduction to Alloy](https://blackmesatech.com/2013/07/alloy/)
 - [Обзорный курс по model-checking/model-finding, читаемый осенью 2020 для студентов 2-го курса МФТИ](https://github.com/vasil-sd/engineering-sw-hw-model-checking-letures)

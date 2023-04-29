@@ -1,0 +1,36 @@
+diff --git a/Makefile b/Makefile
+index 67bdbb7..4c8f659 100644
+--- a/Makefile
++++ b/Makefile
+@@ -9,25 +9,25 @@ LUA_VERSION =   5.1
+ # details.
+ 
+ ## Linux/BSD
+-PREFIX ?=          /usr/local
+-LDFLAGS +=         -shared
++PREFIX ?=          /usr/
++LDFLAGS +=         -shared -fsanitize=undefined
+ 
+ ## OSX (Macports)
+ #PREFIX ?=          /opt/local
+ #LDFLAGS +=         -bundle -undefined dynamic_lookup
+ 
+-LUA_INCLUDE_DIR ?= $(PREFIX)/include
+-LUA_LIB_DIR ?=     $(PREFIX)/lib/lua/$(LUA_VERSION)
++LUA_INCLUDE_DIR ?= $(PREFIX)/include/lua5.1
++LUA_LIB_DIR ?=     $(PREFIX)/lib/x86_64-linux-gnu/liblua5.1.so
+ 
+ #CFLAGS ?=          -g -Wall -pedantic -fno-inline
+-CFLAGS ?=          -g -O -Wall
++CFLAGS ?=          -g -O -Wall -fsanitize=fuzzer-no-link,undefined
+ override CFLAGS += -fpic -I$(LUA_INCLUDE_DIR)
+ 
+ INSTALL ?= install
+ 
+ .PHONY: all clean dist test t
+ 
+-#CC = gcc
++CC = clang
+ RM = rm -f
+ 
+ all: parser.so

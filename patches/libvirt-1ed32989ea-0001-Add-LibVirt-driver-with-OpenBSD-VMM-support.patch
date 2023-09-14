@@ -1,0 +1,2292 @@
+From ef9bfc0ca89567ae7926b158572d8b69918a7f41 Mon Sep 17 00:00:00 2001
+Message-Id: <ef9bfc0ca89567ae7926b158572d8b69918a7f41.1694695484.git.sergeyb@tarantool.org>
+From: Sergey Bronnikov <Sergey.Bronnikov@kaspersky.com>
+Date: Thu, 26 Dec 2019 13:55:58 +0300
+Subject: [PATCH luajit] Add LibVirt driver with OpenBSD VMM support
+To: tarantool-patches@dev.tarantool.org, Sergey Kaplun <skaplun@tarantool.org>, max.kokryashkin@gmail.com
+
+---
+ README.OpenBSD              |   20 +
+ configure.ac                |    5 +-
+ docs/drvvmm.html.in         |  117 ++++
+ include/libvirt/virterror.h |    1 +
+ m4/virt-driver-vmm.m4       |   58 ++
+ src/README                  |    1 +
+ src/conf/domain_conf.h      |    1 +
+ src/libvirt.c               |    7 +
+ src/util/virerror.c         |    1 +
+ src/vmm/Makefile.inc.am     |   30 +
+ src/vmm/README              |    4 +
+ src/vmm/vmm_conf.c          |  463 +++++++++++++
+ src/vmm/vmm_conf.h          |   43 ++
+ src/vmm/vmm_driver.c        | 1242 +++++++++++++++++++++++++++++++++++
+ src/vmm/vmm_driver.h        |   25 +
+ src/vmm/vmm_util.c          |   36 +
+ src/vmm/vmm_util.h          |   22 +
+ tools/virsh.c               |    3 +
+ 18 files changed, 2078 insertions(+), 1 deletion(-)
+ create mode 100644 README.OpenBSD
+ create mode 100644 docs/drvvmm.html.in
+ create mode 100644 m4/virt-driver-vmm.m4
+ create mode 100644 src/vmm/Makefile.inc.am
+ create mode 100644 src/vmm/README
+ create mode 100644 src/vmm/vmm_conf.c
+ create mode 100644 src/vmm/vmm_conf.h
+ create mode 100644 src/vmm/vmm_driver.c
+ create mode 100644 src/vmm/vmm_driver.h
+ create mode 100644 src/vmm/vmm_util.c
+ create mode 100644 src/vmm/vmm_util.h
+
+diff --git a/README.OpenBSD b/README.OpenBSD
+new file mode 100644
+index 0000000000..920e696382
+--- /dev/null
++++ b/README.OpenBSD
+@@ -0,0 +1,20 @@
++- https://libvirt.org/compiling.html
++- https://cvsweb.openbsd.org/cgi-bin/cvsweb/~checkout~/ports/sysutils/libvirt/Makefile
++
++```
++$ doas pkg_add automake-1.16.1 autoconf gettext-tools libxslt libtool unzip ectags gcc-8.3.0
++$ export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.11
++$ git clone https://github.com/ligurio/libvirt
++$ cd libvirt
++$ git checkout -b openbsd-vmm
++$ git submodule init
++$ git submodule update
++$ NOCONFIGURE=1 CLEAN_SUBMODULE=1 GNULIB_SRCDIR=.gnulib/ ./autogen.sh --no-git --gnulib-srcdir .gnulib
++$ mkdir /usr/local/virtualenv/python3
++$ python3 -m venv /usr/local/virtualenv/python3
++$ . /usr/local/virtualenv/python3/bin/activate
++$ pip3 install rst2html5
++$ mkdir build; cd build
++$ ../configure --prefix=/opt/libvirt --with-openbsd-vmm
++$ gmake
++```
+diff --git a/configure.ac b/configure.ac
+index 002a3dcdb0..379ad3b732 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -34,7 +34,7 @@ AM_INIT_AUTOMAKE([
+     -Wno-portability
+     tar-pax
+     no-dist-gzip
+-    dist-xz
++    dist-bzip2
+     subdir-objects
+     ])
+ dnl older automake's default of ARFLAGS=cru is noisy on newer binutils;
+@@ -462,6 +462,7 @@ LIBVIRT_DRIVER_ARG_LXC
+ LIBVIRT_DRIVER_ARG_VZ
+ LIBVIRT_DRIVER_ARG_BHYVE
+ LIBVIRT_DRIVER_ARG_ESX
++LIBVIRT_DRIVER_ARG_VMM
+ LIBVIRT_DRIVER_ARG_HYPERV
+ LIBVIRT_DRIVER_ARG_TEST
+ LIBVIRT_DRIVER_ARG_REMOTE
+@@ -478,6 +479,7 @@ LIBVIRT_DRIVER_CHECK_LXC
+ LIBVIRT_DRIVER_CHECK_VZ
+ LIBVIRT_DRIVER_CHECK_BHYVE
+ LIBVIRT_DRIVER_CHECK_ESX
++LIBVIRT_DRIVER_CHECK_VMM
+ LIBVIRT_DRIVER_CHECK_HYPERV
+ LIBVIRT_DRIVER_CHECK_TEST
+ LIBVIRT_DRIVER_CHECK_REMOTE
+@@ -952,6 +954,7 @@ LIBVIRT_DRIVER_RESULT_VBOX
+ LIBVIRT_DRIVER_RESULT_LIBXL
+ LIBVIRT_DRIVER_RESULT_LXC
+ LIBVIRT_DRIVER_RESULT_ESX
++LIBVIRT_DRIVER_RESULT_VMM
+ LIBVIRT_DRIVER_RESULT_HYPERV
+ LIBVIRT_DRIVER_RESULT_VZ
+ LIBVIRT_DRIVER_RESULT_BHYVE
+diff --git a/docs/drvvmm.html.in b/docs/drvvmm.html.in
+new file mode 100644
+index 0000000000..7f2a5833c0
+--- /dev/null
++++ b/docs/drvvmm.html.in
+@@ -0,0 +1,117 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE html>
++<html xmlns="http://www.w3.org/1999/xhtml">
++  <body>
++    <h1>OpenBSD VMM driver</h1>
++
++    <ul id="toc"></ul>
++
++    <p>
++    OpenBSD VMM is an OpenBSD hypervisor. It first appeared in
++    <a href="http://www.openbsd.org/59.html">OpenBSD 5.9</a>.
++    Additional information on OpenBSD VMM could be obtained on
++    <a href="http://www.openbsd.org/">www.openbsd.org</a>.
++    </p>
++
++    <h2><a id="project">Project Links</a></h2>
++
++    <ul>
++      <li>
++        The <a href="http://openbsd.org/">OpenBSD</a>
++      </li>
++    </ul>
++
++    <h2><a id="connections">Connections to OpenBSD VMM driver</a></h2>
++
++    <p>
++    The libvirt OpenBSD VMM driver is a single-instance privileged driver. Some
++    sample connection URIs are:
++    </p>
++
++<pre>
++openbsd:///system                     (local access)
++openbsd+unix:///system                (local access)
++openbsd+ssh://root@example.com/system (remote access, SSH tunnelled)
++</pre>
++
++    <h2><a id="notes">Notes on bridged networking</a></h2>
++
++    <p>
++    Bridged networking enables a guest domain (ie container) to have its
++    network interface connected directly to the host's physical LAN. Before
++    this can be used there are a couple of configuration pre-requisites for
++    the host OS.
++    </p>
++
++    <h3><a id="host">Host network devices</a></h3>
++
++    <p>
++    One or more of the physical devices must be attached to a bridge. The
++    process for this varies according to the operating system in use, so
++    for up to date notes consult the <a href="http://wiki.libvirt.org">Wiki</a>
++    or your operating system's networking documentation. The basic idea is
++    that the host OS should end up with a bridge device "br0" containing a
++    physical device "eth0", or a bonding device "bond0".
++    </p>
++
++    <h3><a id="tools">OpenVZ tools configuration</a></h3>
++
++    <p>
++    OpenVZ releases later than 3.0.23 ship with a standard network device
++    setup script that is able to setup bridging, named
++    <code>/usr/sbin/vznetaddbr</code>. For releases prior to 3.0.23, this
++    script must be created manually by the host OS administrator. The
++    simplest way is to just download the latest version of this script
++    from a newer OpenVZ release, or upstream source repository. Then
++    a generic configuration file <code>/etc/vz/vznet.conf</code>
++    must be created containing
++    </p>
++
++<pre>
++#!/bin/bash
++EXTERNAL_SCRIPT="/usr/sbin/vznetaddbr"
++</pre>
++
++    <p>
++    The host OS is now ready to allow bridging of guest containers, which
++    will work whether the container is started with libvirt, or OpenVZ
++    tools.
++    </p>
++
++
++    <h2><a id="example">Example guest domain XML configuration</a></h2>
++
++    <p>
++    The current libvirt OpenVZ driver has a restriction that the
++    domain names must match the OpenVZ container VEID, which by
++    convention start at 100, and are incremented from there. The
++    choice of OS template to use inside the container is determined
++    by the <code>filesystem</code> tag, and the template source name
++    matches the templates known to OpenVZ tools.
++    </p>
++
++<pre>
++&lt;domain type='vmm' id='104'&gt;
++  &lt;name&gt;104&lt;/name&gt;
++  &lt;uuid&gt;86c12009-e591-a159-6e9f-91d18b85ef78&lt;/uuid&gt;
++  &lt;vcpu&gt;3&lt;/vcpu&gt;
++  &lt;os&gt;
++    &lt;type&gt;exe&lt;/type&gt;
++    &lt;init&gt;/sbin/init&lt;/init&gt;
++  &lt;/os&gt;
++  &lt;devices&gt;
++    &lt;filesystem type='template'&gt;
++      &lt;source name='fedora-9-i386-minimal'/&gt;
++      &lt;target dir='/'/&gt;
++    &lt;/filesystem&gt;
++    &lt;interface type='bridge'&gt;
++      &lt;mac address='00:18:51:5b:ea:bf'/&gt;
++      &lt;source bridge='br0'/&gt;
++      &lt;target dev='veth101.0'/&gt;
++    &lt;/interface&gt;
++  &lt;/devices&gt;
++&lt;/domain&gt;
++</pre>
++
++  </body>
++</html>
+diff --git a/include/libvirt/virterror.h b/include/libvirt/virterror.h
+index 54f4f8190d..d315087f23 100644
+--- a/include/libvirt/virterror.h
++++ b/include/libvirt/virterror.h
+@@ -136,6 +136,7 @@ typedef enum {
+ 
+     VIR_FROM_TPM = 70,          /* Error from TPM */
+     VIR_FROM_BPF = 71,          /* Error from BPF code */
++    VIR_FROM_VMM = 72,       /* Error from OpenBSD VMM driver */
+ 
+ # ifdef VIR_ENUM_SENTINELS
+     VIR_ERR_DOMAIN_LAST
+diff --git a/m4/virt-driver-vmm.m4 b/m4/virt-driver-vmm.m4
+new file mode 100644
+index 0000000000..6a7334a789
+--- /dev/null
++++ b/m4/virt-driver-vmm.m4
+@@ -0,0 +1,58 @@
++dnl The OpenBSD VMM driver
++dnl
++dnl Copyright (C) 2019 Sergey Bronnikov
++dnl
++dnl This library is free software; you can redistribute it and/or
++dnl modify it under the terms of the GNU Lesser General Public
++dnl License as published by the Free Software Foundation; either
++dnl version 2.1 of the License, or (at your option) any later version.
++dnl
++dnl This library is distributed in the hope that it will be useful,
++dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
++dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++dnl Lesser General Public License for more details.
++dnl
++dnl You should have received a copy of the GNU Lesser General Public
++dnl License along with this library.  If not, see
++dnl <http://www.gnu.org/licenses/>.
++dnl
++
++AC_DEFUN([LIBVIRT_DRIVER_ARG_VMM], [
++  LIBVIRT_ARG_WITH_FEATURE([VMM], [OpenBSD VMM], [check])
++])
++
++AC_DEFUN([LIBVIRT_DRIVER_CHECK_VMM], [
++  OPENBSD_REQUIRED="5.9"
++  OS_NAME=`uname -s`
++
++  if test "$OS_NAME" = "OpenBSD"; then
++	with_openbsd="yes"
++  else
++	with_openbsd="no"
++  fi
++
++  if test "$with_vmm" != "no"; then
++      if test "$with_openbsd" = "no"; then
++          if test "$with_vmm" = "check"; then
++              with_vmm="no"
++          else
++              AC_MSG_ERROR([The OpenBSD VMM driver cannot be enabled])
++          fi
++      else
++          with_vmm="yes"
++      fi
++  fi
++
++  if test "$with_vmm" = "check"; then
++    with_vmm=yes
++  fi
++
++  if test "$with_vmm" = "yes" ; then
++    AC_DEFINE_UNQUOTED([WITH_VMM], 1, [whether VMM driver is enabled])
++  fi
++  AM_CONDITIONAL([WITH_VMM], [test "$with_vmm" = "yes"])
++])
++
++AC_DEFUN([LIBVIRT_DRIVER_RESULT_VMM], [
++  LIBVIRT_RESULT([VMM], [$with_vmm])
++])
+diff --git a/src/README b/src/README
+index 7ddbc08bfe..40f7ef5066 100644
+--- a/src/README
++++ b/src/README
+@@ -35,6 +35,7 @@ Then there are the hypervisor implementations:
+  * test/         - A "mock" driver for testing
+  * vbox/         - Virtual Box using native API
+  * vmware/       - VMware Workstation and Player using the vmrun tool
++ * vmm/          - OpenBSD VMM
+  * xen/          - Xen using hypercalls, XenD SEXPR & XenStore
+ 
+ 
+diff --git a/src/conf/domain_conf.h b/src/conf/domain_conf.h
+index e012975fca..957a962cbf 100644
+--- a/src/conf/domain_conf.h
++++ b/src/conf/domain_conf.h
+@@ -136,6 +136,7 @@ typedef enum {
+     VIR_DOMAIN_VIRT_PARALLELS,
+     VIR_DOMAIN_VIRT_BHYVE,
+     VIR_DOMAIN_VIRT_VZ,
++    VIR_DOMAIN_VIRT_VMM,
+ 
+     VIR_DOMAIN_VIRT_LAST
+ } virDomainVirtType;
+diff --git a/src/libvirt.c b/src/libvirt.c
+index c741ebe311..befe5258af 100644
+--- a/src/libvirt.c
++++ b/src/libvirt.c
+@@ -69,6 +69,9 @@
+ #ifdef WITH_OPENVZ
+ # include "openvz/openvz_driver.h"
+ #endif
++#ifdef WITH_VMM
++# include "vmm/vmm_driver.h"
++#endif
+ #ifdef WITH_VMWARE
+ # include "vmware/vmware_driver.h"
+ #endif
+@@ -283,6 +286,10 @@ virGlobalInit(void)
+     if (openvzRegister() == -1)
+         goto error;
+ #endif
++#ifdef WITH_VMM
++    if (vmmRegister() == -1)
++        goto error;
++#endif
+ #ifdef WITH_VMWARE
+     if (vmwareRegister() == -1)
+         goto error;
+diff --git a/src/util/virerror.c b/src/util/virerror.c
+index fd2f77329f..83b989b507 100644
+--- a/src/util/virerror.c
++++ b/src/util/virerror.c
+@@ -145,6 +145,7 @@ VIR_ENUM_IMPL(virErrorDomain,
+ 
+               "TPM", /* 70 */
+               "BPF",
++              "OpenBSD VMM",
+ );
+ 
+ 
+diff --git a/src/vmm/Makefile.inc.am b/src/vmm/Makefile.inc.am
+new file mode 100644
+index 0000000000..dae28bf2c1
+--- /dev/null
++++ b/src/vmm/Makefile.inc.am
+@@ -0,0 +1,30 @@
++# vim: filetype=automake
++
++VMM_DRIVER_SOURCES = \
++	vmm/vmm_conf.c \
++	vmm/vmm_conf.h \
++	vmm/vmm_driver.c \
++	vmm/vmm_driver.h \
++	vmm/vmm_util.c \
++	vmm/vmm_util.h \
++	$(NULL)
++
++DRIVER_SOURCE_FILES += $(addprefix $(srcdir)/,$(VMM_DRIVER_SOURCES))
++
++EXTRA_DIST += $(VMM_DRIVER_SOURCES)
++
++if WITH_VMM
++noinst_LTLIBRARIES += libvirt_driver_vmm.la
++libvirt_la_BUILT_LIBADD += libvirt_driver_vmm.la
++libvirt_driver_vmm_la_CFLAGS = \
++	-I$(srcdir)/conf \
++	$(AM_CFLAGS) \
++	$(NULL)
++libvirt_driver_vmm_la_SOURCES = $(VMM_DRIVER_SOURCES)
++endif WITH_VMM
++
++if WITH_VMM
++USED_SYM_FILES += $(srcdir)/libvirt_vmm.syms
++else ! WITH_VMM
++SYM_FILES += $(srcdir)/libvirt_vmm.syms
++endif ! WITH_VMM
+diff --git a/src/vmm/README b/src/vmm/README
+new file mode 100644
+index 0000000000..3e115b4480
+--- /dev/null
++++ b/src/vmm/README
+@@ -0,0 +1,4 @@
++
++- https://man.openbsd.org/vmd.8
++- https://man.openbsd.org/vmctl.8
++- https://man.openbsd.org/vm.conf.5
+diff --git a/src/vmm/vmm_conf.c b/src/vmm/vmm_conf.c
+new file mode 100644
+index 0000000000..fdbb16a728
+--- /dev/null
++++ b/src/vmm/vmm_conf.c
+@@ -0,0 +1,463 @@
++/*
++ * vmm_conf.c: config functions for managing OpenBSD VMM
++ *
++ * Copyright (C) 2019 Sergey Bronnikov
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library.  If not, see
++ * <http://www.gnu.org/licenses/>.
++ */
++
++#include <config.h>
++
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/types.h>
++#include <dirent.h>
++#include <time.h>
++#include <sys/stat.h>
++#include <sys/wait.h>
++
++#include "virerror.h"
++#include "viruuid.h"
++#include "virbuffer.h"
++#include "viralloc.h"
++#include "virfile.h"
++#include "vircommand.h"
++#include "virstring.h"
++#include "virhostcpu.h"
++
++#include "vmm_conf.h"
++#include "vmm_util.h"
++
++#define VIR_FROM_THIS VIR_FROM_VMM
++
++static int openvzGetVPSUUID(int vpsid, char *uuidstr, size_t len);
++static int openvzAssignUUIDs(void);
++
++int
++strtoI(const char *str)
++{
++    int val;
++
++    if (virStrToLong_i(str, NULL, 10, &val) < 0)
++        return 0;
++
++    return val;
++}
++
++
++virCapsPtr vmmCapsInit(void)
++{
++    g_autoptr(virCaps) caps = NULL;
++    virCapsGuestPtr guest;
++
++    if ((caps = virCapabilitiesNew(virArchFromHost(),
++                                   false, false)) == NULL)
++        return NULL;
++
++    if (virCapabilitiesInitCaches(caps) < 0)
++        return NULL;
++
++    if ((guest = virCapabilitiesAddGuest(caps,
++                                         VIR_DOMAIN_OSTYPE_HVM,
++                                         caps->host.arch,
++                                         NULL,
++                                         NULL,
++                                         0,
++                                         NULL)) == NULL)
++        return NULL;
++
++    if (virCapabilitiesAddGuestDomain(guest,
++                                      VIR_DOMAIN_VIRT_VMM,
++                                      NULL,
++                                      NULL,
++                                      0,
++                                      NULL) == NULL)
++        return NULL;
++
++    return g_steal_pointer(&caps);
++}
++
++
++/* Free all memory associated with a vmm_driver structure */
++void
++vmmFreeDriver(struct vmm_driver *driver)
++{
++    if (!driver)
++        return;
++
++    virObjectUnref(driver->xmlopt);
++    virObjectUnref(driver->domains);
++    virObjectUnref(driver->caps);
++    VIR_FREE(driver);
++}
++
++
++int vmmLoadDomains(struct vmm_driver *driver)
++{
++    int veid, ret;
++    char *status;
++    char uuidstr[VIR_UUID_STRING_BUFLEN];
++    virDomainObjPtr dom = NULL;
++    virDomainDefPtr def = NULL;
++    char *temp = NULL;
++    char *outbuf = NULL;
++    char *line;
++    virCommandPtr cmd = NULL;
++    unsigned int vcpus = 0;
++
++    if (openvzAssignUUIDs() < 0)
++        return -1;
++
++    cmd = virCommandNewArgList(VMCTL, "-a", "-ovpsid,status", "-H", NULL);
++    virCommandSetOutputBuffer(cmd, &outbuf);
++    if (virCommandRun(cmd, NULL) < 0)
++        goto cleanup;
++
++    line = outbuf;
++    while (line[0] != '\0') {
++        unsigned int flags = 0;
++        if (virStrToLong_i(line, &status, 10, &veid) < 0 ||
++            *status++ != ' ' ||
++            (line = strchr(status, '\n')) == NULL) {
++            virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                           _("Failed to parse vzlist output"));
++            goto cleanup;
++        }
++        *line++ = '\0';
++
++        if (!(def = virDomainDefNew()))
++            goto cleanup;
++
++        def->virtType = VIR_DOMAIN_VIRT_OPENVZ;
++
++        if (STREQ(status, "stopped"))
++            def->id = -1;
++        else
++            def->id = veid;
++        def->name = g_strdup_printf("%i", veid);
++
++        openvzGetVPSUUID(veid, uuidstr, sizeof(uuidstr));
++        ret = virUUIDParse(uuidstr, def->uuid);
++
++        if (ret == -1) {
++            virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                           _("UUID in config file malformed"));
++            goto cleanup;
++        }
++
++        def->os.type = VIR_DOMAIN_OSTYPE_EXE;
++        def->os.init = g_strdup("/sbin/init");
++
++        ret = openvzReadVPSConfigParam(veid, "CPUS", &temp);
++        if (ret < 0) {
++            virReportError(VIR_ERR_INTERNAL_ERROR,
++                           _("Could not read config for container %d"),
++                           veid);
++            goto cleanup;
++        } else if (ret > 0) {
++            vcpus = strtoI(temp);
++        }
++
++        if (ret == 0 || vcpus == 0)
++            vcpus = virHostCPUGetCount();
++
++        if (virDomainDefSetVcpusMax(def, vcpus, driver->xmlopt) < 0)
++            goto cleanup;
++
++        if (virDomainDefSetVcpus(def, vcpus) < 0)
++            goto cleanup;
++
++        /* XXX load rest of VM config data .... */
++
++        openvzReadNetworkConf(def, veid);
++        openvzReadFSConf(def, veid);
++        openvzReadMemConf(def, veid);
++
++        virUUIDFormat(def->uuid, uuidstr);
++        flags = VIR_DOMAIN_OBJ_LIST_ADD_CHECK_LIVE;
++        if (STRNEQ(status, "stopped"))
++            flags |= VIR_DOMAIN_OBJ_LIST_ADD_LIVE;
++
++        if (!(dom = virDomainObjListAdd(driver->domains,
++                                        def,
++                                        driver->xmlopt,
++                                        flags,
++                                        NULL)))
++            goto cleanup;
++
++        if (STREQ(status, "stopped")) {
++            virDomainObjSetState(dom, VIR_DOMAIN_SHUTOFF,
++                                 VIR_DOMAIN_SHUTOFF_UNKNOWN);
++            dom->pid = -1;
++        } else {
++            virDomainObjSetState(dom, VIR_DOMAIN_RUNNING,
++                                 VIR_DOMAIN_RUNNING_UNKNOWN);
++            dom->pid = veid;
++        }
++        /* XXX OpenVZ doesn't appear to have concept of a transient domain */
++        dom->persistent = 1;
++
++        virDomainObjEndAPI(&dom);
++        dom = NULL;
++        def = NULL;
++    }
++
++    virCommandFree(cmd);
++    VIR_FREE(temp);
++    VIR_FREE(outbuf);
++
++    return 0;
++
++ cleanup:
++    virCommandFree(cmd);
++    VIR_FREE(temp);
++    VIR_FREE(outbuf);
++    virDomainDefFree(def);
++    return -1;
++}
++
++static int
++openvzGetVPSUUID(int vpsid, char *uuidstr, size_t len)
++{
++    char *conf_file;
++    char *line = NULL;
++    size_t line_size = 0;
++    char *saveptr = NULL;
++    char *uuidbuf;
++    char *iden;
++    FILE *fp;
++    int retval = -1;
++
++    if (openvzLocateConfFile(vpsid, &conf_file, "conf") < 0)
++        return -1;
++
++    fp = fopen(conf_file, "r");
++    if (fp == NULL)
++        goto cleanup;
++
++    while (1) {
++        if (getline(&line, &line_size, fp) < 0) {
++            if (feof(fp)) { /* EOF, UUID was not found */
++                uuidstr[0] = 0;
++                break;
++            } else {
++                goto cleanup;
++            }
++        }
++
++        iden = strtok_r(line, " ", &saveptr);
++        uuidbuf = strtok_r(NULL, "\n", &saveptr);
++
++        if (iden != NULL && uuidbuf != NULL && STREQ(iden, "#UUID:")) {
++            if (virStrcpy(uuidstr, uuidbuf, len) < 0) {
++                virReportError(VIR_ERR_INTERNAL_ERROR,
++                               _("invalid uuid %s"), uuidbuf);
++                goto cleanup;
++            }
++            break;
++        }
++    }
++    retval = 0;
++ cleanup:
++    VIR_FREE(line);
++    VIR_FORCE_FCLOSE(fp);
++    VIR_FREE(conf_file);
++
++    return retval;
++}
++
++int
++openvzSetDefinedUUID(int vpsid, unsigned char *uuid)
++{
++    char *conf_file;
++    char uuidstr[VIR_UUID_STRING_BUFLEN];
++    FILE *fp = NULL;
++    int ret = -1;
++
++    if (uuid == NULL)
++        return -1;
++
++    if (openvzLocateConfFile(vpsid, &conf_file, "conf") < 0)
++        return -1;
++
++    if (openvzGetVPSUUID(vpsid, uuidstr, sizeof(uuidstr)))
++        goto cleanup;
++
++    if (uuidstr[0] == 0) {
++        fp = fopen(conf_file, "a"); /* append */
++        if (fp == NULL)
++            goto cleanup;
++
++        virUUIDFormat(uuid, uuidstr);
++
++        /* Record failure if fprintf or VIR_FCLOSE fails,
++           and be careful always to close the stream.  */
++        if ((fprintf(fp, "\n#UUID: %s\n", uuidstr) < 0) ||
++            (VIR_FCLOSE(fp) == EOF))
++            goto cleanup;
++    }
++
++    ret = 0;
++ cleanup:
++    VIR_FORCE_FCLOSE(fp);
++    VIR_FREE(conf_file);
++    return ret;
++}
++
++static int
++openvzSetUUID(int vpsid)
++{
++    unsigned char uuid[VIR_UUID_BUFLEN];
++
++    if (virUUIDGenerate(uuid) < 0) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("Failed to generate UUID"));
++        return -1;
++    }
++
++    return openvzSetDefinedUUID(vpsid, uuid);
++}
++
++/*
++ * Scan VPS config files and see if they have a UUID.
++ * If not, assign one. Just append one to the config
++ * file as comment so that the OpenVZ tools ignore it.
++ *
++ */
++
++static int openvzAssignUUIDs(void)
++{
++    DIR *dp;
++    struct dirent *dent;
++    char *conf_dir;
++    int vpsid;
++    char *ext;
++    int ret = 0;
++
++    conf_dir = openvzLocateConfDir();
++    if (conf_dir == NULL)
++        return -1;
++
++    if (virDirOpenQuiet(&dp, conf_dir) < 0) {
++        VIR_FREE(conf_dir);
++        return 0;
++    }
++
++    while ((ret = virDirRead(dp, &dent, conf_dir)) > 0) {
++        if (virStrToLong_i(dent->d_name, &ext, 10, &vpsid) < 0 ||
++            *ext++ != '.' ||
++            STRNEQ(ext, "conf"))
++            continue;
++        if (vpsid > 0) /* '0.conf' belongs to the host, ignore it */
++            openvzSetUUID(vpsid);
++    }
++
++    VIR_DIR_CLOSE(dp);
++    VIR_FREE(conf_dir);
++    return ret;
++}
++
++
++int vmmGetVEID(const char *name)
++{
++    virCommandPtr cmd;
++    char *outbuf;
++    char *temp;
++    int veid;
++    bool ok;
++
++    cmd = virCommandNewArgList(VMCTL, name, "-ovpsid", "-H", NULL);
++    virCommandSetOutputBuffer(cmd, &outbuf);
++    if (virCommandRun(cmd, NULL) < 0) {
++        virCommandFree(cmd);
++        VIR_FREE(outbuf);
++        return -1;
++    }
++
++    virCommandFree(cmd);
++    ok = virStrToLong_i(outbuf, &temp, 10, &veid) == 0 && *temp == '\n';
++    VIR_FREE(outbuf);
++
++    if (ok && veid >= 0)
++        return veid;
++
++    virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                   _("Failed to parse vzlist output"));
++    return -1;
++}
++
++
++static int
++vmmDomainDefPostParse(virDomainDefPtr def,
++                         unsigned int parseFlags G_GNUC_UNUSED,
++                         void *opaque,
++                         void *parseOpaque G_GNUC_UNUSED)
++{
++    /*
++    TODO: sergeyb@
++    
++    struct openvz_driver *driver = opaque;
++    if (!virCapabilitiesDomainSupported(driver->caps, def->os.type,
++                                        def->os.arch,
++                                        def->virtType))
++        return -1;
++
++    if (def->os.type == VIR_DOMAIN_OSTYPE_EXE && !def->os.init)
++        def->os.init = g_strdup("/sbin/init");
++    */
++
++    return 0;
++}
++
++
++static int
++vmmDomainDeviceDefPostParse(virDomainDeviceDefPtr dev,
++                               const virDomainDef *def G_GNUC_UNUSED,
++                               unsigned int parseFlags G_GNUC_UNUSED,
++                               void *opaque G_GNUC_UNUSED,
++                               void *parseOpaque G_GNUC_UNUSED)
++{
++    /*
++    if (dev->type == VIR_DOMAIN_DEVICE_CHR &&
++        dev->data.chr->deviceType == VIR_DOMAIN_CHR_DEVICE_TYPE_CONSOLE &&
++        dev->data.chr->targetType == VIR_DOMAIN_CHR_CONSOLE_TARGET_TYPE_NONE)
++        dev->data.chr->targetType = VIR_DOMAIN_CHR_CONSOLE_TARGET_TYPE_OPENVZ;
++
++    if (dev->type == VIR_DOMAIN_DEVICE_HOSTDEV &&
++        dev->data.hostdev->mode == VIR_DOMAIN_HOSTDEV_MODE_CAPABILITIES) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("hostdev mode 'capabilities' is not "
++                         "supported in %s"),
++                       virDomainVirtTypeToString(def->virtType));
++        return -1;
++    }
++    */
++
++    return 0;
++}
++
++
++virDomainDefParserConfig vmmDomainDefParserConfig = {
++    .domainPostParseCallback = vmmDomainDefPostParse,
++    .devicesPostParseCallback = vmmDomainDeviceDefPostParse,
++    .features = VIR_DOMAIN_DEF_FEATURE_NAME_SLASH,
++};
++
++virDomainXMLOptionPtr vmmXMLOption(struct vmm_driver *driver)
++{
++    vmmDomainDefParserConfig.priv = driver;
++    return virDomainXMLOptionNew(&vmmDomainDefParserConfig,
++                                 NULL, NULL, NULL, NULL);
++}
+diff --git a/src/vmm/vmm_conf.h b/src/vmm/vmm_conf.h
+new file mode 100644
+index 0000000000..b999fb0871
+--- /dev/null
++++ b/src/vmm/vmm_conf.h
+@@ -0,0 +1,43 @@
++/*
++ * vmm_conf.h: config information for OpenBSD VMM
++ *
++ * Copyright (C) 2019 Sergey Bronnikov
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library.  If not, see
++ * <http://www.gnu.org/licenses/>.
++ */
++
++#pragma once
++
++#include "internal.h"
++#include "virdomainobjlist.h"
++#include "virthread.h"
++
++#define VMCTL		"/usr/sbin/vmctl"
++
++struct vmm_driver {
++    virMutex lock;
++
++    virCapsPtr caps;
++    virDomainXMLOptionPtr xmlopt;
++    virDomainObjListPtr domains;
++    int version;
++};
++
++int vmmLoadDomains(struct openvz_driver *driver);
++void vmmFreeDriver(struct openvz_driver *driver);
++int strtoI(const char *str);
++int vmmSetDefinedUUID(int vpsid, unsigned char *uuid);
++int vmmGetVEID(const char *name);
++virDomainXMLOptionPtr vmmXMLOption(struct vmm_driver *driver);
+diff --git a/src/vmm/vmm_driver.c b/src/vmm/vmm_driver.c
+new file mode 100644
+index 0000000000..4023bd19b8
+--- /dev/null
++++ b/src/vmm/vmm_driver.c
+@@ -0,0 +1,1242 @@
++/*
++ * vmm_driver.c: core driver methods for managing OpenBSD VMM
++ *
++ * Copyright (C) 2019 Sergey Bronnikov
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library.  If not, see
++ * <http://www.gnu.org/licenses/>.
++ */
++
++#include <config.h>
++
++#include <sys/types.h>
++#include <sys/poll.h>
++#include <sys/utsname.h>
++#include <stdarg.h>
++#include <unistd.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <pwd.h>
++#include <sys/wait.h>
++
++#include "virerror.h"
++#include "datatypes.h"
++#include "virbuffer.h"
++#include "virhostcpu.h"
++#include "virhostmem.h"
++#include "viralloc.h"
++#include "virfile.h"
++#include "virtypedparam.h"
++#include "virlog.h"
++#include "vircommand.h"
++#include "viruri.h"
++#include "virnetdevtap.h"
++#include "virstring.h"
++
++#include "vmm_conf.h"
++#include "vmm_driver.h"
++#include "vmm_util.h"
++
++#define VIR_FROM_THIS VIR_FROM_VMM
++
++/* FIXME (sergeyb@) */
++VIR_LOG_INIT("openvz.openvz_driver");
++
++static int vmmConnectGetMaxVcpus(virConnectPtr conn, const char *type);
++static int openvzDomainSetMemoryInternal(virDomainObjPtr vm,
++                                         unsigned long long memory);
++static int openvzGetVEStatus(virDomainObjPtr vm, int *status, int *reason);
++
++static void vmmDriverLock(struct vmm_driver *driver)
++{
++    virMutexLock(&driver->lock);
++}
++
++static void vmmDriverUnlock(struct vmm_driver *driver)
++{
++    virMutexUnlock(&driver->lock);
++}
++
++static virDomainObjPtr
++vmmDomObjFromDomainLocked(struct vmm_driver *driver,
++                             const unsigned char *uuid)
++{
++    virDomainObjPtr vm;
++    char uuidstr[VIR_UUID_STRING_BUFLEN];
++
++    if (!(vm = virDomainObjListFindByUUID(driver->domains, uuid))) {
++        virUUIDFormat(uuid, uuidstr);
++
++        virReportError(VIR_ERR_NO_DOMAIN,
++                       _("no domain with matching uuid '%s'"), uuidstr);
++        return NULL;
++    }
++
++    return vm;
++}
++
++
++static virDomainObjPtr
++vmmDomObjFromDomain(struct vmm_driver *driver,
++                       const unsigned char *uuid)
++{
++    virDomainObjPtr vm;
++
++    vmmDriverLock(driver);
++    vm = vmmDomObjFromDomainLocked(driver, uuid);
++    vmmDriverUnlock(driver);
++    return vm;
++}
++
++
++static virCommandPtr
++openvzDomainDefineCmd(virDomainDefPtr vmdef)
++{
++    virCommandPtr cmd = virCommandNewArgList(VZCTL,
++                                             "--quiet",
++                                             "create",
++                                             NULL);
++
++    if (vmdef == NULL) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("Container is not defined"));
++        virCommandFree(cmd);
++        return NULL;
++    }
++
++    virCommandAddArgList(cmd, vmdef->name, "--name", vmdef->name, NULL);
++
++    return cmd;
++}
++
++
++static int vmmSetInitialConfig(virDomainDefPtr vmdef)
++{
++    return 0;
++}
++
++
++static char *
++vmmDomainGetHostname(virDomainPtr dom, unsigned int flags)
++{
++    char *hostname = NULL;
++    /* TODO (sergeyb@) */
++
++    return hostname;
++}
++
++
++static virDomainPtr vmmDomainLookupByID(virConnectPtr conn,
++                                           int id)
++{
++    struct vmm_driver *driver = conn->privateData;
++    virDomainObjPtr vm;
++    virDomainPtr dom = NULL;
++
++    vmmDriverLock(driver);
++    vm = virDomainObjListFindByID(driver->domains, id);
++    vmmDriverUnlock(driver);
++
++    if (!vm) {
++        virReportError(VIR_ERR_NO_DOMAIN,
++                       _("no domain with matching id '%d'"), id);
++        goto cleanup;
++    }
++
++    dom = virGetDomain(conn, vm->def->name, vm->def->uuid, vm->def->id);
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    return dom;
++}
++
++static int vmmConnectGetVersion(virConnectPtr conn, unsigned long *version)
++{
++    struct utsname ver;
++
++    if (virConnectGetVersionEnsureACL(conn) < 0)
++        return -1;
++
++    uname(&ver);
++
++    if (virParseVersionString(ver.release, version, true) < 0) {
++        virReportError(VIR_ERR_INTERNAL_ERROR,
++                       _("Unknown release: %s"), ver.release);
++        return -1;
++    }
++
++    return 0;
++}
++
++
++static char *vmmConnectGetHostname(virConnectPtr conn G_GNUC_UNUSED)
++{
++    return virGetHostname();
++}
++
++
++static char *vmmDomainGetOSType(virDomainPtr dom)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    char *ret = NULL;
++
++    if (!(vm = vmmDomObjFromDomain(driver, dom->uuid)))
++        return NULL;
++
++    ret = g_strdup(virDomainOSTypeToString(vm->def->os.type));
++
++    virDomainObjEndAPI(&vm);
++    return ret;
++}
++
++
++static virDomainPtr vmmDomainLookupByUUID(virConnectPtr conn,
++                                             const unsigned char *uuid)
++{
++    struct  vmm_driver *driver = conn->privateData;
++    virDomainObjPtr vm;
++    virDomainPtr dom = NULL;
++
++    if (!(vm = vmmDomObjFromDomain(driver, uuid)))
++        return NULL;
++
++    dom = virGetDomain(conn, vm->def->name, vm->def->uuid, vm->def->id);
++
++    virDomainObjEndAPI(&vm);
++
++    return dom;
++}
++
++static virDomainPtr vmmDomainLookupByName(virConnectPtr conn,
++                                             const char *name)
++{
++    struct vmm_driver *driver = conn->privateData;
++    virDomainObjPtr vm;
++    virDomainPtr dom = NULL;
++
++    vmmDriverLock(driver);
++    vm = virDomainObjListFindByName(driver->domains, name);
++    vmmDriverUnlock(driver);
++
++    if (!vm) {
++        virReportError(VIR_ERR_NO_DOMAIN,
++                       _("no domain with matching name '%s'"), name);
++        goto cleanup;
++    }
++
++    dom = virGetDomain(conn, vm->def->name, vm->def->uuid, vm->def->id);
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    return dom;
++}
++
++static int vmmDomainGetInfo(virDomainPtr dom,
++                               virDomainInfoPtr info)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    int state;
++    int ret = -1;
++
++    if (!(vm = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    if (openvzGetVEStatus(vm, &state, NULL) == -1)
++        goto cleanup;
++    info->state = state;
++
++    if (info->state != VIR_DOMAIN_RUNNING) {
++        info->cpuTime = 0;
++    } else {
++        /* FIXME: (sergeyb@) */
++        info->cpuTime = 100;
++    }
++
++    info->maxMem = virDomainDefGetMemoryTotal(vm->def);
++    info->memory = vm->def->mem.cur_balloon;
++    info->nrVirtCpu = virDomainDefGetVcpus(vm->def);
++    ret = 0;
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    return ret;
++}
++
++
++static int
++openvzDomainGetState(virDomainPtr dom,
++                     int *state,
++                     int *reason,
++                     unsigned int flags)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    int ret = -1;
++
++    virCheckFlags(0, -1);
++
++    if (!(vm = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    ret = vmmGetVEStatus(vm, state, reason);
++
++    virDomainObjEndAPI(&vm);
++
++    return ret;
++}
++
++
++static int vmmDomainIsActive(virDomainPtr dom)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr obj;
++    int ret = -1;
++
++    if (!(obj = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    ret = virDomainObjIsActive(obj);
++
++    virDomainObjEndAPI(&obj);
++
++    return ret;
++}
++
++
++static int vmmDomainIsPersistent(virDomainPtr dom)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr obj;
++    int ret = -1;
++
++    if (!(obj = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    ret = obj->persistent;
++
++    virDomainObjEndAPI(&obj);
++    return ret;
++}
++
++static int vmmDomainIsUpdated(virDomainPtr dom G_GNUC_UNUSED)
++{
++    return 0;
++}
++
++static char *vmmDomainGetXMLDesc(virDomainPtr dom, unsigned int flags) {
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    char *ret = NULL;
++
++    virCheckFlags(VIR_DOMAIN_XML_COMMON_FLAGS, NULL);
++
++    if (!(vm = vmmDomObjFromDomain(driver, dom->uuid)))
++        return NULL;
++
++    ret = virDomainDefFormat(vm->def, driver->xmlopt,
++                             virDomainDefFormatConvertXMLFlags(flags));
++
++    virDomainObjEndAPI(&vm);
++    return ret;
++}
++
++
++/*
++ * Convenient helper to target a command line argv
++ * and fill in an empty slot with the supplied
++ * key value. This lets us declare the argv on the
++ * stack and just splice in the domain name after
++ */
++#define PROGRAM_SENTINEL ((char *)0x1)
++static void openvzSetProgramSentinal(const char **prog, const char *key)
++{
++    const char **tmp = prog;
++    while (tmp && *tmp) {
++        if (*tmp == PROGRAM_SENTINEL) {
++            *tmp = key;
++            break;
++        }
++        tmp++;
++    }
++}
++
++static int
++vmmDomainShutdownFlags(virDomainPtr dom,
++                          unsigned int flags)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    const char *prog[] = {VMCTL, "stop", PROGRAM_SENTINEL, NULL};
++    int ret = -1;
++    int status;
++
++    virCheckFlags(0, -1);
++
++    if (!(vm = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    if (openvzGetVEStatus(vm, &status, NULL) == -1)
++        goto cleanup;
++
++    openvzSetProgramSentinal(prog, vm->def->name);
++    if (status != VIR_DOMAIN_RUNNING) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("domain is not in running state"));
++        goto cleanup;
++    }
++
++    if (virRun(prog, NULL) < 0)
++        goto cleanup;
++
++    vm->def->id = -1;
++    virDomainObjSetState(vm, VIR_DOMAIN_SHUTOFF, VIR_DOMAIN_SHUTOFF_SHUTDOWN);
++    dom->id = -1;
++    ret = 0;
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    return ret;
++}
++
++static int
++vmmDomainShutdown(virDomainPtr dom)
++{
++    return vmmDomainShutdownFlags(dom, 0);
++}
++
++static int
++vmmDomainDestroy(virDomainPtr dom)
++{
++    return vmmDomainShutdownFlags(dom, 0);
++}
++
++static int
++vmmDomainDestroyFlags(virDomainPtr dom, unsigned int flags)
++{
++    return vmmDomainShutdownFlags(dom, flags);
++}
++
++static int vmmDomainReboot(virDomainPtr dom,
++                              unsigned int flags)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    const char *prog[] = {VMCTL, "reset", PROGRAM_SENTINEL, NULL};
++    int ret = -1;
++    int status;
++
++    virCheckFlags(0, -1);
++
++    if (!(vm = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    if (openvzGetVEStatus(vm, &status, NULL) == -1)
++        goto cleanup;
++
++    openvzSetProgramSentinal(prog, vm->def->name);
++    if (status != VIR_DOMAIN_RUNNING) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("domain is not in running state"));
++        goto cleanup;
++    }
++
++    if (virRun(prog, NULL) < 0)
++        goto cleanup;
++    ret = 0;
++
++    virDomainObjSetState(vm, VIR_DOMAIN_RUNNING, VIR_DOMAIN_RUNNING_BOOTED);
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    return ret;
++}
++
++static int
++openvzDomainSetNetwork(virConnectPtr conn, const char *vpsid,
++                       virDomainNetDefPtr net,
++                       virBufferPtr configBuf)
++{
++    int rc = -1;
++    char macaddr[VIR_MAC_STRING_BUFLEN];
++    virMacAddr host_mac;
++    char host_macaddr[VIR_MAC_STRING_BUFLEN];
++    struct openvz_driver *driver =  conn->privateData;
++    virCommandPtr cmd = NULL;
++    char *guest_ifname = NULL;
++
++    if (net == NULL)
++        return 0;
++
++    if (vpsid == NULL) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("Container ID is not specified"));
++        return -1;
++    }
++
++    if (net->type != VIR_DOMAIN_NET_TYPE_BRIDGE &&
++        net->type != VIR_DOMAIN_NET_TYPE_ETHERNET)
++        return 0;
++
++    cmd = virCommandNewArgList(VZCTL, "--quiet", "set", vpsid, NULL);
++
++    virMacAddrFormat(&net->mac, macaddr);
++    virDomainNetGenerateMAC(driver->xmlopt, &host_mac);
++    virMacAddrFormat(&host_mac, host_macaddr);
++
++    if (net->type == VIR_DOMAIN_NET_TYPE_BRIDGE ||
++        (net->type == VIR_DOMAIN_NET_TYPE_ETHERNET &&
++         net->guestIP.nips == 0)) {
++        virBuffer buf = VIR_BUFFER_INITIALIZER;
++        int veid = openvzGetVEID(vpsid);
++
++        virBufferAdd(&buf, guest_ifname, -1); /* Guest dev */
++        virBufferAsprintf(&buf, ",%s", macaddr); /* Guest dev mac */
++        virBufferAsprintf(&buf, ",%s", net->ifname); /* Host dev */
++        virBufferAsprintf(&buf, ",%s", host_macaddr); /* Host dev mac */
++
++        if (net->type == VIR_DOMAIN_NET_TYPE_BRIDGE) {
++            if (driver->version >= VZCTL_BRIDGE_MIN_VERSION) {
++                virBufferAsprintf(&buf, ",%s", net->data.bridge.brname); /* Host bridge */
++            } else {
++                virBufferAsprintf(configBuf, "ifname=%s", guest_ifname);
++                virBufferAsprintf(configBuf, ",mac=%s", macaddr); /* Guest dev mac */
++                virBufferAsprintf(configBuf, ",host_ifname=%s", net->ifname); /* Host dev */
++                virBufferAsprintf(configBuf, ",host_mac=%s", host_macaddr); /* Host dev mac */
++                virBufferAsprintf(configBuf, ",bridge=%s", net->data.bridge.brname); /* Host bridge */
++            }
++        }
++
++        /* --netif_add ifname[,mac,host_ifname,host_mac] */
++        virCommandAddArg(cmd, "--netif_add");
++        virCommandAddArgBuffer(cmd, &buf);
++    } else if (net->type == VIR_DOMAIN_NET_TYPE_ETHERNET &&
++               net->guestIP.nips > 0) {
++        size_t i;
++
++        /* --ipadd ip */
++        for (i = 0; i < net->guestIP.nips; i++) {
++            char *ipStr = virSocketAddrFormat(&net->guestIP.ips[i]->address);
++            if (!ipStr)
++                goto cleanup;
++            virCommandAddArgList(cmd, "--ipadd", ipStr, NULL);
++            VIR_FREE(ipStr);
++        }
++    }
++
++    /* TODO: processing NAT and physical device */
++
++    virCommandAddArg(cmd, "--save");
++    rc = virCommandRun(cmd, NULL);
++
++ cleanup:
++    virCommandFree(cmd);
++    VIR_FREE(guest_ifname);
++    return rc;
++}
++
++
++static virDomainPtr
++vmmDomainDefineXMLFlags(virConnectPtr conn, const char *xml, unsigned int flags)
++{
++    /* TODO (sergeyb@) */
++    struct vmm_driver *driver =  conn->privateData;
++    virDomainDefPtr vmdef = NULL;
++    virDomainObjPtr vm = NULL;
++    virDomainPtr dom = NULL;
++    unsigned int parse_flags = VIR_DOMAIN_DEF_PARSE_INACTIVE;
++
++    virCheckFlags(VIR_DOMAIN_DEFINE_VALIDATE, NULL);
++
++    if (flags & VIR_DOMAIN_DEFINE_VALIDATE)
++        parse_flags |= VIR_DOMAIN_DEF_PARSE_VALIDATE_SCHEMA;
++
++    vmmDriverLock(driver);
++    if ((vmdef = virDomainDefParseString(xml, driver->xmlopt,
++                                         NULL, parse_flags)) == NULL)
++        goto cleanup;
++
++    if (virXMLCheckIllegalChars("name", vmdef->name, "\n") < 0)
++        goto cleanup;
++
++    if (!(vm = virDomainObjListAdd(driver->domains, vmdef,
++                                   driver->xmlopt,
++                                   0, NULL)))
++        goto cleanup;
++    vmdef = NULL;
++    vm->persistent = 1;
++
++    if (vmmSetInitialConfig(vm->def) < 0) {
++        VIR_ERROR(_("Error creating initial configuration"));
++        goto cleanup;
++    }
++
++    if (openvzSetDefinedUUID(strtoI(vm->def->name), vm->def->uuid) < 0) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("Could not set UUID"));
++        goto cleanup;
++    }
++
++    if (virDomainDefHasVcpusOffline(vm->def)) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
++                       _("current vcpu count must equal maximum"));
++        goto cleanup;
++    }
++
++    dom = virGetDomain(conn, vm->def->name, vm->def->uuid, -1);
++
++ cleanup:
++    virDomainDefFree(vmdef);
++    virDomainObjEndAPI(&vm);
++    openvzDriverUnlock(driver);
++    return dom;
++}
++
++static virDomainPtr
++vmmDomainDefineXML(virConnectPtr conn, const char *xml)
++{
++    return vmmDomainDefineXMLFlags(conn, xml, 0);
++}
++
++static virDomainPtr
++vmmDomainCreateXML(virConnectPtr conn, const char *xml,
++                      unsigned int flags)
++{
++    struct vmm_driver *driver =  conn->privateData;
++    virDomainDefPtr vmdef = NULL;
++    virDomainObjPtr vm = NULL;
++    virDomainPtr dom = NULL;
++    /* vmctl create -s 4.5G disk.img */
++    /* vmctl start -m 1G -i 1 -b /bsd -d disk.img "myvm" */
++    const char *progstart[] = {VMCTL, "create", "-i", PROGRAM_SENTINEL, NULL};
++    unsigned int parse_flags = VIR_DOMAIN_DEF_PARSE_INACTIVE;
++
++    virCheckFlags(VIR_DOMAIN_START_VALIDATE, NULL);
++
++    if (flags & VIR_DOMAIN_START_VALIDATE)
++        parse_flags |= VIR_DOMAIN_DEF_PARSE_VALIDATE_SCHEMA;
++
++    vmmDriverLock(driver);
++    if ((vmdef = virDomainDefParseString(xml, driver->xmlopt,
++                                         NULL, parse_flags)) == NULL)
++        goto cleanup;
++
++    if (!(vm = virDomainObjListAdd(driver->domains,
++                                   vmdef,
++                                   driver->xmlopt,
++                                   VIR_DOMAIN_OBJ_LIST_ADD_LIVE |
++                                   VIR_DOMAIN_OBJ_LIST_ADD_CHECK_LIVE,
++                                   NULL)))
++        goto cleanup;
++
++    vmdef = NULL;
++    /* All OpenVZ domains seem to be persistent - this is a bit of a violation
++     * of this libvirt API which is intended for transient domain creation */
++    vm->persistent = 1;
++
++    if (vmmSetInitialConfig(vm->def) < 0) {
++        VIR_ERROR(_("Error creating initial configuration"));
++        goto cleanup;
++    }
++
++    if (openvzSetDefinedUUID(strtoI(vm->def->name), vm->def->uuid) < 0) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("Could not set UUID"));
++        goto cleanup;
++    }
++
++    openvzSetProgramSentinal(progstart, vm->def->name);
++
++    if (virRun(progstart, NULL) < 0)
++        goto cleanup;
++
++    vm->pid = strtoI(vm->def->name);
++    vm->def->id = vm->pid;
++    virDomainObjSetState(vm, VIR_DOMAIN_RUNNING, VIR_DOMAIN_RUNNING_BOOTED);
++    dom = virGetDomain(conn, vm->def->name, vm->def->uuid, vm->def->id);
++
++ cleanup:
++    virDomainDefFree(vmdef);
++    virDomainObjEndAPI(&vm);
++    vmmDriverUnlock(driver);
++    return dom;
++}
++
++static int
++openvzDomainCreateWithFlags(virDomainPtr dom, unsigned int flags)
++{
++    struct openvz_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    const char *prog[] = {VMCTL, "start", PROGRAM_SENTINEL, NULL };
++    int ret = -1;
++    int status;
++
++    virCheckFlags(0, -1);
++
++    openvzDriverLock(driver);
++    vm = virDomainObjListFindByName(driver->domains, dom->name);
++    openvzDriverUnlock(driver);
++
++    if (!vm) {
++        virReportError(VIR_ERR_NO_DOMAIN,
++                       _("no domain with matching name '%s'"), dom->name);
++        goto cleanup;
++    }
++
++    if (openvzGetVEStatus(vm, &status, NULL) == -1)
++        goto cleanup;
++
++    if (status != VIR_DOMAIN_SHUTOFF) {
++        virReportError(VIR_ERR_OPERATION_DENIED, "%s",
++                       _("domain is not in shutoff state"));
++        goto cleanup;
++    }
++
++    openvzSetProgramSentinal(prog, vm->def->name);
++    if (virRun(prog, NULL) < 0)
++        goto cleanup;
++
++    vm->pid = strtoI(vm->def->name);
++    vm->def->id = vm->pid;
++    dom->id = vm->pid;
++    virDomainObjSetState(vm, VIR_DOMAIN_RUNNING, VIR_DOMAIN_RUNNING_BOOTED);
++    ret = 0;
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    return ret;
++}
++
++static int
++vmmDomainCreate(virDomainPtr dom)
++{
++    return vmmDomainCreateWithFlags(dom, 0);
++}
++
++static int
++vmmDomainUndefineFlags(virDomainPtr dom,
++                          unsigned int flags)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr vm;
++    int ret = -1;
++    int status;
++
++    virCheckFlags(0, -1);
++
++    vmmDriverLock(driver);
++    if (!(vm = vmmDomObjFromDomainLocked(driver, dom->uuid)))
++        goto cleanup;
++
++    if (vmmGetVEStatus(vm, &status, NULL) == -1)
++        goto cleanup;
++
++    /* TODO: vmctl doesn't support destroy */
++    if (virRun(prog, NULL) < 0)
++        goto cleanup;
++
++    if (virDomainObjIsActive(vm))
++        vm->persistent = 0;
++    else
++        virDomainObjListRemove(driver->domains, vm);
++
++    ret = 0;
++
++ cleanup:
++    virDomainObjEndAPI(&vm);
++    vmmDriverUnlock(driver);
++    return ret;
++}
++
++static int
++vmmDomainUndefine(virDomainPtr dom)
++{
++    return vmmDomainUndefineFlags(dom, 0);
++}
++
++static int
++vmmConnectURIProbe(char **uri)
++{
++    *uri = g_strdup("openbsd:///system");
++
++    return 1;
++}
++
++
++static virDrvOpenStatus vmmConnectOpen(virConnectPtr conn,
++                                          virConnectAuthPtr auth G_GNUC_UNUSED,
++                                          virConfPtr conf G_GNUC_UNUSED,
++                                          unsigned int flags)
++{
++    struct vmm_driver *driver;
++
++    virCheckFlags(VIR_CONNECT_RO, VIR_DRV_OPEN_ERROR);
++
++    /* TODO: check openbsd version? */
++
++    /* TODO: check existance of /var/run/vmd.sock */
++    /*
++    if (access("/var/run/vmd.sock", W_OK) < 0) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("OpenBSD VMM control UNIX-domain socket used for
++                        communication with vmd(8) is not accessible"));
++        return VIR_DRV_OPEN_ERROR;
++    }
++    */
++
++    /* We now know the URI is definitely for this driver, so beyond
++     * here, don't return DECLINED, always use ERROR */
++
++    if (VIR_ALLOC(driver) < 0)
++        return VIR_DRV_OPEN_ERROR;
++
++    if (!(driver->domains = virDomainObjListNew()))
++        goto cleanup;
++
++    if (!(driver->caps = vmmCapsInit()))
++        goto cleanup;
++
++    if (!(driver->xmlopt = vmmXMLOption(driver)))
++        goto cleanup;
++
++    if (vmmLoadDomains(driver) < 0)
++        goto cleanup;
++
++    conn->privateData = driver;
++
++    return VIR_DRV_OPEN_SUCCESS;
++
++ cleanup:
++    vmmFreeDriver(driver);
++    return VIR_DRV_OPEN_ERROR;
++};
++
++static int vmmConnectClose(virConnectPtr conn)
++{
++    struct vmm_driver *driver = conn->privateData;
++
++    vmmFreeDriver(driver);
++    conn->privateData = NULL;
++
++    return 0;
++}
++
++static const char *vmmConnectGetType(virConnectPtr conn G_GNUC_UNUSED) {
++    return "OpenBSD VMM";
++}
++
++static int vmmConnectIsEncrypted(virConnectPtr conn G_GNUC_UNUSED)
++{
++    return 0;
++}
++
++static int vmmConnectIsSecure(virConnectPtr conn G_GNUC_UNUSED)
++{
++    return 1;
++}
++
++static int
++vmmConnectIsAlive(virConnectPtr conn G_GNUC_UNUSED)
++{
++    return 1;
++}
++
++static char *vmmConnectGetCapabilities(virConnectPtr conn) {
++    struct vmm_driver *driver = conn->privateData;
++    char *ret;
++
++    vmmDriverLock(driver);
++    ret = virCapabilitiesFormatXML(driver->caps);
++    vmmDriverUnlock(driver);
++
++    return ret;
++}
++
++/* TODO (sergeyb@) */
++static int vmmConnectListDomains(virConnectPtr conn G_GNUC_UNUSED,
++                                    int *ids, int nids)
++{
++    int got = 0;
++    int veid;
++    int outfd = -1;
++    int rc = -1;
++    int ret;
++    char buf[32];
++    char *endptr;
++    virCommandPtr cmd = virCommandNewArgList(VMCTL, "status", NULL);
++
++    virCommandSetOutputFD(cmd, &outfd);
++    if (virCommandRunAsync(cmd, NULL) < 0)
++        goto cleanup;
++
++    while (got < nids) {
++        ret = openvz_readline(outfd, buf, 32);
++        if (!ret)
++            break;
++        if (virStrToLong_i(buf, &endptr, 10, &veid) < 0) {
++            virReportError(VIR_ERR_INTERNAL_ERROR,
++                           _("Could not parse VPS ID %s"), buf);
++            continue;
++        }
++        ids[got] = veid;
++        got ++;
++    }
++
++    if (virCommandWait(cmd, NULL) < 0)
++        goto cleanup;
++
++    if (VIR_CLOSE(outfd) < 0) {
++        virReportSystemError(errno, "%s", _("failed to close file"));
++        goto cleanup;
++    }
++
++    rc = got;
++ cleanup:
++    VIR_FORCE_CLOSE(outfd);
++    virCommandFree(cmd);
++    return rc;
++}
++
++static int vmmConnectNumOfDomains(virConnectPtr conn)
++{
++    struct vmm_driver *driver = conn->privateData;
++    int n = 0;
++
++    vmmDriverLock(driver);
++    n = virDomainObjListNumOfDomains(driver->domains, true, NULL, NULL);
++    vmmDriverUnlock(driver);
++
++    return n;
++}
++
++static int vmmConnectListDefinedDomains(virConnectPtr conn G_GNUC_UNUSED,
++                                           char **const names, int nnames) {
++    int got = 0;
++    int veid, outfd = -1, ret;
++    int rc = -1;
++    char vpsname[32];
++    char buf[32];
++    char *endptr;
++    virCommandPtr cmd = virCommandNewArgList(VZLIST,
++                                             "-ovpsid", "-H", "-S", NULL);
++
++    /* the -S options lists only stopped domains */
++    virCommandSetOutputFD(cmd, &outfd);
++    if (virCommandRunAsync(cmd, NULL) < 0)
++        goto out;
++
++    while (got < nnames) {
++        ret = openvz_readline(outfd, buf, 32);
++        if (!ret)
++            break;
++        if (virStrToLong_i(buf, &endptr, 10, &veid) < 0) {
++            virReportError(VIR_ERR_INTERNAL_ERROR,
++                           _("Could not parse VPS ID %s"), buf);
++            continue;
++        }
++        g_snprintf(vpsname, sizeof(vpsname), "%d", veid);
++        names[got] = g_strdup(vpsname);
++        got ++;
++    }
++
++    if (virCommandWait(cmd, NULL) < 0)
++        goto out;
++
++    if (VIR_CLOSE(outfd) < 0) {
++        virReportSystemError(errno, "%s", _("failed to close file"));
++        goto out;
++    }
++
++    rc = got;
++ out:
++    VIR_FORCE_CLOSE(outfd);
++    virCommandFree(cmd);
++    if (rc < 0) {
++        for (; got >= 0; got--)
++            VIR_FREE(names[got]);
++    }
++    return rc;
++}
++
++
++static int vmmConnectNumOfDefinedDomains(virConnectPtr conn)
++{
++    struct vmm_driver *driver =  conn->privateData;
++    int n = 0;
++
++    vmmDriverLock(driver);
++    n = virDomainObjListNumOfDomains(driver->domains, false, NULL, NULL);
++    vmmDriverUnlock(driver);
++
++    return n;
++}
++
++
++static int
++vmmDomainGetMemoryParameters(virDomainPtr domain,
++                                virTypedParameterPtr params,
++                                int *nparams,
++                                unsigned int flags)
++{
++    /* TODO: (sergeyb@) */
++    result = 0;
++
++    return result;
++}
++
++
++static int
++vmmDomainSetMemoryParameters(virDomainPtr domain,
++                                virTypedParameterPtr params,
++                                int nparams,
++                                unsigned int flags)
++{
++    /* TODO: (sergeyb@) */
++    result = 0;
++
++    return result;
++}
++
++
++static int
++openvzGetVEStatus(virDomainObjPtr vm, int *status, int *reason)
++{
++    virCommandPtr cmd;
++    char *outbuf;
++    char *line;
++    int state;
++    int ret = -1;
++
++    cmd = virCommandNewArgList(VZLIST, vm->def->name, "-ostatus", "-H", NULL);
++    virCommandSetOutputBuffer(cmd, &outbuf);
++    if (virCommandRun(cmd, NULL) < 0)
++        goto cleanup;
++
++    if ((line = strchr(outbuf, '\n')) == NULL) {
++        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
++                       _("Failed to parse vzlist output"));
++        goto cleanup;
++    }
++    *line++ = '\0';
++
++    state = virDomainObjGetState(vm, reason);
++
++    if (STREQ(outbuf, "running")) {
++        /* There is no way to detect whether a domain is paused or not
++         * with vzlist */
++        if (state == VIR_DOMAIN_PAUSED)
++            *status = state;
++        else
++            *status = VIR_DOMAIN_RUNNING;
++    } else {
++        *status = VIR_DOMAIN_SHUTOFF;
++    }
++
++    ret = 0;
++
++ cleanup:
++    virCommandFree(cmd);
++    VIR_FREE(outbuf);
++    return ret;
++}
++
++static int
++vmmDomainInterfaceStats(virDomainPtr dom,
++                           const char *device,
++                           virDomainInterfaceStatsPtr stats)
++{
++    return 0;
++}
++
++static int
++vmmConnectListAllDomains(virConnectPtr conn,
++                            virDomainPtr **domains,
++                            unsigned int flags)
++{
++    struct vmm_driver *driver = conn->privateData;
++    int ret = -1;
++
++    virCheckFlags(VIR_CONNECT_LIST_DOMAINS_FILTERS_ALL, -1);
++
++    vmmDriverLock(driver);
++    ret = virDomainObjListExport(driver->domains, conn, domains,
++                                 NULL, flags);
++    vmmDriverUnlock(driver);
++
++    return ret;
++}
++
++
++static int
++vmmNodeGetInfo(virConnectPtr conn G_GNUC_UNUSED,
++                  virNodeInfoPtr nodeinfo)
++{
++    return virCapabilitiesGetNodeInfo(nodeinfo);
++}
++
++
++static int
++vmmNodeGetCPUStats(virConnectPtr conn G_GNUC_UNUSED,
++                      int cpuNum,
++                      virNodeCPUStatsPtr params,
++                      int *nparams,
++                      unsigned int flags)
++{
++    return virHostCPUGetStats(cpuNum, params, nparams, flags);
++}
++
++
++static int
++vmmNodeGetMemoryStats(virConnectPtr conn G_GNUC_UNUSED,
++                         int cellNum,
++                         virNodeMemoryStatsPtr params,
++                         int *nparams,
++                         unsigned int flags)
++{
++    return virHostMemGetStats(cellNum, params, nparams, flags);
++}
++
++
++static int
++vmmNodeGetCellsFreeMemory(virConnectPtr conn G_GNUC_UNUSED,
++                             unsigned long long *freeMems,
++                             int startCell,
++                             int maxCells)
++{
++    return virHostMemGetCellsFree(freeMems, startCell, maxCells);
++}
++
++
++static unsigned long long
++vmmNodeGetFreeMemory(virConnectPtr conn G_GNUC_UNUSED)
++{
++    unsigned long long freeMem;
++    if (virHostMemGetInfo(NULL, &freeMem) < 0)
++        return 0;
++    return freeMem;
++}
++
++
++static int
++vmmNodeGetCPUMap(virConnectPtr conn G_GNUC_UNUSED,
++                    unsigned char **cpumap,
++                    unsigned int *online,
++                    unsigned int flags)
++{
++    return virHostCPUGetMap(cpumap, online, flags);
++}
++
++
++static int
++vmmConnectSupportsFeature(virConnectPtr conn G_GNUC_UNUSED, int feature)
++{
++    switch ((virDrvFeature) feature) {
++    case VIR_DRV_FEATURE_FD_PASSING:
++    case VIR_DRV_FEATURE_PROGRAM_KEEPALIVE:
++    case VIR_DRV_FEATURE_REMOTE:
++    case VIR_DRV_FEATURE_REMOTE_CLOSE_CALLBACK:
++    case VIR_DRV_FEATURE_REMOTE_EVENT_CALLBACK:
++    case VIR_DRV_FEATURE_TYPED_PARAM_STRING:
++    default:
++        return 0;
++    }
++}
++
++
++static int
++vmmDomainHasManagedSaveImage(virDomainPtr dom, unsigned int flags)
++{
++    struct vmm_driver *driver = dom->conn->privateData;
++    virDomainObjPtr obj;
++    int ret = -1;
++
++    virCheckFlags(0, -1);
++
++    if (!(obj = vmmDomObjFromDomain(driver, dom->uuid)))
++        return -1;
++
++    ret = 0;
++
++    virDomainObjEndAPI(&obj);
++    return ret;
++}
++
++
++
++static virHypervisorDriver vmmHypervisorDriver = {
++    .name = "OpenBSD VMM",
++    .connectURIProbe = vmmConnectURIProbe,
++    .connectOpen = vmmConnectOpen, /* 0.3.1 */
++    .connectClose = vmmConnectClose, /* 0.3.1 */
++    .connectGetType = vmmConnectGetType, /* 0.3.1 */
++    .connectGetVersion = vmmConnectGetVersion, /* 0.5.0 */
++    .connectGetHostname = vmmConnectGetHostname, /* 0.9.12 */
++    .nodeGetInfo = vmmNodeGetInfo, /* 0.3.2 */
++    .nodeGetCPUStats = vmmNodeGetCPUStats, /* 0.9.12 */
++    .nodeGetMemoryStats = vmmNodeGetMemoryStats, /* 0.9.12 */
++    .nodeGetCellsFreeMemory = vmmNodeGetCellsFreeMemory, /* 0.9.12 */
++    .nodeGetFreeMemory = vmmNodeGetFreeMemory, /* 0.9.12 */
++    .nodeGetCPUMap = vmmNodeGetCPUMap, /* 1.0.0 */
++    .connectGetCapabilities = vmmConnectGetCapabilities, /* 0.4.6 */
++    .connectListDomains = vmmConnectListDomains, /* 0.3.1 */
++    .connectNumOfDomains = vmmConnectNumOfDomains, /* 0.3.1 */
++    .connectListAllDomains = vmmConnectListAllDomains, /* 0.9.13 */
++    .domainCreateXML = openvzDomainCreateXML, /* 0.3.3 */
++    .domainLookupByID = vmmDomainLookupByID, /* 0.3.1 */
++    .domainLookupByUUID = vmmDomainLookupByUUID, /* 0.3.1 */
++    .domainLookupByName = vmmDomainLookupByName, /* 0.3.1 */
++    .domainShutdown = vmmDomainShutdown, /* 0.3.1 */
++    .domainShutdownFlags = vmmDomainShutdownFlags, /* 0.9.10 */
++    .domainReboot = vmmDomainReboot, /* 0.3.1 */
++    .domainDestroy = openvzDomainDestroy, /* 0.3.1 */
++    .domainDestroyFlags = openvzDomainDestroyFlags, /* 0.9.4 */
++    .domainGetOSType = openvzDomainGetOSType, /* 0.3.1 */
++    .domainGetMemoryParameters = vmmDomainGetMemoryParameters, /* 0.9.12 */
++    .domainSetMemoryParameters = vmmDomainSetMemoryParameters, /* 0.9.12 */
++    .domainGetInfo = vmmDomainGetInfo, /* 0.3.1 */
++    .domainGetState = openvzDomainGetState, /* 0.9.2 */
++    .domainGetVcpusFlags = openvzDomainGetVcpusFlags, /* 0.8.5 */
++    .domainGetXMLDesc = openvzDomainGetXMLDesc, /* 0.4.6 */
++    .connectListDefinedDomains = openvzConnectListDefinedDomains, /* 0.3.1 */
++    .connectNumOfDefinedDomains = vmmConnectNumOfDefinedDomains, /* 0.3.1 */
++    .domainCreate = vmmDomainCreate, /* 0.3.1 */
++    .domainCreateWithFlags = vmmDomainCreateWithFlags, /* 0.8.2 */
++    .domainDefineXML = vmmDomainDefineXML, /* 0.3.3 */
++    .domainDefineXMLFlags = vmmDomainDefineXMLFlags, /* 1.2.12 */
++    .domainUndefine = vmmDomainUndefine, /* 0.3.3 */
++    .domainUndefineFlags = vmmDomainUndefineFlags, /* 0.9.4 */
++    .domainInterfaceStats = vmmDomainInterfaceStats, /* 0.9.12 */
++    .connectIsEncrypted = vmmConnectIsEncrypted, /* 0.7.3 */
++    .connectIsSecure = vmmConnectIsSecure, /* 0.7.3 */
++    .domainIsActive = vmmDomainIsActive, /* 0.7.3 */
++    .domainIsPersistent = openvzDomainIsPersistent,
++    .domainIsUpdated = vmmDomainIsUpdated, /* 0.8.6 */
++    .connectIsAlive = vmmConnectIsAlive, /* 0.9.8 */
++    .domainGetHostname = vmmDomainGetHostname, /* 0.10.0 */
++    .connectSupportsFeature = vmmConnectSupportsFeature, /* 1.2.8 */
++    .domainHasManagedSaveImage = vmmDomainHasManagedSaveImage, /* 1.2.13 */
++};
++
++static virConnectDriver vmmConnectDriver = {
++    .localOnly = true,
++    .uriSchemes = (const char *[]){ "vmm", NULL },
++    .hypervisorDriver = &vmmHypervisorDriver,
++};
++
++int vmmRegister(void)
++{
++    return virRegisterConnectDriver(&vmmConnectDriver,
++                                    false);
++}
+diff --git a/src/vmm/vmm_driver.h b/src/vmm/vmm_driver.h
+new file mode 100644
+index 0000000000..0d1782e426
+--- /dev/null
++++ b/src/vmm/vmm_driver.h
+@@ -0,0 +1,25 @@
++/*
++ * vmm_driver.h: core driver methods for managing OpenBSD VMM
++ *
++ * Copyright (C) 2019 Sergey Bronnikov
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library.  If not, see
++ * <http://www.gnu.org/licenses/>.
++ */
++
++#pragma once
++
++#include "internal.h"
++
++int vmmRegister(void);
+diff --git a/src/vmm/vmm_util.c b/src/vmm/vmm_util.c
+new file mode 100644
+index 0000000000..0274e6cb56
+--- /dev/null
++++ b/src/vmm/vmm_util.c
+@@ -0,0 +1,36 @@
++/*
++ * vmm_util.c: core driver methods for managing OpenBSD VMM
++ *
++ * Copyright (C) 2019 Sergey Bronnikov
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library.  If not, see
++ * <http://www.gnu.org/licenses/>.
++ *
++ */
++
++#include <config.h>
++
++#include <unistd.h>
++
++#include "internal.h"
++
++#include "virerror.h"
++#include "vircommand.h"
++#include "datatypes.h"
++#include "viralloc.h"
++
++#include "vmm_conf.h"
++#include "vmm_util.h"
++
++#define VIR_FROM_THIS VIR_FROM_VMM
+diff --git a/src/vmm/vmm_util.h b/src/vmm/vmm_util.h
+new file mode 100644
+index 0000000000..f6eb30a581
+--- /dev/null
++++ b/src/vmm/vmm_util.h
+@@ -0,0 +1,22 @@
++/*
++ * vmm_util.h: common util functions for managing OpenBSD VMM
++ *
++ * Copyright (C) 2019 Sergey Bronnikov
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library.  If not, see
++ * <http://www.gnu.org/licenses/>.
++ *
++ */
++
++#pragma once
+diff --git a/tools/virsh.c b/tools/virsh.c
+index 9fb9ed6430..d4691c84f7 100644
+--- a/tools/virsh.c
++++ b/tools/virsh.c
+@@ -516,6 +516,9 @@ virshShowVersion(vshControl *ctl G_GNUC_UNUSED)
+ #ifdef WITH_OPENVZ
+     vshPrint(ctl, " OpenVZ");
+ #endif
++#ifdef WITH_VMM
++    vshPrint(ctl, " OpenBSD VMM");
++#endif
+ #ifdef WITH_VZ
+     vshPrint(ctl, " Virtuozzo");
+ #endif
+-- 
+2.34.1
+

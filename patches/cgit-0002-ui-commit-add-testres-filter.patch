@@ -1,0 +1,237 @@
+From 249f4e44cc96942fff1c5c9f4ea832d35365627e Mon Sep 17 00:00:00 2001
+Message-Id: <249f4e44cc96942fff1c5c9f4ea832d35365627e.1694694345.git.sergeyb@tarantool.org>
+In-Reply-To: <cover.1694694345.git.sergeyb@tarantool.org>
+References: <cover.1694694345.git.sergeyb@tarantool.org>
+From: Sergey Bronnikov <estetus@gmail.com>
+Date: Sun, 3 Oct 2021 11:42:28 +0300
+Subject: [PATCH luajit 2/2] ui-commit: add testres filter
+To: tarantool-patches@dev.tarantool.org, Sergey Kaplun <skaplun@tarantool.org>, max.kokryashkin@gmail.com
+
+This allows to process test results before printing.
+
+Signed-off-by: Sergey Bronnikov <estetus@gmail.com>
+---
+ cgit.c                      |  6 ++++++
+ cgit.h                      |  3 ++-
+ cgitrc.5.txt                | 17 +++++++++++++++++
+ filter.c                    |  6 ++++++
+ filters/testres-example.lua | 21 +++++++++++++++++++++
+ shared.c                    |  1 +
+ tests/setup.sh              |  1 +
+ tests/t0111-filter.sh       |  8 ++++++++
+ ui-commit.c                 |  2 ++
+ 9 files changed, 64 insertions(+), 1 deletion(-)
+ create mode 100755 filters/testres-example.lua
+
+diff --git a/cgit.c b/cgit.c
+index 08d81a1..6a1224c 100644
+--- a/cgit.c
++++ b/cgit.c
+@@ -114,6 +114,8 @@ static void repo_config(struct cgit_repo *repo, const char *name, const char *va
+ 			repo->commit_filter = cgit_new_filter(value, COMMIT);
+ 		else if (!strcmp(name, "source-filter"))
+ 			repo->source_filter = cgit_new_filter(value, SOURCE);
++		else if (!strcmp(name, "testres-filter"))
++			repo->testres_filter = cgit_new_filter(value, TESTRES);
+ 		else if (!strcmp(name, "email-filter"))
+ 			repo->email_filter = cgit_new_filter(value, EMAIL);
+ 		else if (!strcmp(name, "owner-filter"))
+@@ -221,6 +223,8 @@ static void config_cb(const char *name, const char *value)
+ 		ctx.cfg.about_filter = cgit_new_filter(value, ABOUT);
+ 	else if (!strcmp(name, "commit-filter"))
+ 		ctx.cfg.commit_filter = cgit_new_filter(value, COMMIT);
++	else if (!strcmp(name, "testres-filter"))
++		ctx.cfg.commit_filter = cgit_new_filter(value, TESTRES);
+ 	else if (!strcmp(name, "email-filter"))
+ 		ctx.cfg.email_filter = cgit_new_filter(value, EMAIL);
+ 	else if (!strcmp(name, "owner-filter"))
+@@ -830,6 +834,8 @@ static void print_repo(FILE *f, struct cgit_repo *repo)
+ 		cgit_fprintf_filter(repo->commit_filter, f, "repo.commit-filter=");
+ 	if (repo->source_filter && repo->source_filter != ctx.cfg.source_filter)
+ 		cgit_fprintf_filter(repo->source_filter, f, "repo.source-filter=");
++	if (repo->testres_filter && repo->testres_filter != ctx.cfg.testres_filter)
++		cgit_fprintf_filter(repo->testres_filter, f, "repo.testres_filter=");
+ 	if (repo->email_filter && repo->email_filter != ctx.cfg.email_filter)
+ 		cgit_fprintf_filter(repo->email_filter, f, "repo.email-filter=");
+ 	if (repo->owner_filter && repo->owner_filter != ctx.cfg.owner_filter)
+diff --git a/cgit.h b/cgit.h
+index b504168..da30079 100644
+--- a/cgit.h
++++ b/cgit.h
+@@ -58,7 +58,7 @@ typedef enum {
+ } diff_type;
+ 
+ typedef enum {
+-	ABOUT, COMMIT, SOURCE, EMAIL, AUTH, OWNER
++	ABOUT, COMMIT, SOURCE, TESTRES, EMAIL, AUTH, OWNER
+ } filter_type;
+ 
+ struct cgit_filter {
+@@ -268,6 +268,7 @@ struct cgit_config {
+ 	struct cgit_filter *about_filter;
+ 	struct cgit_filter *commit_filter;
+ 	struct cgit_filter *source_filter;
++	struct cgit_filter *testres_filter;
+ 	struct cgit_filter *email_filter;
+ 	struct cgit_filter *owner_filter;
+ 	struct cgit_filter *auth_filter;
+diff --git a/cgitrc.5.txt b/cgitrc.5.txt
+index 33a6a8c..77386fb 100644
+--- a/cgitrc.5.txt
++++ b/cgitrc.5.txt
+@@ -441,6 +441,14 @@ strict-export::
+ 	repositories to match those exported by git-daemon. This option must
+ 	be defined prior to scan-path.
+ 
++testres-filter::
++	Specifies a command which will be invoked to format testing results
++	report that stored in Git notes by reference 'refs/notes/testres'.
++	The command will get the report's content on its STDIN, and the STDOUT from the
++	command will be included verbatim as the formatted report, i.e. this can
++	be used to parse report and visualize it. Default value: none.
++	See also: "FILTER API".
++
+ virtual-root::
+ 	Url which, if specified, will be used as root for all cgit links. It
+ 	will also cause cgit to generate 'virtual urls', i.e. urls like
+@@ -605,6 +613,10 @@ repo.source-filter::
+ 	Override the default source-filter. Default value: none. See also:
+ 	"enable-filter-overrides". See also: "FILTER API".
+ 
++repo.testres-filter::
++	Override the default testres-filter. Default value: none. See also:
++	"enable-filter-overrides". See also: "FILTER API".
++
+ repo.url::
+ 	The relative url used to access the repository. This must be the first
+ 	setting specified for each repo. Default value: none.
+@@ -723,6 +735,11 @@ source filter::
+ 	file that is to be filtered is available on standard input and the
+ 	filtered contents is expected on standard output.
+ 
++testres filter::
++        This filter is given a single parameter: the buffer with raw test
++        report contents to filter. The contents of the buffer that is to be
++        filtered is available on standard input and the filtered contents is
++        expected on standard output.
+ 
+ All filters are handed the following environment variables:
+ 
+diff --git a/filter.c b/filter.c
+index 70f5b74..52f1232 100644
+--- a/filter.c
++++ b/filter.c
+@@ -27,6 +27,7 @@ void cgit_cleanup_filters(void)
+ 	reap_filter(ctx.cfg.about_filter);
+ 	reap_filter(ctx.cfg.commit_filter);
+ 	reap_filter(ctx.cfg.source_filter);
++	reap_filter(ctx.cfg.testres_filter);
+ 	reap_filter(ctx.cfg.email_filter);
+ 	reap_filter(ctx.cfg.owner_filter);
+ 	reap_filter(ctx.cfg.auth_filter);
+@@ -34,6 +35,7 @@ void cgit_cleanup_filters(void)
+ 		reap_filter(cgit_repolist.repos[i].about_filter);
+ 		reap_filter(cgit_repolist.repos[i].commit_filter);
+ 		reap_filter(cgit_repolist.repos[i].source_filter);
++		reap_filter(cgit_repolist.repos[i].testres_filter);
+ 		reap_filter(cgit_repolist.repos[i].email_filter);
+ 		reap_filter(cgit_repolist.repos[i].owner_filter);
+ 	}
+@@ -433,6 +435,10 @@ struct cgit_filter *cgit_new_filter(const char *cmd, filter_type filtertype)
+ 			break;
+ 
+ 		case SOURCE:
++		case TESTRES:
++			argument_count = 1;
++			break;
++
+ 		case ABOUT:
+ 			argument_count = 1;
+ 			break;
+diff --git a/filters/testres-example.lua b/filters/testres-example.lua
+new file mode 100755
+index 0000000..fae45e5
+--- /dev/null
++++ b/filters/testres-example.lua
+@@ -0,0 +1,21 @@
++-- This script is an example of an testres-filter. It replaces the
++-- test statuses used in Test Anything Protocol format to PASS and FAIL.
++-- This script may be used with the testres-filter or repo.testres-filter
++-- settings in cgitrc with the `lua:` prefix.
++
++function filter_open()
++	buffer = ""
++end
++
++function filter_close()
++	html("<pre>")
++	buffer = string.gsub(buffer, "not ok", "FAIL")
++	buffer = string.gsub(buffer, "ok", "PASS")
++	html(buffer)
++	html("</pre>")
++	return 0
++end
++
++function filter_write(str)
++	buffer = buffer .. str
++end
+diff --git a/shared.c b/shared.c
+index 8115469..6fd4b26 100644
+--- a/shared.c
++++ b/shared.c
+@@ -75,6 +75,7 @@ struct cgit_repo *cgit_add_repo(const char *url)
+ 	ret->commit_filter = ctx.cfg.commit_filter;
+ 	ret->source_filter = ctx.cfg.source_filter;
+ 	ret->email_filter = ctx.cfg.email_filter;
++	ret->testres_filter = ctx.cfg.testres_filter;
+ 	ret->owner_filter = ctx.cfg.owner_filter;
+ 	ret->clone_url = ctx.cfg.clone_url;
+ 	ret->submodules.strdup_strings = 1;
+diff --git a/tests/setup.sh b/tests/setup.sh
+index 7a83c9f..b338fcf 100755
+--- a/tests/setup.sh
++++ b/tests/setup.sh
+@@ -155,6 +155,7 @@ repo.about-filter=lua:$FILTER_DIRECTORY/dump.lua
+ repo.commit-filter=lua:$FILTER_DIRECTORY/dump.lua
+ repo.email-filter=lua:$FILTER_DIRECTORY/dump.lua
+ repo.source-filter=lua:$FILTER_DIRECTORY/dump.lua
++repo.testres-filter=lua:$FILTER_DIRECTORY/dump.lua
+ repo.readme=master:a+b
+ EOF
+ 	fi
+diff --git a/tests/t0111-filter.sh b/tests/t0111-filter.sh
+index 2fdc366..173f20c 100755
+--- a/tests/t0111-filter.sh
++++ b/tests/t0111-filter.sh
+@@ -41,6 +41,14 @@ do
+ 	test_expect_success "check whether the $prefix email filter works for committers" '
+ 		grep "<committer@example.com> commit C O MITTER &LT;COMMITTER@EXAMPLE.COM&GT;" tmp
+ 	'
++
++	test_expect_success "generate filter-$prefix/testres/" "
++		cgit_url 'filter-$prefix/testres/' >tmp
++	"
++
++	test_expect_success "check whether the $prefix testres filter works" '
++		grep "AABBCC" tmp
++	'
+ done
+ 
+ test_done
+diff --git a/ui-commit.c b/ui-commit.c
+index 7824f93..62cd860 100644
+--- a/ui-commit.c
++++ b/ui-commit.c
+@@ -66,7 +66,9 @@ void cgit_print_testres(char *hex)
+ 
+ 	cgit_print_layout_start();
+ 	if (ctx.repo->testres_filter) {
++		cgit_open_filter(ctx.repo->testres_filter);
+ 		html_raw(buf, size);
++		cgit_close_filter(ctx.repo->testres_filter);
+ 	} else {
+ 		html("<pre><code>");
+ 		html_txt(buf);
+-- 
+2.34.1
+

@@ -1,0 +1,287 @@
+From 2316ad6515dbe846452ed3af782ef5c5cbf054c3 Mon Sep 17 00:00:00 2001
+Message-Id: <2316ad6515dbe846452ed3af782ef5c5cbf054c3.1694694345.git.sergeyb@tarantool.org>
+In-Reply-To: <cover.1694694345.git.sergeyb@tarantool.org>
+References: <cover.1694694345.git.sergeyb@tarantool.org>
+From: Sergey Bronnikov <estetus@gmail.com>
+Date: Thu, 24 Dec 2020 18:36:49 +0300
+Subject: [PATCH luajit 1/2] ui-commit: add support of test results
+To: tarantool-patches@dev.tarantool.org, Sergey Kaplun <skaplun@tarantool.org>, max.kokryashkin@gmail.com
+
+Git SCM allows to store information in so called notes [1] and cgit
+allows to show notes that placed to default reference
+('refs/notes/commits') and attached to certain commits. It is convenient
+to add various useful information related to commit in Git notes.
+
+Often tests results stored for future analysis in different systems (aka
+'test report systems'). But one is the logic places to store test
+results is a Git SCM, test report automatically connected to commits and
+easily available for everyone. It even can be automated using git-test [2].
+
+How-to use:
+
+$ cat report.tap
+1..2
+ok 1 - test_0.py::test_list_once
+ok 2 - test_0.py::test_list_twice
+$ GIT_NOTES_REF=refs/notes/testres git notes add -F report.tap 95aa7d200ee10580c472a1156a11c726046b110f
+$ git notes add -m 'Tested-by: Sergey Bronnikov <estetus@gmail.com>' \
+	    2a3a0d1a62de2ae5ab4511c15d82a6a0f2c2a930
+$ GIT_NOTES_REF=refs/notes/testres git show 95aa7d200ee10580c472a1156a11c726046b110f
+
+commit 95aa7d200ee10580c472a1156a11c726046b110f
+Author: Sergey Bronnikov <sergeyb@tarantool.org>
+Date:   Tue Dec 22 10:06:10 2020 +0300
+
+...
+
+Notes (testres):
+    1..2
+    ok 1 - test_0.py::test_list_once
+    ok 2 - test_0.py::test_list_twice
+
+Test report become available in cgit by clicking to href 'tests' for
+that commit.
+
+1. https://git-scm.com/docs/git-notes
+2. https://github.com/ligurio/git-test
+3. https://github.com/ligurio/testres/wiki/Using-GIT-as-a-storage
+
+Signed-off-by: Sergey Bronnikov <estetus@gmail.com>
+---
+ cgit.h                |  1 +
+ cmd.c                 |  8 ++++-
+ tests/setup.sh        |  1 +
+ tests/t0105-commit.sh |  7 +++++
+ ui-commit.c           | 71 ++++++++++++++++++++++++++++++++++++++++++-
+ ui-commit.h           |  1 +
+ ui-shared.c           |  8 ++++-
+ ui-shared.h           |  3 ++
+ 8 files changed, 97 insertions(+), 3 deletions(-)
+
+diff --git a/cgit.h b/cgit.h
+index 69b5c13..b504168 100644
+--- a/cgit.h
++++ b/cgit.h
+@@ -108,6 +108,7 @@ struct cgit_repo {
+ 	struct cgit_filter *about_filter;
+ 	struct cgit_filter *commit_filter;
+ 	struct cgit_filter *source_filter;
++	struct cgit_filter *testres_filter;
+ 	struct cgit_filter *email_filter;
+ 	struct cgit_filter *owner_filter;
+ 	struct string_list submodules;
+diff --git a/cmd.c b/cmd.c
+index 0eb75b1..518cd89 100644
+--- a/cmd.c
++++ b/cmd.c
+@@ -1,6 +1,6 @@
+ /* cmd.c: the cgit command dispatcher
+  *
+- * Copyright (C) 2006-2017 cgit Development Team <cgit@lists.zx2c4.com>
++ * Copyright (C) 2006-2021 cgit Development Team <cgit@lists.zx2c4.com>
+  *
+  * Licensed under GNU General Public License v2
+  *   (see COPYING for full license text)
+@@ -159,6 +159,11 @@ static void tag_fn(void)
+ 	cgit_print_tag(ctx.qry.oid);
+ }
+ 
++static void testres_fn(void)
++{
++	cgit_print_testres(ctx.qry.oid);
++}
++
+ static void tree_fn(void)
+ {
+ 	cgit_print_tree(ctx.qry.oid, ctx.qry.path);
+@@ -189,6 +194,7 @@ struct cgit_cmd *cgit_get_cmd(void)
+ 		def_cmd(snapshot, 1, 0, 0),
+ 		def_cmd(stats, 1, 1, 0),
+ 		def_cmd(summary, 1, 0, 0),
++		def_cmd(testres, 1, 0, 0),
+ 		def_cmd(tag, 1, 0, 0),
+ 		def_cmd(tree, 1, 1, 0),
+ 	};
+diff --git a/tests/setup.sh b/tests/setup.sh
+index 8db810f..7a83c9f 100755
+--- a/tests/setup.sh
++++ b/tests/setup.sh
+@@ -91,6 +91,7 @@ mkrepo() {
+ 			git commit-graph write
+ 			;;
+ 		esac
++		echo "AABBCC" | GIT_NOTES_REF=refs/notes/testres git notes add -F - HEAD
+ 	)
+ }
+ 
+diff --git a/tests/t0105-commit.sh b/tests/t0105-commit.sh
+index 1a12ee3..858fb13 100755
+--- a/tests/t0105-commit.sh
++++ b/tests/t0105-commit.sh
+@@ -6,6 +6,7 @@ test_description='Check content on commit page'
+ test_expect_success 'generate foo/commit' 'cgit_url "foo/commit" >tmp'
+ test_expect_success 'find tree link' 'grep "<a href=./foo/tree/.>" tmp'
+ test_expect_success 'find parent link' 'grep -E "<a href=./foo/commit/\?id=.+>" tmp'
++test_expect_success 'find tests link' 'grep -E "href=./foo/testres/\?id=.+" tmp'
+ 
+ test_expect_success 'find commit subject' '
+ 	grep "<div class=.commit-subject.>commit 5<" tmp
+@@ -33,4 +34,10 @@ test_expect_success 'root commit contains diff' '
+ 	grep "<div class=.add.>+1</div>" tmp
+ '
+ 
++test_expect_success 'get test results' '
++	root=$(cd repos/bar && git rev-list --reverse HEAD | head -1) &&
++	cgit_url "bar/testres/?id=$root" >tmp &&
++	grep "AABBCC" tmp
++'
++
+ test_done
+diff --git a/ui-commit.c b/ui-commit.c
+index 948118c..7824f93 100644
+--- a/ui-commit.c
++++ b/ui-commit.c
+@@ -1,6 +1,6 @@
+ /* ui-commit.c: generate commit view
+  *
+- * Copyright (C) 2006-2014 cgit Development Team <cgit@lists.zx2c4.com>
++ * Copyright (C) 2006-2021 cgit Development Team <cgit@lists.zx2c4.com>
+  *
+  * Licensed under GNU General Public License v2
+  *   (see COPYING for full license text)
+@@ -13,6 +13,69 @@
+ #include "ui-diff.h"
+ #include "ui-log.h"
+ 
++static struct notes_tree commit_testres_notes[5];
++
++const struct object_id *cgit_commit_get_testres(const char *ref)
++{
++	struct notes_tree *tree;
++	struct object_id oid;
++
++	if (get_oid(ref, &oid))
++		return NULL;
++
++	tree = &commit_testres_notes[0];
++	if (!tree->initialized) {
++		struct strbuf notes_ref = STRBUF_INIT;
++
++		strbuf_addf(&notes_ref, "refs/notes/testres");
++
++		init_notes(tree, notes_ref.buf, combine_notes_ignore, 0);
++		strbuf_release(&notes_ref);
++	}
++
++	return get_note(tree, &oid);
++}
++
++void cgit_print_testres(char *hex)
++{
++	struct object_id oid;
++
++	if (!hex)
++		hex = ctx.qry.head;
++
++	if (get_oid(hex, &oid)) {
++		cgit_print_error_page(400, "Bad request",
++				"Bad object id: %s", hex);
++		return;
++	}
++
++	const struct object_id *note = cgit_commit_get_testres(hex);
++	enum object_type type;
++	unsigned long size;
++	char *buf;
++
++	if (!note) {
++		cgit_print_error_page(404, "Not found",
++				"No test results for %s", hex);
++	}
++
++	buf = read_object_file(note, &type, &size);
++	if (!buf) {
++		cgit_print_error_page(404, "Not found", "Not found");
++	}
++
++	cgit_print_layout_start();
++	if (ctx.repo->testres_filter) {
++		html_raw(buf, size);
++	} else {
++		html("<pre><code>");
++		html_txt(buf);
++		html("</code></pre>");
++	}
++	cgit_print_layout_end();
++	free(buf);
++}
++
+ void cgit_print_commit(char *hex, const char *prefix)
+ {
+ 	struct commit *commit, *parent;
+@@ -113,6 +176,12 @@ void cgit_print_commit(char *hex, const char *prefix)
+ 		cgit_print_snapshot_links(ctx.repo, hex, "<br/>");
+ 		html("</td></tr>");
+ 	}
++
++	html("<tr><th>tests</th><td colspan='2' class='oid'>");
++	tmp = oid_to_hex(&commit->object.oid);
++	cgit_testres_link(tmp, "test results", NULL, NULL, tmp, prefix);
++	html("</td></tr>");
++
+ 	html("</table>\n");
+ 	html("<div class='commit-subject'>");
+ 	cgit_open_filter(ctx.repo->commit_filter);
+diff --git a/ui-commit.h b/ui-commit.h
+index 8198b4b..ca73803 100644
+--- a/ui-commit.h
++++ b/ui-commit.h
+@@ -2,5 +2,6 @@
+ #define UI_COMMIT_H
+ 
+ extern void cgit_print_commit(char *hex, const char *prefix);
++extern void cgit_print_testres(char *hex);
+ 
+ #endif /* UI_COMMIT_H */
+diff --git a/ui-shared.c b/ui-shared.c
+index acd8ab5..4379b3e 100644
+--- a/ui-shared.c
++++ b/ui-shared.c
+@@ -1,6 +1,6 @@
+ /* ui-shared.c: common web output functions
+  *
+- * Copyright (C) 2006-2017 cgit Development Team <cgit@lists.zx2c4.com>
++ * Copyright (C) 2006-2021 cgit Development Team <cgit@lists.zx2c4.com>
+  *
+  * Licensed under GNU General Public License v2
+  *   (see COPYING for full license text)
+@@ -458,6 +458,12 @@ void cgit_snapshot_link(const char *name, const char *title, const char *class,
+ 	reporevlink("snapshot", name, title, class, head, rev, archivename);
+ }
+ 
++void cgit_testres_link(const char *name, const char *title, const char *class,
++		       const char *head, const char *rev, const char *path)
++{
++	reporevlink("testres", name, title, class, head, rev, path);
++}
++
+ void cgit_diff_link(const char *name, const char *title, const char *class,
+ 		    const char *head, const char *new_rev, const char *old_rev,
+ 		    const char *path)
+diff --git a/ui-shared.h b/ui-shared.h
+index 6964873..1431673 100644
+--- a/ui-shared.h
++++ b/ui-shared.h
+@@ -46,6 +46,9 @@ extern void cgit_refs_link(const char *name, const char *title,
+ extern void cgit_snapshot_link(const char *name, const char *title,
+ 			       const char *class, const char *head,
+ 			       const char *rev, const char *archivename);
++extern void cgit_testres_link(const char *name, const char *title,
++                              const char *class, const char *head,
++                              const char *rev, const char *path);
+ extern void cgit_diff_link(const char *name, const char *title,
+ 			   const char *class, const char *head,
+ 			   const char *new_rev, const char *old_rev,
+-- 
+2.34.1
+

@@ -1,0 +1,7 @@
+.cache
+.eggs
+.hypothesis
+*.pyc
+*.pyo
+*.egg-info
+dist/

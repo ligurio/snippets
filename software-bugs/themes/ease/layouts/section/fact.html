@@ -1,0 +1,24 @@
+{{ partial "header.html" . }}
+
+<body class="item">
+  <div id="sitewrapper">
+    <div id="contentwrapper">
+      <div class="itemwrapper" id="fact">
+        <header>
+          <h1>Software Bugs Taxonomy</h1>
+        </header>
+        <hr>
+        <div class="itemcontent">
+          <p>A list of different types of software bugs. Why this site exists, see <a href="/about/">About</a>.</p>
+          <ul>
+            {{ range where .Pages "Type" "fact" }}
+            <li>
+              <a href="{{ .Permalink }}">{{ .Title }}</a>
+            </li>
+            {{ end }}
+          </ul>
+        </div>
+      </div>
+
+{{ partial "menu.html" . }}
+{{ partial "footer.html" . }}

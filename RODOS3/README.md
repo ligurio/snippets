@@ -91,6 +91,10 @@ bootcmd=tftp Komset/kos-image; bootelf 0x12000000; reset
 => saveenv
 ```
 
+### Похожие проекты
+
+- https://github.com/darrylb123/usbrelay
+
 ### Описание инфраструктуры для тестирования на отладочных платах:
 
 - https://elinux.org/images/b/b5/Herd_Your_Boards.pdf

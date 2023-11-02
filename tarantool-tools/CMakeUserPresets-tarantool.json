@@ -1,0 +1,96 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Config (Make)",
+      "description": "Default build using Unix Makefile generator",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "ENABLE_BUNDLED_LIBCURL": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "ENABLE_GCOV": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "fuzzing",
+      "displayName": "Fuzzing",
+      "description": "Fuzzing build",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "ENABLE_ASAN": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "ENABLE_FUZZER": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "ENABLE_BUNDLED_LIBCURL": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "CMAKE_EXPORT_COMPILE_COMMANDS": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "default-ninja",
+      "inherits": "default",
+      "displayName": "Default Config (Ninja)",
+      "description": "Default build using Ninja generator",
+      "generator": "Ninja"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "jobs": 10
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "default",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "default"
+        },
+        {
+          "type": "build",
+          "name": "default"
+        }
+      ]
+    },
+    {
+      "name": "fuzzing",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "fuzzing"
+        }
+      ]
+    }
+  ]
+}

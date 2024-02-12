@@ -1,0 +1,210 @@
+# Entries in this file are made for two reasons:
+#
+# 1) to merge multiple git commit authors that correspond to a single author
+# 2) to change the canonical name and/or email address of an author.
+#
+# Format is:
+#     Canonical Name <Canonical@email> commit name <commit@email>
+#     \--------------+---------------/ \----------+-------------/
+#                 replace                       find
+# See also: 'git shortlog --help' and 'git check-mailmap --help'.
+#
+# If you don't like the way your name is cited by qiskit, please feel free to
+# open a pull request against this file to set your preferred naming.
+#
+# Note that each qiskit element uses its own mailmap so it may be necessary to
+# propagate changes in other repos for consistency.
+
+AKhatskevich <avkhatskevich@gmail.com>
+AKhatskevich <avkhatskevich@tarantool.org>
+Alec Larson <aleclarson@users.noreply.github.com>
+Aleksandr Lyapunov <a.lyapunov@corp.mail.ru>
+Aleksandr Lyapunov <alyapunov@tarantool.org>
+Aleksandr Lyapunov <alyapunov@users.noreply.github.com>
+Aleksandr Lyapunov <a.lyapunov@corp.mail.ru>
+Aleksandr Lyapunov <aleks@tarantool.org>
+Aleksey Demakov <ademakov@gmail.com>
+Aleksey Demakov <avd@scorpion.(none)>
+Aleksey Mashanov <a.mashanov@corp.mail.ru>
+Aleksey Mashanov <aleksey.mashanov@gmail.com>
+Alexander Tikhonov <avtikhon@tarantool.org>
+Alexander Tikhonov <avtikhon@gmail.com>
+Alexander Tikhonov <avtikhon@tarantool.org>
+Alexander Tikhonov <avtikhon@tarantool.org>
+Alexander Turenko <a.turenko@corp.mail.ru>
+Alexander Turenko <alexander.turenko@tarantool.org>
+Alexandre <akalend@mail.ru>
+Alexey Vishnyakov <vishnya@ispras.ru>
+Anastasia Neklepaeva <neknas28@gmail.com>
+Anastasiy Belyaev <AtosBel@ya.ru>
+Anatol Pomozov <anatol.pomozov@gmail.com>
+Andrey Drozdov <sulverus@gmail.com>
+Andrey Kulikov <amdei@cryptopro.ru>
+Andrey Saranchin <Andrey22102001@gmail.com>
+Arseny Antonov <arseny.antonov@gmail.com>
+Artem Starshov <artemreyt@tarantool.org>
+Barabanov Anton <a.barabanov@corp.mail.ru>
+Bulat Niatshin <niatshin@tarantool.org>
+Bulat Niatshin <theairvideo@gmail.com>
+Bulat Niatshin <niatshin@tarantool.org>
+Chris Sosnin <k.sosnin@tarantool.org>
+Cyrill Gorcunov <gorcunov@gmail.com>
+Cyrill Gorcunov <tarantool-patches@dev.tarantool.org>
+Damien Lefortier <damien.lefortier@gmail.com>
+Daniil Kotelnikov <zwirec@icloud.com>
+Daniil Lemenkov <lemenkov@rambler.ru>
+Daniil Medvedev <medvdanil@gmail.com>
+Denis Ignatenko <denis.ignatenko@gmail.com>
+Dmitry E. Oboukhov <unera@debian.org>
+Dmitry Isaikin <isaikin@corp.mail.ru>
+Dmitry Khominich <khdmitryi@gmail.com>
+Dmitry Sharonov <d.sharonov@corp.mail.ru>
+Dmitry Simonenko <pmwkaa@gmail.com>
+Dmitry Simonenko <pmwkaa@pb.mail.msk>
+Domingo Alvarez Duarte <mingodad@gmail.com>
+Egor Elchinov <elchinov.es@gmail.com>
+Eugene Leonovich <gen.work@gmail.com>
+Eugene Leonovich <rybakit@users.noreply.github.com>
+Evgeniy Shadrin <e.shadrin@gmail.com>
+Evgeniy Shadrin <shadrin.e@gmail.com>
+Eugene Blikh <bigbes@debian.(none)>
+Eugene Blikh <bigbes@gmail.com>
+Eugene Blikh <bigbes@tarantool.org>
+Elena Shebunyaeva <elena.shebunyaeva@gmail.com>
+Evgeny Mekhanik <mechanik20051988@tarantool.org>
+Evgeny Mekhanik <mechanik20.05.1988@gmail.com>
+Fedor Sigaev <sigaev@corp.mail.ru>
+Gallagher Pryor <gallagher.pryor@gmail.com>
+Georgiy Lebedev <g.lebedev@tarantool.org>
+Georgy Kirichenko <georgy@tarantool.org>
+Georgy Kirichenko <kirichenkoga@gmail.com>
+Georgy Moiseev <georgy.moiseev@corp.mail.ru>
+Vladislav Shpilevoy <v.shpilevoy@corp.mail.ru>
+Vladislav Shpilevoy <v.shpilevoy@tarantool.org>
+Gleb <gleb-skiba@mail.ru>
+Hollow <hollow653@gmail.com>
+HustonMmmavr <huston.mavr@gmail.com>
+Igor Munkin <imun@tarantool.org>
+Ilnar Borkhanov <borkhanov@corp.mail.ru>
+Ilya Konyukhov <runsfor@gmail.com>
+Ilya Kosarev <i.kosarev@tarantool.org>
+Ilya Kosarev <ilyanapar@yandex.ru>
+Ilya Markov <imarkov@tarantool.org>
+Ilya Markov <markovilya197@gmail.com>
+Iskander Sagitov <i.sagitov@tarantool.org>
+Iskander Sagitov <iskander.s@bk.ru>
+Ivan Ilyin <vanyail@yandex.ru>
+Ivan Koptelov <ivan.koptelov@tarantool.org>
+Ivan Kosenko <kosenko.ivan@gmail.com>
+Kirill Shcherbatov <kshcherbatov@tarantool.org>
+Kirill Yukhin <kirill.yukhin@gmail.com>
+Kirill Yukhin <kyukhin@tarantool.org>
+Kirill Yukhin <kyukhin@vm-tarantool.mail.msk>
+KlonD90 <newbiecraft@gmail.com>
+Konstantin Belyavskiy <k.belyavskiy@tarantool.org>
+Konstantin Nazarov <knazarov@parallels.com>
+Konstantin Nazarov <mail@racktear.com>
+Konstantin Osipov <kostja.osipov@gmail.com>
+Konstantin Osipov <kostja@tarantool.org>
+Konstantin Osipov <tarantool-bot@mail.ru>
+Konstantin Shulgin <konstantin.shulgin@gmail.com>
+Konstantin Sorokin <kvs@sigterm.ru>
+Pavel Lapaev <lapaevpavel@gmail.com>
+Leonid Vasiliev <lvasiliev@tarantool.org>
+Maria Khaydich <maria.khaydich@tarantool.org>
+Maria Khaydich <maria.khaydich@tarantool.org>
+Maria Khaydich <marianneliash@gmail.com>
+Marko Kevac <marko@kevac.org>
+Mary Feofanova <m.feofanova@tarantool.org>
+Max Melentiev <m.melentiev@corp.mail.ru>
+Mergen Imeev <imeevma@gmail.com>
+Mergen Imeev <imeevma@tarantool.org>
+Michael Filonenko <filonenko.mikhail@gmail.com>
+Michał Durak <gdrbyko1@protonmail.com>
+Mike Siomkin <msiomkin@mail.ru>
+Mons Anderson <mons@cpan.org>
+N.Tatunov <hollow653@gmail.com>
+N.Tatunov <n.tatunov@tarantool.org>
+Nick <newbiecraft@gmail.com>
+Nick Zavaritsky <mejedi@gmail.com>
+Nick Zavaritsky <mejedi@users.noreply.github.com>
+Nikita Pettik <korablev@tarantool.org>
+Nikita Pettik <pettik@phystech.edu>
+Oleg Babin <babinoleg@mail.ru>
+Oleg Efimov <o.efimov@corp.badoo.com>
+Oleg Kovalev <man0xff@gmail.com>
+Oleg Piskunov <o.piskunov@tarantool.org>
+Oleg Tsarev <oleg@oleg.sh>
+Olga Arkhangelskaia <arkholga@tarantool.org>
+Olga Arkhangelskaia <krishtal.olja@gmail.com>
+Paul Chechetin <paulche@yandex.ru>
+Pavel Balaev <balaev@tarantool.org>
+Pavel Cherenkov <pavelc@ubuntu.(none)>
+Pavel Cherenkov <p.cherenkov@corp.mail.ru>
+Pavel Cherenkov <pcherenkov@gmail.com>
+Peter Gulutzan <pgulutzan@ocelot.ca>
+Roman Tsisyk <roman@tsisyk.com>
+Roman Tsisyk <roman@tarantool.org>
+Roman Antipin <roman.antipin@odnoklassniki.ru>
+Roman Khabibov <roman.habibov1@yandex.ru>
+Roman Khabibov <roman.habibov@tarantool.org>
+Roman Khabibov <36643748+romanhabibov@users.noreply.github.com>
+Roman Proskin <opomuc@gmail.com>
+Roman Tokarev <rtokarev@corp.mail.ru>
+Roman V. Nikolaev <rshadow@rambler.ru>
+Ruben Ayrapetyan <ruben.ayrapetyan@gmail.com>
+Serge Petrenko <sergepetrenko@tarantool.org>
+Sergei Kalashnikov <ztarvos@gmail.com>
+Sergei Voronezhskii <sergw@tarantool.org>
+Sergey Bronnikov <estetus@gmail.com>
+Sergey Bronnikov <sergeyb@tarantool.org>
+Sergey Kaplun <skaplun@tarantool.org>
+Sergey Nikiforov <void@tarantool.org>
+Sergey Ostanevich <sergos@tarantool.org>
+Sergey Voinov <sergeiv@tarantool.org>
+Sokolov Yura <funny.falcon@gmail.com>
+Stanislav Zudin <szudin@tarantool.org>
+Starshaya Yord <starshayayord@gmail.com>
+Svyatoslav Feldsherov <feldsherov_sv@mail.ru>
+Ivan Koptelov <ivan.koptelov@phystech.edu>
+Ivan Kosenko <kosenko.ivan@gmail.com>
+Teodor Sigaev <teodor@sigaev.ru>
+The Gitter Badger <badger@gitter.im>
+Tim Curtis <timjohncurtis@gmail.com>
+Timofey Khryukin <khryukin@corp.mail.ru>
+Timur Safin <tsafin@tarantool.org>
+Tony Freeman <tonyfreeman@users.noreply.github.com>
+Vadim Markovtsev <gmarkhor@gmail.com>
+Vasiliy Soshnikov <dedok.mad@gmail.com>
+Veniamin Gvozdikov <g.veniamin@googlemail.com>
+Veniamin Gvozdikov <vgvozdikov@tarantool.org>
+Victor Popov <v.popov@corp.mail.ru>
+Viktor Oreshkin <solteke.st@gmail.com>
+Vitaliya Ioffe <vitaioffe@yandex.ru>
+Vladimir Davydov <vdavydov.dev@gmail.com>
+Vladimir Davydov <vdavydov@tarantool.org>
+Vladimir Rudnyh <rudnyh@corp.mail.ru>
+Vladislav Grubov <gru212@tproger.ru>
+Vladislav Grubov <vladgrubov@gmail.com>
+Yan Shtunder <ya.shtunder@gmail.com>
+Yaroslav Dynnikov <yaroslav.dynnikov@gmail.com>
+Yaroslav Lobankov <y.lobankov@tarantool.org>
+Yuriy Nevinitsin <nevinitsin@corp.mail.ru>
+Yuriy Vostrikov <mon@unformed.ru>
+Yuriy Vostrikov <vostrikov@corp.mail.ru>
+aidar <darych90@gmail.com>
+antonmes <antonmes@users.noreply.github.com>
+bfxy <al.werehere@gmail.com>
+buildslave <buildslave@localhost.localdomain>
+condor-the-bird <kondor40@ya.ru>
+daurnimator <quae@daurnimator.com>
+feldsherov <feldsherov_sv@mail.ru>
+gdrbyKo1 <gdrbyko1@protonmail.com>
+imarkov <imarkov@tarantool.org>
+Konstantin Knizhnik <knizhnik@garret.ru>
+lifemaker <kosenko.ivan@gmail.com>
+nevinitsin <nevinitsin@corp.mail.ru>
+pkubaj <pkubaj@users.noreply.github.com>
+tpelzer <tpelzer@linux-90b4.site>
+vanyail <vanyail@yandex.ru>
+Шипицын Анатолий <avsh@get-net.ru>

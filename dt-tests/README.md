@@ -28,7 +28,9 @@ TODO: use Hypothesis
 
 ### TODO
 
+- https://www.epochconverter.com/weeknumbers
+- https://www.epochconverter.com/
 - https://github.com/HowardHinnant/date/tree/master/test/date_test
 - https://github.com/CppCon/CppCon2015/blob/master/Presentations/A%20C++14%20Approach%20to%20Dates%20and%20Times/A%20C++14%20Approach%20to%20Dates%20and%20Times%20-%20Howard%20Hinnant%20-%20CppCon%202015.pdf
 - CppCon 2015: Howard Hinnant "A C++14 approach to dates and times", https://www.youtube.com/watch?v=tzyGjOm8AKo
-- https://dl.acm.org/doi/10.1145/359156.359160 On the proof of correctness of a calendar program, Author: Leslie Lamport
+- "On the proof of correctness of a calendar program" -- Leslie Lamport, https://dl.acm.org/doi/10.1145/359156.359160

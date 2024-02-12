@@ -1,0 +1,7 @@
+/home/sergeyb/sources/snippets/microb/CMakeFiles/install/strip.dir
+/home/sergeyb/sources/snippets/microb/CMakeFiles/install/local.dir
+/home/sergeyb/sources/snippets/microb/CMakeFiles/install.dir
+/home/sergeyb/sources/snippets/microb/CMakeFiles/list_install_components.dir
+/home/sergeyb/sources/snippets/microb/CMakeFiles/rebuild_cache.dir
+/home/sergeyb/sources/snippets/microb/CMakeFiles/edit_cache.dir
+/home/sergeyb/sources/snippets/microb/CMakeFiles/microb.dir

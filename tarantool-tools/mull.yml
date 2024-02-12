@@ -1,0 +1,27 @@
+mutators:
+ - cxx_all
+ - cxx_arithmetic
+ - cxx_arithmetic_assignment
+ - cxx_assignment
+ - cxx_bitwise
+ - cxx_bitwise_assignment
+ - cxx_boundary
+ - cxx_calls
+ - cxx_comparison
+ - cxx_const_assignment
+ - cxx_decrement
+ - cxx_default
+ - cxx_increment
+ - cxx_logical
+includePaths:
+ - src
+excludePaths:
+ - src/lib/small
+ - src/lib/tzcode   # https://github.com/mull-project/mull/issues/994
+ - src/lib/uri      # uri_parser.c
+ - src/lib/core
+ - src/lib/json     # json.c
+ - src/box          # xlog.c
+quiet: false
+debug:
+ slowIRVerification: true

@@ -2,12 +2,12 @@
 
 ### How-To Use
 
-- ```mkdir build; cd build; cmake ..```
+- ```make```
 - ```make test```
 
 ### License
 
-Copyright (c) 2017-2018 Sergey Bronnikov sergeyb@bronevichok.ru
+Copyright (c) 2017 Sergey Bronnikov sergeyb@bronevichok.ru
 
 Permission to use, copy, modify, and distribute this software for any purpose
 with or without fee is hereby granted, provided that the above copyright notice

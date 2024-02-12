@@ -1,0 +1,637 @@
+From 2535fbac35cba4252b211fc7f61b5a04e55d4c24 Mon Sep 17 00:00:00 2001
+From: Sergey Bronnikov <estetus@gmail.com>
+Date: Wed, 31 May 2023 15:14:31 +0300
+Subject: [PATCH] casr: support Lua
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+"8.5 – Error Messages and Tracebacks" https://www.lua.org/pil/8.5.html
+"Exceptions in Lua" https://www.lua.org/gems/lpg113.pdf
+
+https://stackoverflow.com/questions/24578652/parsing-an-error-string-in-lua
+
+See also: 1d589f8ae369846f24ea255f478ce1a34b86d687
+---
+ README.md                                     |   8 +-
+ casr/src/bin/casr-lua.rs                      | 213 +++++++++++++++++
+ .../tests/casr_tests/lua/test_casr_assert.lua |  13 ++
+ casr/tests/casr_tests/lua/test_casr_error.lua |  13 ++
+ casr/tests/casr_tests/lua/test_casr_lua.lua   |   3 +
+ .../casr_tests/lua/test_casr_traceback.lua    |  13 ++
+ docs/usage.md                                 |  23 ++
+ libcasr/src/lib.rs                            |   2 +
+ libcasr/src/lua.rs                            | 217 ++++++++++++++++++
+ 9 files changed, 504 insertions(+), 1 deletion(-)
+ create mode 100644 casr/src/bin/casr-lua.rs
+ create mode 100644 casr/tests/casr_tests/lua/test_casr_assert.lua
+ create mode 100644 casr/tests/casr_tests/lua/test_casr_error.lua
+ create mode 100644 casr/tests/casr_tests/lua/test_casr_lua.lua
+ create mode 100644 casr/tests/casr_tests/lua/test_casr_traceback.lua
+ create mode 100644 libcasr/src/lua.rs
+
+diff --git a/README.md b/README.md
+index b6ad6b5..cc9cf51 100644
+--- a/README.md
++++ b/README.md
+@@ -20,6 +20,7 @@ CASR is maintained by:
+ CASR is a set of tools that allows you to collect crash reports in different
+ ways. Use `casr-core` binary to deal with coredumps. Use `casr-san` to analyze ASAN
+ reports. Try `casr-gdb` to get reports from gdb. Use `casr-python` to analyze python reports and get report from [Atheris](https://github.com/google/atheris).
++Use `casr-lua` to analyze Lua reports and get report from [luzer](https://github.com/ligurio/luzer).
+ 
+ Crash report contains many useful information: severity (like [exploitable](https://github.com/jfoote/exploitable))
+ for x86, x86\_64, arm32, aarch64, rv32g, rv64g architectures,
+@@ -55,6 +56,7 @@ and program languages:
+ * Rust
+ * Go
+ * Python
++* Lua
+ 
+ It could be built with `exploitable` feature for severity estimation crashes
+ collected from gdb. To save crash reports as json use `serde` feature.
+@@ -99,6 +101,10 @@ Create report from python:
+ 
+     $ casr-python -o python.casrep -- casr/tests/casr_tests/python/test_casr_python.py
+ 
++Create report from Lua:
++
++    $ casr-lua -o lua.casrep -- casr/tests/casr_tests/lua/test_casr_lua.lua
++
+ View report:
+ 
+     $ casr-cli casr/tests/casr_tests/casrep/test_clustering_san/load_fuzzer_crash-120697a7f5b87c03020f321c8526adf0f4bcc2dc.casrep
+@@ -151,7 +157,7 @@ If you use [AFL++](https://github.com/AFLplusplus/AFLplusplus), whole pipeline
+ could be done automatically by `casr-afl`.
+ 
+ If you use [libFuzzer](https://www.llvm.org/docs/LibFuzzer.html) based fuzzer
+-(C/C++/[go-fuzz](https://github.com/dvyukov/go-fuzz)/[Atheris](https://github.com/google/atheris)),
++(C/C++/[go-fuzz](https://github.com/dvyukov/go-fuzz)/[Atheris](https://github.com/google/atheris)/[luzer](https://github.com/ligurio/luzer)),
+ whole pipeline could be done automatically by `casr-libfuzzer`.
+ 
+ ## Contributing
+diff --git a/casr/src/bin/casr-lua.rs b/casr/src/bin/casr-lua.rs
+new file mode 100644
+index 0000000..f2e9d81
+--- /dev/null
++++ b/casr/src/bin/casr-lua.rs
+@@ -0,0 +1,213 @@
++use casr::util;
++use libcasr::constants::*;
++use libcasr::exception::Exception;
++use libcasr::init_ignored_frames;
++use libcasr::lua::{LuaException, LuaStacktrace};
++use libcasr::report::CrashReport;
++use libcasr::stacktrace::*;
++
++use anyhow::{bail, Context, Result};
++use clap::{Arg, ArgAction, ArgGroup, ArgMatches};
++use regex::Regex;
++use std::path::{Path, PathBuf};
++use std::process::{Command, Stdio};
++
++/// Call casr-san with similar options
++///
++/// # Arguments
++///
++/// * `matches` - casr options
++///
++/// * `argv` - executable file options
++fn call_casr_san(matches: &ArgMatches, argv: &[&str]) -> Result<()> {
++    let mut python_cmd = Command::new("casr-san");
++    if let Some(report_path) = matches.get_one::<String>("output") {
++        python_cmd.args(["--output", report_path]);
++    } else {
++        python_cmd.args(["--stdout"]);
++    }
++    if let Some(path) = matches.get_one::<String>("stdin") {
++        python_cmd.args(["--stdin", path]);
++    }
++    if let Some(path) = matches.get_one::<String>("ignore") {
++        python_cmd.args(["--ignore", path]);
++    }
++    python_cmd.arg("--").args(argv);
++
++    let output = python_cmd
++        .stdout(Stdio::inherit())
++        .stderr(Stdio::inherit())
++        .output()
++        .with_context(|| format!("Couldn't launch {lua_cmd:?}"))?;
++
++    if output.status.success() {
++        Ok(())
++    } else {
++        bail!("casr-san error when calling from casr-lua");
++    }
++}
++
++fn main() -> Result<()> {
++    let matches = clap::Command::new("casr-lua")
++        .version(clap::crate_version!())
++        .about("Create CASR reports (.casrep) from Lua reports")
++        .term_width(90)
++        .arg(
++            Arg::new("output")
++                .short('o')
++                .long("output")
++                .action(ArgAction::Set)
++                .value_parser(clap::value_parser!(PathBuf))
++                .value_name("REPORT")
++                .help(
++                    "Path to save report. Path can be a directory, then report name is generated",
++                ),
++        )
++        .arg(
++            Arg::new("stdout")
++                .action(ArgAction::SetTrue)
++                .long("stdout")
++                .help("Print CASR report to stdout"),
++        )
++        .group(
++            ArgGroup::new("out")
++                .args(["stdout", "output"])
++                .required(true),
++        )
++        .arg(
++            Arg::new("stdin")
++                .long("stdin")
++                .action(ArgAction::Set)
++                .value_parser(clap::value_parser!(PathBuf))
++                .value_name("FILE")
++                .help("Stdin file for program"),
++        )
++        .arg(
++            Arg::new("ignore")
++                .long("ignore")
++                .action(ArgAction::Set)
++                .value_parser(clap::value_parser!(PathBuf))
++                .value_name("FILE")
++                .help("File with regular expressions for functions and file paths that should be ignored"),
++        )
++        .arg(
++            Arg::new("ARGS")
++                .action(ArgAction::Set)
++                .num_args(1..)
++                .last(true)
++                .help("Add \"-- <path> <arguments>\" to run"),
++        )
++        .get_matches();
++
++    init_ignored_frames!("lua");
++    if let Some(path) = matches.get_one::<PathBuf>("ignore") {
++        util::add_custom_ignored_frames(path)?;
++    }
++    // Get program args.
++    let argv: Vec<&str> = if let Some(argvs) = matches.get_many::<String>("ARGS") {
++        argvs.map(|s| s.as_str()).collect()
++    } else {
++        bail!("Wrong arguments for starting program");
++    };
++
++    // Get stdin for target program.
++    let stdin_file = util::stdin_from_matches(&matches)?;
++
++    // Run program.
++    let mut lua_cmd = Command::new(argv[0]);
++    if let Some(ref file) = stdin_file {
++        lua_cmd.stdin(std::fs::File::open(file)?);
++    }
++    if argv.len() > 1 {
++        lua_cmd.args(&argv[1..]);
++    }
++    let lua_result = lua_cmd
++        .output()
++        .with_context(|| "Couldn't run target program")?;
++
++    let lua_stderr = String::from_utf8_lossy(&lua_result.stderr);
++
++    // Create report.
++    let mut report = CrashReport::new();
++    report.executable_path = argv[0].to_string();
++    if argv.len() > 1 {
++        if let Some(fname) = Path::new(argv[0]).file_name() {
++            let fname = fname.to_string_lossy();
++            if fname.starts_with("lua") && !fname.ends_with(".py") && argv[1].ends_with(".py") {
++                report.executable_path = argv[1].to_string();
++            }
++        }
++    }
++    report.proc_cmdline = argv.join(" ");
++    let _ = report.add_os_info();
++    let _ = report.add_proc_environ();
++
++    // Get Lua report.
++    let lua_stderr_list: Vec<String> =
++        lua_stderr.split('\n').map(|l| l.to_string()).collect();
++
++    let re = Regex::new(r"==\d+==\s*ERROR: (LeakSanitizer|AddressSanitizer|libFuzzer):").unwrap();
++    if lua_stderr_list.iter().any(|line| re.is_match(line)) {
++        let lua_stdout = String::from_utf8_lossy(&lua_result.stdout);
++        let lua_stdout_list: Vec<String> =
++            lua_stdout.split('\n').map(|l| l.to_string()).collect();
++
++        if let Some(report_start) = lua_stdout_list
++            .iter()
++            .position(|line| line.contains("Uncaught Lua exception: "))
++        {
++            // Set Lua report in casr report.
++            let Some(report_end) = python_stdout_list.iter().rposition(|s| !s.is_empty()) else {
++                bail!("Corrupted output: can't find stdout end");
++            };
++            let report_end = report_end + 1;
++            report.python_report = Vec::from(&python_stdout_list[report_start..report_end]);
++
++            report.stacktrace =
++                LuaStacktrace::extract_stacktrace(&report.python_report.join("\n"))?;
++            // Get exception from python report.
++            if report.python_report.len() > 1 {
++                if let Some(exception) = LuaException::parse_exception(&report.python_report[1])
++                {
++                    report.execution_class = exception;
++                }
++            }
++        } else {
++            // Call casr-san
++            return call_casr_san(&matches, &argv);
++        }
++    } else if let Some(report_start) = python_stderr_list
++        .iter()
++        .position(|line| line.contains("Traceback "))
++    {
++        // Set python report in casr report.
++        let Some(report_end) = python_stderr_list.iter().rposition(|s| !s.is_empty()) else {
++            bail!("Corrupted output: can't find stderr end");
++        };
++        let report_end = report_end + 1;
++        report.python_report = Vec::from(&python_stderr_list[report_start..report_end]);
++
++        report.stacktrace = LuaStacktrace::extract_stacktrace(&report.python_report.join("\n"))?;
++
++        if let Some(exception) =
++            LuaException::parse_exception(report.python_report.last().unwrap())
++        {
++            report.execution_class = exception;
++        }
++    } else {
++        // Call casr-san.
++        return call_casr_san(&matches, &argv);
++    }
++
++    if let Ok(crash_line) = LuaStacktrace::parse_stacktrace(&report.stacktrace)?.crash_line() {
++        report.crashline = crash_line.to_string();
++        if let CrashLine::Source(debug) = crash_line {
++            if let Some(sources) = CrashReport::sources(&debug) {
++                report.source = sources;
++            }
++        }
++    }
++
++    // Output report.
++    util::output_report(&report, &matches, &argv)
++}
+diff --git a/casr/tests/casr_tests/lua/test_casr_assert.lua b/casr/tests/casr_tests/lua/test_casr_assert.lua
+new file mode 100644
+index 0000000..3751fce
+--- /dev/null
++++ b/casr/tests/casr_tests/lua/test_casr_assert.lua
+@@ -0,0 +1,13 @@
++local function a()
++    assert(1 == 0)
++end
++
++local function b()
++    a()
++end
++
++local function c()
++    b()
++end
++
++c()
+diff --git a/casr/tests/casr_tests/lua/test_casr_error.lua b/casr/tests/casr_tests/lua/test_casr_error.lua
+new file mode 100644
+index 0000000..7cbb13d
+--- /dev/null
++++ b/casr/tests/casr_tests/lua/test_casr_error.lua
+@@ -0,0 +1,13 @@
++local function a()
++    error("something is going wrong")
++end
++
++local function b()
++    a()
++end
++
++local function c()
++    b()
++end
++
++c()
+diff --git a/casr/tests/casr_tests/lua/test_casr_lua.lua b/casr/tests/casr_tests/lua/test_casr_lua.lua
+new file mode 100644
+index 0000000..b66366b
+--- /dev/null
++++ b/casr/tests/casr_tests/lua/test_casr_lua.lua
+@@ -0,0 +1,3 @@
++local f
++local length = f:seek("end")
++print(length)
+diff --git a/casr/tests/casr_tests/lua/test_casr_traceback.lua b/casr/tests/casr_tests/lua/test_casr_traceback.lua
+new file mode 100644
+index 0000000..e3ee310
+--- /dev/null
++++ b/casr/tests/casr_tests/lua/test_casr_traceback.lua
+@@ -0,0 +1,13 @@
++local function a()
++    print(debug.traceback())
++end
++
++local function b()
++    a()
++end
++
++local function c()
++    b()
++end
++
++c()
+diff --git a/docs/usage.md b/docs/usage.md
+index 581e30a..30d0db0 100644
+--- a/docs/usage.md
++++ b/docs/usage.md
+@@ -79,6 +79,29 @@ Example:
+ 
+     $ casr-python -o python.casrep -- casr/tests/casr_tests/python/test_casr_python.py
+ 
++## casr-lua
++
++Create CASR reports (.casrep) from Lua reports.
++
++    Usage: casr-lua [OPTIONS] <--stdout|--output <REPORT>> [-- <ARGS>...]
++
++    Arguments:
++      [ARGS]...  Add "-- <path> <arguments>" to run
++
++    Options:
++      -o, --output <REPORT>  Path to save report. Path can be a directory, then report name is
++                             generated
++          --stdout           Print CASR report to stdout
++          --stdin <FILE>     Stdin file for program
++          --ignore <FILE>    File with regular expressions for functions and file paths that
++                             should be ignored
++      -h, --help             Print help
++      -V, --version          Print version
++
++Example:
++
++    $ casr-lua -o lua.casrep -- casr/tests/casr_tests/lua/test_casr_lua.lua
++
+ ## casr-core
+ 
+ Analyze coredump for security goals and provide detailed report with severity estimation
+diff --git a/libcasr/src/lib.rs b/libcasr/src/lib.rs
+index 55d1270..ea4036f 100644
+--- a/libcasr/src/lib.rs
++++ b/libcasr/src/lib.rs
+@@ -14,6 +14,7 @@
+ //! * Rust
+ //! * Go
+ //! * Python
++//! * Lua
+ //!
+ //! It could be built with `exploitable` feature for severity estimation crashes
+ //! collected from gdb. To save crash reports as json use `serde` feature.
+@@ -27,6 +28,7 @@ pub mod execution_class;
+ pub mod gdb;
+ pub mod go;
+ pub mod python;
++pub mod lua;
+ pub mod report;
+ pub mod rust;
+ pub mod severity;
+diff --git a/libcasr/src/lua.rs b/libcasr/src/lua.rs
+new file mode 100644
+index 0000000..86a18ea
+--- /dev/null
++++ b/libcasr/src/lua.rs
+@@ -0,0 +1,217 @@
++//! Lua module implements `ParseStacktrace` and `Exception` traits for Lua reports.
++use crate::exception::Exception;
++use crate::stacktrace::ParseStacktrace;
++
++use crate::error::*;
++use crate::execution_class::ExecutionClass;
++use crate::stacktrace::*;
++use regex::Regex;
++
++/// Structure provides an interface for processing the stack trace.
++pub struct LuaStacktrace;
++
++impl ParseStacktrace for LuaStacktrace {
++    fn extract_stacktrace(stream: &str) -> Result<Vec<String>> {
++        // Get stack trace from Lua report.
++        let stacktrace = stream
++            .split('\n')
++            .map(|l| l.to_string())
++            .collect::<Vec<String>>();
++        let Some(first) = stacktrace
++            .iter()
++            .position(|line| line.starts_with("Traceback ")) else {
++            return Err(Error::Casr(
++                "Couldn't find traceback in Lua report".to_string(),
++            ));
++        };
++
++        // Stack trace is splitted by empty line.
++        let Some(last) = stacktrace.iter().skip(first).rposition(|s| !s.is_empty()) else {
++            return Err(Error::Casr(
++                "Couldn't find traceback end in Lua report".to_string(),
++            ));
++        };
++
++        let re = Regex::new(
++            r#"(File ".+", line [\d]+, in .+|\[Previous line repeated (\d+) more times\])"#,
++        )
++        .unwrap();
++        Ok(stacktrace[first..first + last]
++            .iter()
++            .rev()
++            .map(|s| s.trim().to_string())
++            .filter(|s| re.is_match(s))
++            .collect::<Vec<String>>())
++    }
++
++    fn parse_stacktrace(entries: &[String]) -> Result<Stacktrace> {
++        let mut stacktrace = Stacktrace::new();
++
++        for entry in entries.iter() {
++            let mut stentry = StacktraceEntry::default();
++
++            if entry.starts_with('[') {
++                let re = Regex::new(r#"\[Previous line repeated (\d+) more times\]"#).unwrap();
++                let Some(rep) = re.captures(entry) else {
++                    return Err(Error::Casr(format!(
++                        "Couldn't parse stacktrace line: {entry}")
++                    ));
++                };
++                let Ok(rep) = rep.get(1).unwrap().as_str().parse::<u64>() else {
++                    return Err(Error::Casr(format!("Couldn't parse num: {entry}")));
++                };
++                let last = stacktrace.last().unwrap().clone();
++                for _ in 0..rep {
++                    stentry = last.clone();
++                    stacktrace.push(stentry);
++                }
++                continue;
++            }
++
++            let re = Regex::new(r#"File "(.+)", line (\d+), in (.+)"#).unwrap();
++
++            let Some(cap) = re.captures(entry) else {
++                return Err(Error::Casr(format!(
++                    "Couldn't parse stacktrace line: {entry}")
++                ));
++            };
++            stentry.debug.file = cap.get(1).unwrap().as_str().to_string();
++            if let Ok(line) = cap.get(2).unwrap().as_str().parse::<u64>() {
++                stentry.debug.line = line;
++            } else {
++                return Err(Error::Casr(format!(
++                    "Couldn't parse stacktrace line num: {entry}"
++                )));
++            };
++            stentry.function = cap.get(3).unwrap().as_str().to_string();
++
++            stacktrace.push(stentry);
++        }
++        Ok(stacktrace)
++    }
++}
++
++/// Structure provides an interface for parsing Lua exception message.
++pub struct LuaException;
++
++impl Exception for LuaException {
++    fn parse_exception(stderr: &str) -> Option<ExecutionClass> {
++        let stderr_list: Vec<String> = stderr
++            .split('\n')
++            .map(|l| l.trim_end().to_string())
++            .collect();
++        let re = Regex::new(r#"([\w]+): (.+)"#).unwrap();
++        stderr_list
++            .iter()
++            .rev()
++            .find_map(|x| re.captures(x))
++            .map(|cap| {
++                ExecutionClass::new((
++                    "NOT_EXPLOITABLE",
++                    cap.get(1).unwrap().as_str(),
++                    cap.get(2).unwrap().as_str(),
++                    "",
++                ))
++            })
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn test_lua_stacktrace() {
++        let raw_stacktrace = &[
++            "File \"<stdin>\", line 1, in <module>",
++            "File \"/usr/lib/python3.10/site-packages/PIL/Image.py\", line 2259, in show",
++            "File \"/usr/lib/python3.10/site-packages/PIL/Image.py\", line 3233, in _show",
++            "File \"/usr/lib/python3.10/site-packages/PIL/ImageShow.py\", line 55, in show",
++            "File \"/usr/lib/python3.10/site-packages/PIL/ImageShow.py\", line 79, in show",
++            "File \"/usr/lib/python3.10/site-packages/PIL/ImageShow.py\", line 105, in show_image",
++            "File \"/usr/lib/python3.10/site-packages/PIL/ImageShow.py\", line 212, in show_file",
++            "File \"/usr/lib/python3.10/subprocess.py\", line 966, in __init__",
++            "[Previous line repeated 3 more times]",
++            "File \"/usr/lib/python3.10/subprocess.py\", line 1775, in _execute_child",
++        ];
++        let trace = raw_stacktrace
++            .iter()
++            .map(|e| e.to_string())
++            .collect::<Vec<String>>();
++        let sttr = PythonStacktrace::parse_stacktrace(&trace);
++        if sttr.is_err() {
++            panic!("{}", sttr.err().unwrap());
++        }
++
++        let stacktrace = sttr.unwrap();
++        assert_eq!(stacktrace[0].debug.file, "<stdin>".to_string());
++        assert_eq!(stacktrace[0].debug.line, 1);
++        assert_eq!(stacktrace[0].function, "<module>".to_string());
++        assert_eq!(
++            stacktrace[1].debug.file,
++            "/usr/lib/python3.10/site-packages/PIL/Image.py".to_string()
++        );
++        assert_eq!(stacktrace[1].debug.line, 2259);
++        assert_eq!(stacktrace[1].function, "show".to_string());
++        assert_eq!(
++            stacktrace[2].debug.file,
++            "/usr/lib/python3.10/site-packages/PIL/Image.py".to_string()
++        );
++        assert_eq!(stacktrace[2].debug.line, 3233);
++        assert_eq!(stacktrace[2].function, "_show".to_string());
++        assert_eq!(
++            stacktrace[3].debug.file,
++            "/usr/lib/python3.10/site-packages/PIL/ImageShow.py".to_string()
++        );
++        assert_eq!(stacktrace[3].debug.line, 55);
++        assert_eq!(stacktrace[3].function, "show".to_string());
++        assert_eq!(
++            stacktrace[4].debug.file,
++            "/usr/lib/python3.10/site-packages/PIL/ImageShow.py".to_string()
++        );
++        assert_eq!(stacktrace[4].debug.line, 79);
++        assert_eq!(stacktrace[4].function, "show".to_string());
++        assert_eq!(
++            stacktrace[5].debug.file,
++            "/usr/lib/python3.10/site-packages/PIL/ImageShow.py".to_string()
++        );
++        assert_eq!(stacktrace[5].debug.line, 105);
++        assert_eq!(stacktrace[5].function, "show_image".to_string());
++        assert_eq!(
++            stacktrace[6].debug.file,
++            "/usr/lib/python3.10/site-packages/PIL/ImageShow.py".to_string()
++        );
++        assert_eq!(stacktrace[6].debug.line, 212);
++        assert_eq!(stacktrace[6].function, "show_file".to_string());
++        assert_eq!(
++            stacktrace[7].debug.file,
++            "/usr/lib/python3.10/subprocess.py".to_string()
++        );
++        assert_eq!(stacktrace[7].debug.line, 966);
++        assert_eq!(stacktrace[7].function, "__init__".to_string());
++        assert_eq!(
++            stacktrace[8].debug.file,
++            "/usr/lib/python3.10/subprocess.py".to_string()
++        );
++        assert_eq!(stacktrace[8].debug.line, 966);
++        assert_eq!(stacktrace[8].function, "__init__".to_string());
++        assert_eq!(
++            stacktrace[9].debug.file,
++            "/usr/lib/python3.10/subprocess.py".to_string()
++        );
++        assert_eq!(stacktrace[9].debug.line, 966);
++        assert_eq!(stacktrace[9].function, "__init__".to_string());
++        assert_eq!(
++            stacktrace[10].debug.file,
++            "/usr/lib/python3.10/subprocess.py".to_string()
++        );
++        assert_eq!(stacktrace[10].debug.line, 966);
++        assert_eq!(stacktrace[10].function, "__init__".to_string());
++        assert_eq!(
++            stacktrace[11].debug.file,
++            "/usr/lib/python3.10/subprocess.py".to_string()
++        );
++        assert_eq!(stacktrace[11].debug.line, 1775);
++        assert_eq!(stacktrace[11].function, "_execute_child".to_string());
++    }
++}
+-- 
+2.34.1
+

@@ -1,6 +1,6 @@
 --[[
 -- measure serialization time
--- run: taskset -c 1 tarantool perf.lua 
+-- run: taskset -c 1 tarantool perf.lua
 ]]
 
 local clock = require('clock')
@@ -59,7 +59,7 @@ function calculate_stddev(t)
       sum = sum + (vm * vm)
     end
   end
-  
+
   return math.sqrt(sum/(#t - 1))
 end
 

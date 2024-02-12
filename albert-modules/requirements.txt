@@ -1,0 +1,9 @@
+boltons==21.0.0
+dateparser==1.1.1
+geopy==2.2.0
+fuzzywuzzy==0.18.0
+matplotlib==3.5.2
+PyGithub==1.55
+requests==2.25.1
+vcfxplr==0.1.2
+colour==0.1.5

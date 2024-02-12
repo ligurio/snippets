@@ -1,0 +1,10 @@
+language: c
+compiler:
+  - clang
+  - gcc
+
+dist: bionic
+
+script:
+  - cmake CMakeLists.txt
+  - cmake --build .

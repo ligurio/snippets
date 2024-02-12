@@ -1,14 +1,3 @@
--- local inspect = require('inspect')
-
-if type(jit) ~= 'table' then
-   print('PUC Rio Lua is unsupported')
-   os.exit()
-end
-
-local function __FILE__() return debug.getinfo(3, 'S').source end
-local function __LINE__() return debug.getinfo(3, 'l').currentline end
-local function __FUNC__() return debug.getinfo(3, 'n').name or '' end
-
 -- "require no more, promise no less"
 -- It is a PoC of Design by Contract for Lua using native debug module.
 -- Unfortunately it doesn't work as expected for two reasons:
@@ -16,9 +5,31 @@ local function __FUNC__() return debug.getinfo(3, 'n').name or '' end
 -- 2. it is not possible to set more than one hook to trace call and
 --    exit in function
 -- How to run: tarantool dbc.lua
+--
 -- See also support DbC in Go https://github.com/ligurio/go-contracts
+-- See http://wiki.luajit.org/JIT-Compiler-API#jit-util-funcinfo-func-pc
+-- See https://www.lua.org/pil/23.html
+-- See https://github.com/LuaDist/luacontractor
+-- See https://en.wikipedia.org/wiki/Design_by_contract
 
--- uncomment to trigger assert
+local log = require('log')
+
+if type(jit) ~= 'table' then
+   print('LuaJIT and LuaJIT-based are supported only')
+   os.exit()
+end
+
+--[[
+local trace = function()
+end
+jit.util.funcinfo(func, pc)
+]]
+
+local function __FILE__() return debug.getinfo(3, 'S').source end
+local function __LINE__() return debug.getinfo(3, 'l').currentline end
+local function __FUNC__() return debug.getinfo(3, 'n').name or '' end
+
+-- Uncomment to trigger assert.
 -- local promise = 'p1 < p2'
 local promise = 'p1 > p2'
 
@@ -36,11 +47,10 @@ end
 
 function precondition_hook(event)
     local name = debug.getinfo(2).name or ''
-    local fn_name = __FUNC__()
     local argc = debug.getinfo(2).nparams
     local argv = {}
     if fn_name == 'hello' then
-        print('precondition_hook triggered ' .. fn_name)
+        print('precondition_hook triggered ' .. __FUNC__())
         for i = 1, argc do
             arg, value = debug.getlocal(2, i)
             argv[arg] = value
@@ -57,8 +67,8 @@ function precondition_hook(event)
 end
 
 function postcondition_hook(event)
-    --local info = debug.getinfo(2)
-    --print(inspect.inspect(info))
+    local info = debug.getinfo(2)
+    print(log.info(info))
 end
 
 function dbc_enable()

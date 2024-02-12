@@ -104,6 +104,8 @@ size_t b_pgfault() {
  * exception, and measure how long it will be proceeded.
  */
 
+#pragma GCC diagnostic warning "-Wdiv-by-zero"
+
 jmp_buf fpe;
 
 static void sigfpe_sigaction(int signal, siginfo_t *si, void *arg) {

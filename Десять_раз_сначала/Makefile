@@ -4,7 +4,7 @@ CSS_FILE ?= epub.css
 
 PANDOC = pandoc
 PANDOC_OPT = -s --toc-depth=3 --toc --self-contained title.txt $(MAKRDOWN_FILES)
-NAME = Десять_раз_сначала
+NAME = 10times
 
 epub: $(MAKRDOWN_FILES) $(CSS_FILE) title.txt
 	$(PANDOC) $(PANDOC_OPT) --epub-cover-image=images/B1.png -c $(CSS_FILE) -o $(NAME).epub	

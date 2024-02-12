@@ -1,0 +1,280 @@
+{
+  "_comments": "Add more stations from here: http://wiki.secondlife.com/wiki/Music_streams#Jazz_and_Vintage",
+  "all": [
+    {
+      "url": "https://www.internet-radio.com/servers/tools/playlistgenerator/?u=http://us4.internet-radio.com:8193/listen.pls&t=.m3u",
+      "name": "Internet Radio - Deeply Beautiful Chillout Music - A Heavenly World of Sound",
+      "homepage": "https://www.internet-radio.com/stations/ambient/"
+    },
+    {
+      "url": "https://www.internet-radio.com/servers/tools/playlistgenerator/?u=http://us4.internet-radio.com:8193/listen.pls&t=.m3u",
+      "name": "Internet Radio - Radio Estilon Leblon",
+      "homepage": "https://www.internet-radio.com/stations/ambient/"
+    },
+    {
+      "url": "https://www.internet-radio.com/servers/tools/playlistgenerator/?u=http://uk1.internet-radio.com:8004/listen.pls&t=.m3u",
+      "name": "Internet Radio - Pink Noise Radio",
+      "homepage": "https://www.internet-radio.com/stations/ambient/"
+    },
+    {
+      "url": "https://radiostreaming.ert.gr/ert-proto",
+      "name": "Proto Programma / Πρώτο Πρόγραμμα 91.6 - ERT/ΕΡΤ",
+      "homepage": "https://webradio.ert.gr/proto/",
+      "icon": "proto.jpeg"
+    },
+
+    {
+      "url": "https://radiostreaming.ert.gr/ert-deftero",
+      "name": "Deftero Programma / Δεύτερο Πρόγραμμα 103.7 - ERT/ΕΡΤ",
+      "homepage": "https://webradio.ert.gr/deftero/",
+      "icon": "deftero.png"
+    },
+    {
+      "url": "https://radiostreaming.ert.gr/ert-trito",
+      "name": "Trito Programma / Τρίτο Πρόγραμμα 90.9 - ERT/ΕΡΤ",
+      "homepage": "https://webradio.ert.gr/trito/",
+      "icon": "trito.jpeg"
+    },
+    {
+      "url": "http://pepper966.live24.gr/pepper9660",
+      "name": "Pepper 96.6",
+      "homepage": "https://www.pepper966.gr/",
+      "icon": "pepper966.jpg"
+    },
+    {
+      "url": "http://diesi.live24.gr/diesi1013",
+      "name": "Δίεση 101.3",
+      "homepage": "https://diesi.gr/",
+      "icon": "diesi.png"
+    },
+    {
+      "url": "http://uk1.internet-radio.com:8267/listen.pls?sid=1",
+      "name": "White Noise"
+    },
+    {
+      "url": "http://cast.streams.ovh:8008/listen.pls?sid=1&t=.pls",
+      "name": "Trance Athena"
+    },
+    {
+      "url": "http://realfm.live24.gr/realfm",
+      "name": "RealFM 97.8",
+      "homepage": " http://www.realfm.gr/"
+    },
+    {
+      "url": "http://198.245.60.88:8128/listen.pls?sid=1",
+      "name": "Skylab Radio",
+      "homepage": "https://www.skylabradio.com",
+      "favorite": true
+    },
+    {
+      "url": "http://www.wnyc.org/stream/wnyc-fm939/aac.pls",
+      "name": "WNYC 93.9 FM",
+      "homepage": "http://www.wnyc.org/"
+    },
+    {
+      "url": "http://www.wnyc.org/stream/wqxr/aac.pls",
+      "name": "WQXR 105.9 FM",
+      "homepage": "https://www.wqxr.org/",
+      "favorite": true
+    },
+    {
+      "url": "http://www.wnyc.org/stream/q2/aac.pls",
+      "name": "New Sounds",
+      "homepage": "https://www.wqxr.org/"
+    },
+    {
+      "url": "http://www.wqxr.org/stream/wqxr-special/aac.pls",
+      "homepage": "https://www.wqxr.org/",
+      "name": "Openavore"
+    },
+    {
+      "url": "http://www.101smoothjazz.com/101-smoothjazz.m3u",
+      "name": "101 Smooth Jazz",
+      "homepage": "http://www.101smoothjazz.com/"
+    },
+    {
+      "url": "https://stream.radioparadise.com/aac-320",
+      "name": "Radio Paradise - Main Mix AAC 320K",
+      "icon": "rp",
+      "homepage": "https://radioparadise.com",
+      "favorite": true
+    },
+    {
+      "url": "https://stream.radioparadise.com/mellow-320",
+      "name": "Radio Paradise - Mellow Mix AAC 320K",
+      "icon": "rp",
+      "homepage": "https://radioparadise.com"
+    },
+    {
+      "url": "https://stream.radioparadise.com/rock-320",
+      "name": "Radio Paradise - Rock Mix AAC 320K",
+      "icon": "rp",
+      "homepage": "https://radioparadise.com"
+    },
+    {
+      "url": "https://stream.radioparadise.com/eclectic-320",
+      "name": "Radio Paradise - World/Eclectic Mix AAC 320K",
+      "icon": "rp",
+      "homepage": "https://radioparadise.com"
+    },
+    {
+      "url": "http://minnesota.publicradio.org/tools/play/streams/the_current.pls",
+      "name": "The Current"
+    },
+    {
+      "url": "http://listen.radionomy.com/boleros-para-enamorarse",
+      "name": "Boleros Para Enamorarse",
+      "description": "Latin Jazz"
+    },
+    {
+      "url": "http://sc2b-sjc.1.fm:8030/",
+      "name": "FM Blues"
+    },
+    {
+      "url": "http://minnesota.publicradio.org/tools/play/streams/classical.pls",
+      "name": "Classical MPR"
+    },
+    {
+      "url": "http://minnesota.publicradio.org/tools/play/streams/local.pls",
+      "name": "Local Current"
+    },
+    {
+      "url": "http://minnesota.publicradio.org/tools/play/streams/radio_heartland.pls",
+      "name": "MPR Radio Heartland"
+    },
+    {
+      "url": "http://www.wefunkradio.com/play/shoutcast.pls",
+      "name": "WEFUNK Radio MP3 64K"
+    },
+    {
+      "url": "http://sleepbot.com/ambience/cgi/listen.cgi/listen.pls",
+      "name": "Sleepbot Environmental Broadcast 56K MP3"
+    },
+    {
+      "url": "https://somafm.com/thetrip130.pls",
+      "name": "The Trip",
+      "icon": "thetrip",
+      "homepage": "https://somafm.com/thetrip"
+    },
+    {
+      "url": "https://somafm.com/beatblender130.pls",
+      "name": "Beat Blender",
+      "icon": "beatblender-400",
+      "homepage": "https://somafm.com/beatblender/"
+    },
+    {
+      "url": "https://somafm.com/deepspaceone130.pls",
+      "name": "Deep Space One",
+      "icon": "deepspaceone120",
+      "homepage": "https://somafm.com"
+    },
+    {
+      "url": "https://somafm.com/covers130.pls,",
+      "name": "Soma FM Covers",
+      "icon": "covers120",
+      "homepage": "https://somafm.com"
+    },
+    {
+      "url": "https://somafm.com/secretagent130.pls",
+      "name": "Soma FM Secret Agent",
+      "favorite": true,
+      "icon": "secretagent120",
+      "homepage": "https://somafm.com"
+    },
+    {
+      "url": "http://somafm.com/groovesalad130.pls",
+      "name": "Soma FM Groove Salad iTunes AAC 128K",
+      "icon": "groovesalad120",
+      "homepage": "https://somafm.com"
+    },
+    {
+      "url": "http://somafm.com/dronezone130.pls",
+      "name": "Soma FM Drone Zone iTunes AAC 128K",
+      "icon": "dronezone120",
+      "homepage": "https://somafm.com"
+    },
+    {
+      "url": "http://somafm.com/lush130.pls",
+      "name": "Soma FM Lush",
+      "icon": "lush120",
+      "homepage": "https://somafm.com"
+    },
+    {
+      "url": "https://somafm.com/u80s130.pls",
+      "name": "Underground 80s",
+      "icon": "u80s-120",
+      "description": " Early 80s UK Synthpop and a bit of New Wave. ",
+      "homepage": "https://somafm.com/u80s/"
+    },
+    {
+      "url": "https://somafm.com/spacestation130.pls",
+      "name": "Space Station Soma",
+      "icon": "spacestation-400",
+      "description": " Tune in, turn on, space out. Spaced-out ambient and mid-tempo electronica. ",
+      "homepage": "https://somafm.com/reggae/",
+      "favorite": false
+    },
+    {
+      "url": "https://somafm.com/defcon130.pls",
+      "name": "DEF CON Radio",
+      "icon": "defcon120",
+      "description": " Music for Hacking. The DEF CON Year-Round Channel. ",
+      "homepage": "https://somafm.com/defcon/",
+      "favorite": true
+    },
+    {
+      "url": " http://somafm.com/sonicuniverse130.pls",
+      "name": "Sonic Universe",
+      "icon": "sonicuniverse120",
+      "description": " Transcending the world of jazz with eclectic, avant-garde takes on tradition. ",
+      "homepage": "https://somafm.com/sonicuniverse/",
+      "favorite": true
+    },
+    {
+      "url": "https://somafm.com/missioncontrol130.pls",
+      "name": "Mission Control",
+      "icon": "missioncontrol120",
+      "description": "Celebrating NASA and Space Explorers everywhere.",
+      "homepage": "https://somafm.com/missioncontrol/",
+      "favorite": true
+    },
+    {
+      "url": "https://somafm.com/reggae130.pls",
+      "name": "Heavyweight Reggae",
+      "icon": "reggae120",
+      "description": "Reggae, Ska, Rocksteady classic and deep tracks.",
+      "homepage": "https://somafm.com/reggae/"
+    },
+    {
+      "url": "https://sebsauvage.net/ambient/playlist.m3u",
+      "name": "Sebsauvage - Ambient music",
+      "icon": "sebsauvage",
+      "description": "Background music for exploration/settlement management games such as Minecraft, RimWorld or Rise to Ruins",
+      "homepage": "https://sebsauvage.net/ambient/"
+    },
+    {
+      "url": "http://somafm.com/synphaera130.pls",
+      "name": "Synphaera",
+      "icon": "synphaera400",
+      "description": " Featuring the music from an independent record label focused on modern electronic ambient and space music. ",
+      "homepage": "https://somafm.com/synphaera/",
+      "favorite": false
+    },
+    {
+      "url": "http://somafm.com/live130.pls",
+      "name": "Soma FM Live",
+      "icon": "live-400",
+      "description": " Special Live Events and rebroadcasts of past live events ",
+      "homepage": "https://somafm.com/live/",
+      "favorite": true
+    },
+    {
+      "url": "http://somafm.com/scanner130.pls",
+      "name": "SF Police Scanner",
+      "icon": "scanner-400",
+      "description": "San Francisco Public Safety Scanner Feed.",
+      "homepage": "https://somafm.com/scanner/",
+      "favorite": true
+    }
+  ]
+}

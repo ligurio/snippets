@@ -1,0 +1,143 @@
+commit ee9b86415f122057b96a99d1b9b1eb3efe0be1a7
+Author: Sergey Bronnikov <estetus@gmail.com>
+Date:   Wed Dec 14 16:55:53 2022 +0300
+
+    fuzzing test
+
+diff --git a/src/test/fuzzing/CMakeLists.txt b/src/test/fuzzing/CMakeLists.txt
+index c2bc61ed5..ac405e99a 100644
+--- a/src/test/fuzzing/CMakeLists.txt
++++ b/src/test/fuzzing/CMakeLists.txt
+@@ -6,3 +6,58 @@ z3_add_component(fuzzing
+   COMPONENT_DEPENDENCIES
+     ast
+ )
++
++# find_package(Z3
++#   REQUIRED
++#   CONFIG
++#   # `NO_DEFAULT_PATH` is set so that -DZ3_DIR has to be passed to find Z3.
++#   # This should prevent us from accidentally picking up an installed
++#   # copy of Z3. This is here to benefit Z3's build system when building
++#   # this project. When making your own project you probably shouldn't
++#   # use this option.
++#   NO_DEFAULT_PATH
++# )
++# message(STATUS "Z3_FOUND: ${Z3_FOUND}")
++# message(STATUS "Found Z3 ${Z3_VERSION_STRING}")
++# message(STATUS "Z3_DIR: ${Z3_DIR}")
++
++# A special target with fuzzer and sanitizer flags.
++add_library(fuzzer_config INTERFACE)
++
++target_compile_options(
++    fuzzer_config
++    INTERFACE
++        $<$<NOT:$<BOOL:${OSS_FUZZ}>>:
++        -fsanitize=fuzzer
++        >
++        $<$<BOOL:${OSS_FUZZ}>:
++        ${CXX}
++        ${CXXFLAGS}
++        >
++)
++
++target_link_libraries(
++    fuzzer_config
++    INTERFACE
++        $<$<NOT:$<BOOL:${OSS_FUZZ}>>:
++        -fsanitize=fuzzer
++        >
++        $<$<BOOL:${OSS_FUZZ}>:
++        $ENV{LIB_FUZZING_ENGINE}
++        >
++)
++
++add_executable(Z3_parse_smtlib2_string_fuzzer Z3_parse_smtlib2_string.c)
++
++option(FORCE_CXX_LINKER "Force linker with C++ linker" OFF)
++if (FORCE_CXX_LINKER)
++  # This is a hack for avoiding UBSan linking errors
++  message(STATUS "Forcing use of C++ linker")
++  set_target_properties(Z3_parse_smtlib2_string_fuzzer
++    PROPERTIES
++    LINKER_LANGUAGE CXX
++  )
++endif()
++
++target_include_directories(Z3_parse_smtlib2_string_fuzzer PRIVATE ${Z3_C_INCLUDE_DIRS})
++target_link_libraries(Z3_parse_smtlib2_string_fuzzer PUBLIC ${Z3_LIBRARIES} fuzzer_config)
+diff --git a/src/test/fuzzing/Z3_parse_smtlib2_string.c b/src/test/fuzzing/Z3_parse_smtlib2_string.c
+new file mode 100644
+index 000000000..89c9cc2b6
+--- /dev/null
++++ b/src/test/fuzzing/Z3_parse_smtlib2_string.c
+@@ -0,0 +1,68 @@
++/*
++https://github.com/Z3Prover/z3/blob/master/examples/c%2B%2B/example.cpp#L1241-L1252
++https://github.com/Z3Prover/z3/blob/master/examples/c/test_capi.c#L2553-L2566
++https://github.com/Z3Prover/z3/blob/master/README-CMake.md
++
++$ cmake -S . -B build -DZ3_BUILD_TEST_EXECUTABLES=ON -DFORCE_CXX_LINKER=ON
++$ cmake --build build --target Z3_parse_smtlib2_string_fuzzer
++*/
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <stdarg.h>
++#include <memory.h>
++#include <setjmp.h>
++#include <z3.h>
++
++/**
++   \brief Create a logical context.
++   Enable model construction. Other configuration parameters can be passed in the cfg variable.
++   Also enable tracing to stderr and register custom error handler.
++*/
++Z3_context mk_context_custom(Z3_config cfg, Z3_error_handler err)
++{
++    Z3_context ctx;
++
++    Z3_set_param_value(cfg, "model", "true");
++    ctx = Z3_mk_context(cfg);
++    Z3_set_error_handler(ctx, err);
++
++    return ctx;
++}
++
++/**
++   \brief Simpler error handler.
++ */
++void error_handler(Z3_context c, Z3_error_code e)
++{
++    printf("Error code: %d\n", e);
++    exitf("incorrect use of Z3");
++}
++
++/**
++   \brief Create a logical context.
++
++   Enable model construction only.
++
++   Also enable tracing to stderr and register standard error handler.
++*/
++Z3_context mk_context()
++{
++    Z3_config  cfg;
++    Z3_context ctx;
++    cfg = Z3_mk_config();
++    ctx = mk_context_custom(cfg, error_handler);
++    Z3_del_config(cfg);
++    return ctx;
++}
++
++int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
++    Z3_context ctx;
++    Z3_ast_vector fs;
++    ctx = mk_context();
++    Z3_parse_smtlib2_string(ctx, Data, 0, 0, 0, 0, 0, 0);
++    Z3_ast_vector_inc_ref(ctx, fs);
++    Z3_del_context(ctx);
++
++	return 0;
++}

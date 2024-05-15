@@ -17,7 +17,6 @@ local N_OPS_IN_TX = 10
 local fiber = require('fiber')
 local log = require('log')
 local math = require('math')
-local tt_helpers = require('tt_helpers')
 
 local seed = SEED or os.time()
 seed = seed or math.randomseed(seed)
@@ -32,6 +31,24 @@ end
 
 -- https://www.lua.org/pil/23.2.html
 -- debug.sethook(trace, "l")
+
+local function dict_keys(t)
+    assert(next(t) ~= nil)
+    local keys = {}
+    for k, _ in pairs(t) do
+        table.insert(keys, k)
+    end
+	return keys
+end
+
+local function random_elem(t)
+    assert(type(t) == 'table')
+    assert(next(t) ~= nil)
+
+    local n = #t
+    local idx = math.random(1, n)
+    return t[idx]
+end
 
 local errinj_set = {
     ['ERRINJ_VY_GC'] = 'boolean',
@@ -206,7 +223,7 @@ local dml_ops = {
 
 local function generate_dml(space)
     log.info("GENERATE DML")
-    local op_name = tt_helpers.random_elem(tt_helpers.dict_keys(dml_ops))
+    local op_name = random_elem(dict_keys(dml_ops))
     log.info(op_name)
 	local fn = dml_ops[op_name]
 	assert(type(fn) == 'function')
@@ -266,7 +283,7 @@ local ddl_ops = {
 
 local function generate_ddl(space)
     log.info("GENERATE DDL")
-    local op_name = tt_helpers.random_elem(tt_helpers.dict_keys(ddl_ops))
+    local op_name = random_elem(dict_keys(ddl_ops))
     log.info(op_name)
 	local fn = ddl_ops[op_name]
 	assert(type(fn) == 'function')
@@ -278,7 +295,7 @@ end
 
 local function set_err_injection()
     log.info("SET RANDOM ERROR INJECTIONS")
-    local errinj_name = tt_helpers.random_elem(tt_helpers.dict_keys(errinj_set))
+    local errinj_name = random_elem(dict_keys(errinj_set))
 	local t = errinj_set[errinj_name]
 
     local errinj_val_enable = true
@@ -290,10 +307,17 @@ local function set_err_injection()
     local pause_time = math.random(1, 20)
 
     log.info(string.format("SET %s -> %s", errinj_name, tostring(errinj_val_enable)))
-    pcall(box.error.injection.set, errinj_name, errinj_val_enable)
+    local ok, err
+    ok, err = pcall(box.error.injection.set, errinj_name, errinj_val_enable)
+    if ok ~= true then
+        log.info(err)
+    end
     fiber.sleep(pause_time)
     log.info(string.format("SET %s -> %s", errinj_name, tostring(errinj_val_disable)))
-    pcall(box.error.injection.set, errinj_name, errinj_val_disable)
+    ok, err = pcall(box.error.injection.set, errinj_name, errinj_val_disable)
+    if ok ~= true then
+        log.info(err)
+    end
 end
 
 -- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_stat/vinyl/

@@ -6,11 +6,12 @@ vinyl в box.cfg. Все случайные операции и настройк
 См. https://github.com/tarantool/tarantool/issues/5076
 ]]
 
-local TEST_DURATION = 120 -- Seconds.
+local TEST_DURATION = 10*60 -- Seconds.
 local NUM_SP = 5
 local NUM_TUPLES = 1000
 local SEED = 10000
 local N_OPS_IN_TX = 10
+local MAX_KEY = 10000
 
 --
 
@@ -22,7 +23,7 @@ local seed = SEED or os.time()
 seed = seed or math.randomseed(seed)
 log.info(string.format("RANDOM SEED %d", seed))
 
-local function trace(event, line)
+local function trace(event, line) -- luacheck: no unused
     local s = debug.getinfo(2).short_src
     if s == 'vinyl.lua' then
         log.info(s .. ":" .. line)
@@ -40,6 +41,10 @@ local function dict_keys(t)
     end
 	return keys
 end
+
+-- local function rand_char()
+--     return string.char(math.random(97, 97 + 25))
+-- end
 
 local function random_elem(t)
     assert(type(t) == 'table')
@@ -59,82 +64,125 @@ local errinj_set = {
     ['ERRINJ_VY_READ_PAGE_DELAY'] = 'boolean',
     ['ERRINJ_VY_READ_PAGE_TIMEOUT'] = 'double',
     ['ERRINJ_VY_RUN_DISCARD'] = 'boolean',
-    ['ERRINJ_VY_RUN_WRITE'] = 'boolean',
+    -- TX: Timed out waiting for Vinyl memory quota.
+    -- ['ERRINJ_VY_RUN_WRITE'] = 'boolean',
     ['ERRINJ_VY_RUN_WRITE_DELAY'] = 'boolean',
     ['ERRINJ_VY_SCHED_TIMEOUT'] = 'double',
     ['ERRINJ_VY_SQUASH_TIMEOUT'] = 'double',
     ['ERRINJ_VY_TASK_COMPLETE'] = 'boolean',
 }
 
-local TX_COMMIT = 0
-local TX_ROLLBACK = 1
-local TX_NOOP = 2
-
 -- Forward declaration.
 local function generate_dml()
 end
-
-local function generate_noop()
+local function generate_ddl()
 end
+
+local tx_op = {
+    ['TX_COMMIT'] = function() box.rollback() end,
+    ['TX_ROLLBACK'] = function() box.commit() end,
+    ['TX_NOOP'] = function() end,
+}
 
 local function generate_tx(space)
     log.info("GENERATE_TX")
     if box.is_in_txn() then
-        local tx_op = math.random(0, TX_NOOP * 2)
-        if tx_op == TX_COMMIT then
-            box.rollback()
-        elseif tx_op == TX_ROLLBACK then
-            box.commit()
-        else
-            -- None
-        end
+        local tx_op_name = random_elem(dict_keys(tx_op))
+	    local fn = tx_op[tx_op_name]
+	    assert(type(fn) == 'function')
+	    pcall(fn)
     else
         box.begin()
-            for i = 1, N_OPS_IN_TX do
+            for _ = 1, N_OPS_IN_TX do
                 generate_dml(space)
+                generate_ddl(space)
             end
         box.commit()
     end
 end
 
+-- Iterator types for TREE indexes.
+-- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_index/pairs/#box-index-iterator-types
+local iter_type = {
+    'ALL',
+    'EQ',
+    'GE',
+    'GT',
+    'LE',
+    'LT',
+    'REQ',
+}
+
 local function generate_read(space)
     log.info("DML: READ")
     box.snapshot()
 
-    -- Do fullscan.
-    -- sk:select{}
-
     space:get(1)
-    space:select(1)
-    space:select({10}, { iterator = 'ge' })
-    space:select({10}, { iterator = 'le' })
-    space:select(math.random(count), { iterator = box.index.LE, limit = 10 })
+    local select_opts = {
+        iterator = random_elem(iter_type),
+        -- The maximum number of tuples.
+        limit = math.random(5000),
+        -- The number of tuples to skip.
+        offset = math.random(100),
+        -- A tuple or the position of a tuple (tuple_pos) after
+        -- which select starts the search.
+        after = box.NULL,
+        -- If true, the select method returns the position of
+        -- the last selected tuple as the second value.
+        fetch_pos = random_elem({true, false}),
+    }
+    log.info(select_opts)
+    space:select(math.random(MAX_KEY), select_opts)
 end
 
 local function generate_delete(space)
     log.info("DML: DELETE")
-    space:delete({1, 1})
+    local key = math.random(MAX_KEY)
+    space:delete(key)
 end
 
 local function generate_insert(space)
-    log.info("DML: NSERT")
-
-    space:insert(1, math.random(100))
-    -- local key = math.random(0, MAX_KEY)
-    -- space:insert({key, data})
-
-    pcall(space.insert, space, {math.random(MAX_KEY), math.random(MAX_VAL),
-                        math.random(MAX_VAL), math.random(MAX_VAL), PADDING})
+    log.info("DML: INSERT")
+    local key = math.random(MAX_KEY)
+    if space:get(key) ~= nil then
+        return
+    end
+    pcall(space.insert, space, {
+        key,
+		math.random(MAX_KEY),
+        math.random(MAX_KEY),
+        math.random(MAX_KEY),
+	})
 end
+
+local tuple_op = {
+    '+', -- numeric.
+    '-', -- numeric.
+    '&', -- numeric.
+    '|', -- numeric.
+    '^', -- numeric.
+    '!', -- for insertion of a new field.
+    '#', -- for deletion.
+    '=', -- for assignment.
+    -- ':', for string splice.
+}
 
 local function generate_upsert(space)
     log.info("DML: UPSERT")
-    space:upsert({1, math.random(100)})
+    local tuple = { math.random(1000), math.random(1000) }
+    space:upsert(tuple, {
+        { random_elem(tuple_op), math.random(2), math.random(1000) },
+        { random_elem(tuple_op), math.random(2), math.random(1000) }
+    })
 end
 
 local function generate_update(space)
     log.info("DML: UPDATE")
-    space:update({1, math.random(100)})
+    local count = space:count()
+	space:update(math.random(count), {
+        { random_elem(tuple_op), math.random(2), math.random(1000) },
+        { random_elem(tuple_op), math.random(2), math.random(1000) },
+    })
 end
 
 local function generate_replace(space)
@@ -145,9 +193,9 @@ end
 
 local function init_space(space)
     log.info('CREATING TUPLES')
-    for j = 1, NUM_TUPLES do
+    for _ = 1, NUM_TUPLES do
         box.begin()
-            for i = 1, N_OPS_IN_TX do
+            for _ = 1, N_OPS_IN_TX do
                 generate_insert(space)
             end
         box.commit()
@@ -167,21 +215,23 @@ local function setup(spaces)
     log.info("SETUP")
     -- TODO: https://www.tarantool.io/en/doc/2.3/reference/configuration/
     box.cfg{
-        -- listen = 3301,
         memtx_memory = 1024*1024,
         vinyl_cache = math.random(0, 10),
-        vinyl_bloom_fpr = math.random(0, 0.5),
+        vinyl_bloom_fpr = math.random(50) / 100,
         vinyl_max_tuple_size = math.random(0, 100000),
-        vinyl_memory = 256*1024,
+        vinyl_memory = 10*1024*1024,
         -- vinyl_page_size = math.random(1, 10),
         -- vinyl_range_size = math.random(1, 10),
         vinyl_run_size_ratio = math.random(2, 5),
         vinyl_run_count_per_level = math.random(1, 10),
-        vinyl_read_threads = math.random(2, 5),
-        vinyl_write_threads = math.random(2, 5),
+        vinyl_read_threads = math.random(2, 10),
+        vinyl_write_threads = math.random(2, 10),
         vinyl_timeout = math.random(1, 5),
-        checkpoint_interval = 0,
-        wal_mode = 'write',
+        wal_mode = random_elem({'write', 'fsync'}),
+        wal_max_size = math.random(1024 * 1024 * 1024),
+        checkpoint_interval = math.random(1*60*60),
+        checkpoint_count = math.random(5),
+        checkpoint_wal_threshold = math.random(10^18),
     }
     log.info('FINISH BOX.CFG')
 
@@ -213,15 +263,15 @@ local function teardown(spaces)
 end
 
 local dml_ops = {
-    ['INSERT_OP'] = generate_insert,
     ['DELETE_OP'] = generate_delete,
+    ['INSERT_OP'] = generate_insert,
+    ['READ_OP'] = generate_read,
     ['REPLACE_OP'] = generate_replace,
-    ['UPSERT_OP'] = generate_upsert,
     ['UPDATE_OP'] = generate_update,
-    ['NO_OP'] = generate_noop,
+    ['UPSERT_OP'] = generate_upsert,
 }
 
-local function generate_dml(space)
+generate_dml = function(space)
     log.info("GENERATE DML")
     local op_name = random_elem(dict_keys(dml_ops))
     log.info(op_name)
@@ -233,15 +283,33 @@ local function generate_dml(space)
 	end
 end
 
+local function index_opts()
+    return {
+        -- TODO: RTREE
+        type = random_elem({'TREE', 'HASH', 'BITSET'}),
+        unique = random_elem({true, false}),
+        if_not_exists = false,
+        -- TODO: index_opts.parts
+        -- TODO: dimension (RTREE only)
+        -- TODO: distance (RTREE only)
+        -- sequence,
+        -- func,
+        hint = random_elem({true, false}),
+        bloom_fpr = math.random(50) / 100,
+        -- page_size,
+        -- range_size,
+        -- run_count_per_level,
+        -- run_size_ratio,
+    }
+end
+
 local function index_create(space)
     log.info("INDEX_CREATE")
-    space:create_index('i')
-    space.index.i:alter({ bloom_fpr = 0.0 })
-    for i = 1, 100000 do
-        i = i + 1
-        space:insert({ i, '' })
-        space.index.i:alter({ page_size = i })
+    local idx_name = 'idx_' .. math.random(100)
+    if space.index[idx_name] ~= nil then
+        return
     end
+    space:create_index(idx_name, index_opts())
 end
 
 local function index_drop(space)
@@ -253,7 +321,7 @@ end
 
 local function index_alter(space)
     log.info("INDEX_ALTER")
-    -- TODO
+    space.index[idx_name]:alter(index_opts())
 end
 
 local function index_compact(space)
@@ -274,14 +342,14 @@ local function index_noop(space)
 end
 
 local ddl_ops = {
-    INDEX_CREATE = index_create,
-    INDEX_DROP = index_drop,
     INDEX_ALTER = index_alter,
     INDEX_COMPACT = index_compact,
+    INDEX_CREATE = index_create,
+    INDEX_DROP = index_drop,
     INDEX_NO_OP = index_noop,
 }
 
-local function generate_ddl(space)
+generate_ddl = function(space)
     log.info("GENERATE DDL")
     local op_name = random_elem(dict_keys(ddl_ops))
     log.info(op_name)
@@ -304,7 +372,8 @@ local function set_err_injection()
         errinj_val_enable = math.random(0, 10)
         errinj_val_disable = 0
     end
-    local pause_time = math.random(1, 20)
+
+    local pause_time = math.random(1, 10)
 
     log.info(string.format("SET %s -> %s", errinj_name, tostring(errinj_val_enable)))
     local ok, err
@@ -329,7 +398,7 @@ local function print_stat(spaces)
     for i = 1, NUM_SP do
         stat = spaces[i].index.secondary:stat()
         log.info(string.format('memory rows %d bytes %d',
-                    stat.memory.rows, stat.memory.bytes))
+                 stat.memory.rows, stat.memory.bytes))
     end
 end
 

@@ -114,7 +114,6 @@ local iter_type = {
 }
 
 local function generate_read(space)
-    log.info("DML: READ")
     box.snapshot()
 
     space:get(1)
@@ -136,13 +135,11 @@ local function generate_read(space)
 end
 
 local function generate_delete(space)
-    log.info("DML: DELETE")
     local key = math.random(MAX_KEY)
     space:delete(key)
 end
 
 local function generate_insert(space)
-    log.info("DML: INSERT")
     local key = math.random(MAX_KEY)
     if space:get(key) ~= nil then
         return
@@ -168,7 +165,6 @@ local tuple_op = {
 }
 
 local function generate_upsert(space)
-    log.info("DML: UPSERT")
     local tuple = { math.random(1000), math.random(1000) }
     space:upsert(tuple, {
         { random_elem(tuple_op), math.random(2), math.random(1000) },
@@ -177,7 +173,6 @@ local function generate_upsert(space)
 end
 
 local function generate_update(space)
-    log.info("DML: UPDATE")
     local count = space:count()
 	space:update(math.random(count), {
         { random_elem(tuple_op), math.random(2), math.random(1000) },
@@ -186,7 +181,6 @@ local function generate_update(space)
 end
 
 local function generate_replace(space)
-    log.info("DML: REPLACE")
     local k = math.random(0, 1000)
     space:replace({k, math.random(100)})
 end
@@ -236,7 +230,7 @@ local function setup(spaces)
     log.info('FINISH BOX.CFG')
 
     for i = 1, NUM_SP do
-        log.info(i)
+        log.info('create space ' .. tostring(i))
         local space = box.schema.space.create('test' .. i, { engine = 'vinyl' })
         space:create_index('pk', { type = 'tree', parts = {{1, 'uint'}},
                            run_count_per_level = 100,
@@ -272,9 +266,8 @@ local dml_ops = {
 }
 
 generate_dml = function(space)
-    log.info("GENERATE DML")
     local op_name = random_elem(dict_keys(dml_ops))
-    log.info(op_name)
+    log.info(("GENERATE DML: %s"):format(op_name))
 	local fn = dml_ops[op_name]
 	assert(type(fn) == 'function')
 	local ok, err = pcall(fn, space)
@@ -304,7 +297,6 @@ local function index_opts()
 end
 
 local function index_create(space)
-    log.info("INDEX_CREATE")
     local idx_name = 'idx_' .. math.random(100)
     if space.index[idx_name] ~= nil then
         return
@@ -313,7 +305,6 @@ local function index_create(space)
 end
 
 local function index_drop(space)
-    log.info("INDEX_DROP")
     if space.index.i ~= nil then
         space.index.i:drop()
     end
@@ -325,7 +316,6 @@ local function index_alter(space)
 end
 
 local function index_compact(space)
-    log.info("INDEX_COMPACT")
     if space.index.pk ~= nil then
         space.index.pk:compact()
     end
@@ -337,8 +327,8 @@ local function index_compact(space)
     -- box.space.stock_reserved.index.primary:select({}, {limit=100})
 end
 
-local function index_noop(space)
-    log.info("INDEX_NOOP")
+local function index_noop()
+    -- Nope.
 end
 
 local ddl_ops = {
@@ -350,9 +340,8 @@ local ddl_ops = {
 }
 
 generate_ddl = function(space)
-    log.info("GENERATE DDL")
     local op_name = random_elem(dict_keys(ddl_ops))
-    log.info(op_name)
+    log.info(("GENERATE DDL: %s"):format(op_name))
 	local fn = ddl_ops[op_name]
 	assert(type(fn) == 'function')
 	local ok, err = pcall(fn, space)
@@ -362,7 +351,6 @@ generate_ddl = function(space)
 end
 
 local function set_err_injection()
-    log.info("SET RANDOM ERROR INJECTIONS")
     local errinj_name = random_elem(dict_keys(errinj_set))
 	local t = errinj_set[errinj_name]
 
@@ -375,17 +363,19 @@ local function set_err_injection()
 
     local pause_time = math.random(1, 10)
 
-    log.info(string.format("SET %s -> %s", errinj_name, tostring(errinj_val_enable)))
+    log.info(string.format("ENABLE RANDOM ERROR INJECTION: %s -> %s",
+                           errinj_name, tostring(errinj_val_enable)))
     local ok, err
     ok, err = pcall(box.error.injection.set, errinj_name, errinj_val_enable)
     if ok ~= true then
         log.info(err)
     end
     fiber.sleep(pause_time)
-    log.info(string.format("SET %s -> %s", errinj_name, tostring(errinj_val_disable)))
+    log.info(string.format("DISABLE RANDOM ERROR INJECTION: %s -> %s",
+                           errinj_name, tostring(errinj_val_disable)))
     ok, err = pcall(box.error.injection.set, errinj_name, errinj_val_disable)
     if ok ~= true then
-        log.info(err)
+        log.info('ERR: ' .. err)
     end
 end
 
@@ -393,12 +383,12 @@ end
 local function print_stat(spaces)
     log.info("PRINT STATISTICS")
     local stat = box.stat.vinyl()
-    log.info(string.format('transactions: %d, tx memory: %d',
-                    stat.tx.transactions, stat.memory.tx))
+    log.info(string.format('STATISTICS: transactions: %d, tx memory: %d',
+                           stat.tx.transactions, stat.memory.tx))
     for i = 1, NUM_SP do
         stat = spaces[i].index.secondary:stat()
-        log.info(string.format('memory rows %d bytes %d',
-                 stat.memory.rows, stat.memory.bytes))
+        log.info(string.format('STATISTICS: memory rows %d bytes %d',
+                               stat.memory.rows, stat.memory.bytes))
     end
 end
 

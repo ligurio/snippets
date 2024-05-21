@@ -185,10 +185,8 @@ local errinj_set = {
 }
 
 -- Forward declaration.
-local function generate_dml()
-end
-local function generate_ddl()
-end
+local function generate_dml() end
+local function generate_ddl() end
 
 local tx_op = {
     ['TX_COMMIT'] = function() box.rollback() end,

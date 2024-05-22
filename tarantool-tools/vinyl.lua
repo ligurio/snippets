@@ -4,6 +4,8 @@ vinyl в box.cfg. Все случайные операции и настройк
 генерируется в самом начале теста.
 
 См. https://github.com/tarantool/tarantool/issues/5076
+https://github.com/mkostoevr/tarantool/commit/f3462f6bfb80f93ce2c155bb6444d12e478dd180
+https://github.com/tarantool/tarantool/issues/4349
 ]]
 
 local TEST_DURATION = 10*60 -- Seconds.
@@ -50,11 +52,15 @@ local function random_elem(t)
     assert(type(t) == 'table')
     assert(next(t) ~= nil)
 
-    local n = #t
+    local n = table.getn(t)
     local idx = math.random(1, n)
     return t[idx]
 end
 
+-- TODO: Obtain error injections dynamically:
+-- box.error.injection.info()
+-- box.error.injection.get('ERRINJ_SNAP_SKIP_ALL_ROWS')
+-- box.error.injection.set('ERRINJ_SNAP_SKIP_ALL_ROWS', true)
 -- Source: src/lib/core/errinj.h
 local errinj_set = {
     ['ERRINJ_APPLIER_DESTROY_DELAY'] = 'boolean',
@@ -124,7 +130,8 @@ local errinj_set = {
     ['ERRINJ_TESTING'] = 'boolean',
     ['ERRINJ_TUPLE_ALLOC'] = 'boolean',
     ['ERRINJ_TUPLE_FIELD'] = 'boolean',
-    ['ERRINJ_TUPLE_FIELD_COUNT_LIMIT'] = 'int',
+    -- https://github.com/tarantool/tarantool/issues/10033
+    -- ['ERRINJ_TUPLE_FIELD_COUNT_LIMIT'] = 'int',
     ['ERRINJ_TUPLE_FORMAT_COUNT'] = 'int',
     ['ERRINJ_TX_DELAY_PRIO_ENDPOINT'] = 'double',
     ['ERRINJ_TXN_COMMIT_ASYNC'] = 'boolean',
@@ -304,15 +311,10 @@ local function init_space(space)
             end
         box.commit()
     end
-
-    --[[
-    local dump_watermark = 7000000
+    local dump_watermark = 70000
     while box.stat.vinyl().memory.level0 < dump_watermark do
         generate_insert(space)
     end
-    ]]
-    log.info('snapshot')
-    box.snapshot()
 end
 
 local function setup(spaces)
@@ -342,12 +344,14 @@ local function setup(spaces)
     for i = 1, NUM_SP do
         log.info('create space ' .. tostring(i))
         local space = box.schema.space.create('test' .. i, { engine = 'vinyl' })
+        -- TODO: replace with function create_index.
         space:create_index('pk', { type = 'tree', parts = {{1, 'uint'}},
                            run_count_per_level = 100,
                            page_size = 128,
                            range_size = 1024 })
+        -- TODO: replace with function create_index.
         space:create_index('secondary', { unique = false, parts = { 2, 'unsigned' }})
-        -- init_space(space)
+        init_space(space)
         spaces[i] = space
     end
     log.info('FINISH SETUP')
@@ -355,7 +359,7 @@ end
 
 local function cleanup()
    log.info("CLEANUP")
-   os.execute('rm -rf *.snap *.xlog *.vylog')
+   os.execute('rm -rf *.snap *.xlog *.vylog 51*')
 end
 
 local function teardown(spaces)
@@ -386,32 +390,53 @@ generate_dml = function(space)
 	end
 end
 
-local function index_opts()
-    return {
-        -- TODO: RTREE
-        type = random_elem({'TREE', 'HASH', 'BITSET'}),
+-- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/
+local function index_opts(space)
+    assert(space ~= nil)
+    local opts = {
         unique = random_elem({true, false}),
         if_not_exists = false,
-        -- TODO: index_opts.parts
-        -- TODO: dimension (RTREE only)
-        -- TODO: distance (RTREE only)
         -- sequence,
         -- func,
-        hint = random_elem({true, false}),
-        bloom_fpr = math.random(50) / 100,
         -- page_size,
         -- range_size,
         -- run_count_per_level,
         -- run_size_ratio,
     }
+
+    -- TODO: RTREE, BITSET
+    opts.type = random_elem({'TREE', 'HASH'})
+    if space.engine == 'memtx' then
+        opts.hint = random_elem({true, false})
+    end
+
+    if space.engine == 'vinyl' then
+        opts.bloom_fpr = math.random(50) / 100
+    end
+
+    -- TODO: index_opts.parts
+
+    if opts.type == 'RTREE' then
+        -- TODO: dimension (RTREE only)
+    end
+    if opts.type == 'RTREE' then
+        -- TODO: distance (RTREE only)
+    end
+
+    return opts
 end
 
 local function index_create(space)
     local idx_name = 'idx_' .. math.random(100)
     if space.index[idx_name] ~= nil then
-        return
+        space.index[idx_name]:drop()
     end
-    space:create_index(idx_name, index_opts())
+    local opts = index_opts(space)
+    local ok, err = pcall(space.create_index, space, idx_name, opts)
+    if ok ~= true then
+        log.info('ERROR: ' .. err)
+        log.info(opts)
+    end
 end
 
 local function index_drop(space)
@@ -421,8 +446,12 @@ local function index_drop(space)
 end
 
 local function index_alter(space)
-    log.info("INDEX_ALTER")
-    space.index[idx_name]:alter(index_opts())
+    local idx = random_elem(space.index)
+    local opts = index_opts(space)
+    -- Option is not relevant.
+    opts.if_not_exists = nil
+    idx:alter(opts)
+    -- TODO: space.index.sk:alter{parts = {2, 'number'}}
 end
 
 local function index_compact(space)
@@ -432,9 +461,6 @@ local function index_compact(space)
     if space.index.sk ~= nil then
         space.index.sk:compact()
     end
-    -- fiber.create(function() space.index.sk:select() end)
-    -- space.index.sk:alter{parts = {2, 'number'}}
-    -- box.space.stock_reserved.index.primary:select({}, {limit=100})
 end
 
 local function index_noop()

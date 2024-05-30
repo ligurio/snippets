@@ -319,7 +319,7 @@ local function init_space(space)
     end
 end
 
-local function setup(spaces)
+local function setup()
     log.info("SETUP")
     -- TODO: https://www.tarantool.io/en/doc/2.3/reference/configuration/
     box.cfg{
@@ -343,20 +343,18 @@ local function setup(spaces)
     }
     log.info('FINISH BOX.CFG')
 
-    for i = 1, NUM_SP do
-        log.info('create space ' .. tostring(i))
-        local space = box.schema.space.create('test' .. i, { engine = 'vinyl' })
-        -- TODO: replace with function create_index.
-        space:create_index('pk', { type = 'tree', parts = {{1, 'uint'}},
-                           run_count_per_level = 100,
-                           page_size = 128,
-                           range_size = 1024 })
-        -- TODO: replace with function create_index.
-        space:create_index('secondary', { unique = false, parts = { 2, 'unsigned' }})
-        init_space(space)
-        spaces[i] = space
-    end
+    log.info('create a space')
+    local space = box.schema.space.create('test', { engine = 'vinyl' })
+    -- TODO: replace with function create_index.
+    space:create_index('pk', { type = 'tree', parts = {{1, 'uint'}},
+                       run_count_per_level = 100,
+                       page_size = 128,
+                       range_size = 1024 })
+    -- TODO: replace with function create_index.
+    space:create_index('secondary', { unique = false, parts = { 2, 'unsigned' }})
+    init_space(space)
     log.info('FINISH SETUP')
+    return space
 end
 
 local function cleanup()
@@ -364,11 +362,9 @@ local function cleanup()
    os.execute('rm -rf *.snap *.xlog *.vylog 51*')
 end
 
-local function teardown(spaces)
+local function teardown(space)
    log.info("TEARDOWN")
-   for i = 1, NUM_SP do
-       spaces[i]:drop()
-   end
+   space:drop()
    cleanup()
 end
 
@@ -522,24 +518,22 @@ local function set_err_injection()
 end
 
 -- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_stat/vinyl/
-local function print_stat(spaces)
+local function print_stat(space)
     log.info("PRINT STATISTICS")
     local stat = box.stat.vinyl()
     log.info(string.format('STATISTICS: transactions: %d, tx memory: %d',
                            stat.tx.transactions, stat.memory.tx))
-    for i = 1, NUM_SP do
-        stat = spaces[i].index.secondary:stat()
-        log.info(string.format('STATISTICS: memory rows %d bytes %d',
-                               stat.memory.rows, stat.memory.bytes))
-    end
+
+    stat = space.index.secondary:stat()
+    log.info(string.format('STATISTICS: memory rows %d bytes %d',
+                           stat.memory.rows, stat.memory.bytes))
 end
 
 local function main()
-    local spaces = {}
     local fibers = {}
 
     cleanup()
-    setup(spaces)
+    local space = setup()
 
     local f
     for i = 1, NUM_SP do
@@ -547,8 +541,8 @@ local function main()
             log.info('START DML ' .. i)
             local start = os.clock()
             while os.clock() - start < TEST_DURATION do
-                generate_dml(spaces[i])
-				fiber.sleep(0.1)
+                generate_dml(space)
+                fiber.sleep(0.1)
             end
         end)
         f:set_joinable(true)
@@ -561,11 +555,11 @@ local function main()
             log.info('START TX ' .. i)
             local start = os.clock()
             while os.clock() - start < TEST_DURATION do
-                local ok, err = pcall(generate_tx, spaces[i])
+                local ok, err = pcall(generate_tx, space)
                 if ok ~= true then
                     log.info('TX: ' .. err)
                 end
-				fiber.sleep(0.1)
+                fiber.sleep(0.1)
             end
         end)
         f:set_joinable(true)
@@ -578,8 +572,8 @@ local function main()
             log.info('START DDL ' .. i)
             local start = os.clock()
             while os.clock() - start < TEST_DURATION do
-                generate_ddl(spaces[i])
-				fiber.sleep(0.1)
+                generate_ddl(space)
+                fiber.sleep(0.1)
             end
         end)
         f:set_joinable(true)
@@ -593,8 +587,8 @@ local function main()
             local ok, err = pcall(box.snapshot)
             if ok ~= true then
                 log.info('BOX SNAPSHOT: ' .. err)
-            end;
-			fiber.sleep(math.random(30, 60))
+            end
+            fiber.sleep(math.random(30, 60))
         end
     end)
     f:set_joinable(true)
@@ -605,7 +599,7 @@ local function main()
         local start = os.clock()
         while os.clock() - start < TEST_DURATION do
             set_err_injection()
-			fiber.sleep(math.random(30, 60))
+            fiber.sleep(math.random(30, 60))
         end
     end)
     f:set_joinable(true)
@@ -615,8 +609,8 @@ local function main()
     f = fiber.new(function()
         local start = os.clock()
         while os.clock() - start < TEST_DURATION do
-            print_stat(spaces)
-			fiber.sleep(60)
+            print_stat(space)
+            fiber.sleep(60)
         end
     end)
     f:set_joinable(true)
@@ -629,7 +623,7 @@ local function main()
         assert(ok, true)
     end
 
-    teardown(spaces)
+    teardown(space)
 end
 
 main()

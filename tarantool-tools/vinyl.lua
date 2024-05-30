@@ -536,67 +536,97 @@ end
 
 local function main()
     local spaces = {}
+    local fibers = {}
 
     cleanup()
     setup(spaces)
 
     local f
     for i = 1, NUM_SP do
-        f = fiber.create(function()
+        f = fiber.new(function()
             log.info('START DML ' .. i)
-            while true do generate_dml(spaces[i]); fiber.yield() end
+            local start = os.clock()
+            while os.clock() - start < TEST_DURATION do
+                generate_dml(spaces[i])
+				fiber.sleep(0.1)
+            end
         end)
+        f:set_joinable(true)
         f:name('DML_' .. i)
+        table.insert(fibers, f)
     end
 
     for i = 1, NUM_SP do
-        f = fiber.create(function()
+        f = fiber.new(function()
             log.info('START TX ' .. i)
-            while true do
+            local start = os.clock()
+            while os.clock() - start < TEST_DURATION do
                 local ok, err = pcall(generate_tx, spaces[i])
                 if ok ~= true then
                     log.info('TX: ' .. err)
                 end
-                fiber.yield()
+				fiber.sleep(0.1)
             end
         end)
+        f:set_joinable(true)
         f:name('TX_' .. i)
+        table.insert(fibers, f)
     end
 
     for i = 1, NUM_SP do
-        f = fiber.create(function()
+        f = fiber.new(function()
             log.info('START DDL ' .. i)
-            while true do generate_ddl(spaces[i]); fiber.yield() end
+            local start = os.clock()
+            while os.clock() - start < TEST_DURATION do
+                generate_ddl(spaces[i])
+				fiber.sleep(0.1)
+            end
         end)
+        f:set_joinable(true)
         f:name('DDL_' .. i)
+        table.insert(fibers, f)
     end
 
-    f = fiber.create(function()
-        while true do
+    f = fiber.new(function()
+        local start = os.clock()
+        while os.clock() - start < TEST_DURATION do
             local ok, err = pcall(box.snapshot)
             if ok ~= true then
                 log.info('BOX SNAPSHOT: ' .. err)
-            end; fiber.sleep(5)
+            end;
+			fiber.sleep(math.random(30, 60))
         end
     end)
+    f:set_joinable(true)
     f:name('snapshots')
+    table.insert(fibers, f)
 
-    f = fiber.create(function()
-        while true do set_err_injection(); fiber.sleep(5) end
+    f = fiber.new(function()
+        local start = os.clock()
+        while os.clock() - start < TEST_DURATION do
+            set_err_injection()
+			fiber.sleep(math.random(30, 60))
+        end
     end)
+    f:set_joinable(true)
     f:name('ERRINJ')
+    table.insert(fibers, f)
 
-    f = fiber.create(function()
-        while true do print_stat(spaces); fiber.sleep(5) end
+    f = fiber.new(function()
+        local start = os.clock()
+        while os.clock() - start < TEST_DURATION do
+            print_stat(spaces)
+			fiber.sleep(60)
+        end
     end)
+    f:set_joinable(true)
     f:name('STATS')
+    table.insert(fibers, f)
 
-    local start = os.clock()
-    while os.clock() - start < TEST_DURATION do
-        local n = math.random(1, NUM_SP)
-        generate_dml(spaces[n])
-        generate_tx(spaces[n])
-        generate_ddl(spaces[n])
+    for _, fb in ipairs(fibers) do
+        local ok, errmsg = fiber.join(fb)
+        assert(errmsg, nil)
+        assert(ok, true)
     end
 
     teardown(spaces)

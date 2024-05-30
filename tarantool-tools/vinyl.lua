@@ -33,7 +33,9 @@ local function trace(event, line) -- luacheck: no unused
 end
 
 -- https://www.lua.org/pil/23.2.html
--- debug.sethook(trace, "l")
+if os.getenv('DEV') then
+    debug.sethook(trace, "l")
+end
 
 local function dict_keys(t)
     assert(next(t) ~= nil)

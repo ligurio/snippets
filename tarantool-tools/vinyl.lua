@@ -619,8 +619,8 @@ local function main()
 
     for _, fb in ipairs(fibers) do
         local ok, errmsg = fiber.join(fb)
-        assert(errmsg, nil)
-        assert(ok, true)
+        assert(ok == true)
+        assert(errmsg == nil)
     end
 
     teardown(space)

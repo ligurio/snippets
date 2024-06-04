@@ -13,23 +13,18 @@ https://www.tarantool.io/ru/doc/latest/concepts/engines/memtx_vinyl_diff/
 Usage: taskset 0xef ./tarantool vinyl.lua
 ]]
 
-local TEST_DURATION = 30*60 -- Seconds.
-local NUM_SP = 70
-local NUM_TUPLES = 1000
-local SEED = 10000
-local N_OPS_IN_TX = 5
-local MAX_KEY = 10000
-
---
-
 local fiber = require('fiber')
+local fun = require('fun')
+local json = require('json')
 local log = require('log')
 local math = require('math')
-local json = require('json')
 
-local seed = SEED or os.time()
-seed = seed or math.randomseed(seed)
-log.info(string.format("RANDOM SEED %d", seed))
+local params = require('internal.argparse').parse(arg, {
+    {'test_duration', 'number'},
+    {'workers', 'number'},
+    {'seed', 'number'},
+    {'h', 'boolean'},
+})
 
 local function trace(event, line) -- luacheck: no unused
     local s = debug.getinfo(2).short_src
@@ -43,20 +38,46 @@ if os.getenv('DEV') then
     debug.sethook(trace, "l")
 end
 
+if params.help or params.h then
+    print([[
+
+ Usage: taskset 0xef tarantool vinyl.lua [options]
+
+ Options can be used with '--', followed by the value if it's not
+ a boolean option. The options list with default values:
+
+   workers <number, 50>          - number of fibers to run simultaneously
+   test_duration <number, 2*60>  - test duration time (sec)
+   seed                          - random seed
+   help (same as -h)             - print this message
+]])
+    os.exit(0)
+end
+
+-- Number of workers.
+local num_workers = params.workers or 50
+
+-- Test duration time.
+local test_duration = params.test_duration or 2*60
+
+local seed = params.seed or os.time()
+math.randomseed(seed)
+log.info(string.format("Random seed: %d", seed))
+
 local function dict_keys(t)
     assert(next(t) ~= nil)
     local keys = {}
     for k, _ in pairs(t) do
         table.insert(keys, k)
     end
-	return keys
+    return keys
 end
 
 -- local function rand_char()
 --     return string.char(math.random(97, 97 + 25))
 -- end
 
-local function random_elem(t)
+local function oneof(t)
     assert(type(t) == 'table')
     assert(next(t) ~= nil)
 
@@ -200,35 +221,55 @@ local errinj_set = {
 }
 
 -- Forward declaration.
-local generate_dml
-local generate_ddl
 local index_create_op
 
 local tx_op = {
+    ['TX_BEGIN'] = function() box.begin() end,
     ['TX_COMMIT'] = function() box.rollback() end,
     ['TX_ROLLBACK'] = function() box.commit() end,
-    ['TX_NOOP'] = function() end,
 }
 
-local function generate_tx(space)
-    log.info("TX")
-    if box.is_in_txn() then
-        local tx_op_name = random_elem(dict_keys(tx_op))
-        local fn = tx_op[tx_op_name]
-        assert(type(fn) == 'function')
-        local ok, err = pcall(fn)
-        if not ok then log.info('ERROR: ' .. err) end
+local tarantool_type = {
+    -- 'any',
+    -- 'array',
+    'boolean',
+    -- 'decimal',
+    -- 'datetime',
+    'double',
+    'integer',
+    -- 'map',
+    'number',
+    -- 'scalar',
+    -- 'string',
+    -- 'unsigned',
+    -- 'uuid',
+}
+
+-- The name value may be any string, provided that two fields
+-- do not have the same name.
+-- The type value may be any of allowed types:
+-- any | unsigned | string | integer | number | varbinary |
+-- boolean | double | decimal | uuid | array | map | scalar,
+-- but for creating an index use only indexed fields;
+-- (Optional) The is_nullable boolean value specifies whether
+-- nil can be used as a field value. See also: key_part.is_nullable.
+-- (Optional) The collation string value specifies the collation
+-- used to compare field values. See also: key_part.collation.
+-- (Optional) The constraint table specifies the constraints that
+-- the field value must satisfy.
+-- (Optional) The foreign_key table specifies the foreign keys
+-- for the field.
+local function random_space_format()
+    local space_format = {}
+    local max_num_fields = 10
+    local num_fields = math.random(max_num_fields)
+    for i = 1, num_fields do
+        table.insert(space_format, {
+            name =('name_%d'):format(i),
+            type = oneof(tarantool_type),
+        })
     end
-    box.begin()
-        for _ = 1, N_OPS_IN_TX do
-            generate_dml(space)
-        end
-    box.commit()
-    box.begin()
-        for _ = 1, N_OPS_IN_TX do
-            generate_ddl(space)
-        end
-    box.commit()
+    return space_format
 end
 
 -- Iterator types for TREE indexes.
@@ -243,9 +284,9 @@ local iter_type = {
     'REQ',
 }
 
-local function select_op(space)
+local function select_op(space, key)
     local select_opts = {
-        iterator = random_elem(iter_type),
+        iterator = oneof(iter_type),
         -- The maximum number of tuples.
         limit = math.random(100, 500),
         -- The number of tuples to skip.
@@ -255,29 +296,17 @@ local function select_op(space)
         after = box.NULL,
         -- If true, the select method returns the position of
         -- the last selected tuple as the second value.
-        fetch_pos = random_elem({true, false}),
+        fetch_pos = oneof({true, false}),
     }
-    -- log.info(select_opts)
-    local key = math.random(MAX_KEY)
     space:select(key, select_opts)
 end
 
-local function delete_op(space)
-    local key = math.random(MAX_KEY)
-    space:delete(key)
+local function delete_op(space, tuple)
+    space:delete(tuple)
 end
 
-local function insert_op(space)
-    local key = math.random(MAX_KEY)
-    if space:get(key) ~= nil then
-        return
-    end
-    pcall(space.insert, space, {
-        key,
-        math.random(MAX_KEY),
-        math.random(MAX_KEY),
-        math.random(MAX_KEY),
-    })
+local function insert_op(space, tuple)
+    space:insert(tuple)
 end
 
 local tuple_op = {
@@ -292,26 +321,16 @@ local tuple_op = {
     -- ':', for string splice.
 }
 
-local function upsert_op(space)
-    local tuple = { math.random(MAX_KEY), math.random(MAX_KEY) }
-    space:upsert(tuple, {
-        { random_elem(tuple_op), math.random(2), math.random(1000) },
-        { random_elem(tuple_op), math.random(2), math.random(1000) }
-    })
+local function upsert_op(space, tuple, spec)
+    space:upsert(tuple, spec)
 end
 
-local function update_op(space)
-    local count = space:count()
-    local key = math.random(count)
-    space:update(key, {
-        { random_elem(tuple_op), math.random(2), math.random(1000) },
-        { random_elem(tuple_op), math.random(2), math.random(1000) },
-    })
+local function update_op(space, key, spec)
+    space:update(key, spec)
 end
 
-local function replace_op(space)
-    local key = math.random(MAX_KEY)
-    space:replace({key, math.random(MAX_KEY)})
+local function replace_op(space, tuple)
+    space:replace(tuple)
 end
 
 local function bsize_op(space)
@@ -322,49 +341,28 @@ local function len_op(space)
     space:len()
 end
 
-local function truncate_op(space)
-    space:truncate()
-end
-
---[[
-local DEFAULT_FORMAT = {
-    {name = '1', type = 'any'},
-    {name = '2', type = 'unsigned'},
-    {name = '3', type = 'string'},
-    {name = '4', type = 'number'},
-    {name = '5', type = 'double'},
-    {name = '6', type = 'integer'},
-    {name = '7', type = 'boolean'},
-    {name = '8', type = 'decimal'},
-    {name = '9', type = 'uuid'},
-    {name = 'a', type = 'scalar'},
-    {name = 'b', type = 'array'},
-    {name = 'c', type = 'map'}
-}
-]]
-
 local function format_op(space)
     -- https://www.tarantool.io/ru/doc/latest/reference/reference_lua/box_space/format/
-    -- space:format(DEFAULT_FORMAT)
+    local space_format = random_space_format()
+    space:format(space_format)
 end
 
-local function init_space(space)
-    log.info('CREATING TUPLES')
-    for _ = 1, NUM_TUPLES do
-        box.begin()
-            for _ = 1, N_OPS_IN_TX do
-                insert_op(space)
-            end
-        box.commit()
-    end
-    local dump_watermark = 70000
-    while box.stat.vinyl().memory.level0 < dump_watermark do
-        insert_op(space)
-    end
-end
+local dml_ops = {
+    DELETE_OP = delete_op,
+    INSERT_OP = insert_op,
+    SELECT_OP = select_op,
+    REPLACE_OP = replace_op,
+    UPDATE_OP = update_op,
+    UPSERT_OP = upsert_op,
+    BSIZE_OP = bsize_op,
+    LEN_OP = len_op,
+    FORMAT_OP = format_op,
+}
 
-local function setup()
+local function setup(engine)
     log.info("SETUP")
+    local engine_name = engine or oneof({'vinyl', 'memtx'})
+    assert(engine_name == 'memtx' or engine_name == 'vinyl')
     -- TODO: https://www.tarantool.io/en/doc/2.3/reference/configuration/
     box.cfg{
         memtx_memory = 1024*1024,
@@ -379,20 +377,31 @@ local function setup()
         vinyl_read_threads = math.random(2, 10),
         vinyl_write_threads = math.random(2, 10),
         vinyl_timeout = math.random(1, 5),
-        wal_mode = random_elem({'write', 'fsync'}),
+        wal_mode = oneof({'write', 'fsync'}),
         wal_max_size = math.random(1024 * 1024 * 1024),
-        checkpoint_interval = math.random(1*60*60),
+        checkpoint_interval = math.random(60),
         checkpoint_count = math.random(5),
-        checkpoint_wal_threshold = math.random(10^18),
+        checkpoint_wal_threshold = math.random(1024),
     }
     log.info('FINISH BOX.CFG')
 
     log.info('CREATE A SPACE')
-    local space = box.schema.space.create('test', { engine = 'vinyl' })
-    index_create_op(space)
-    index_create_op(space)
-
-    init_space(space)
+    local space_opts = {
+        engine = engine_name,
+        is_local = oneof({true, false}),
+        if_not_exists = oneof({true, false}),
+        field_count = 0,
+        format = random_space_format(),
+        temporary = oneof({true, false}),
+        -- is_sync = oneof({true, false}),
+        -- TODO: constraint =
+        -- TODO: foreign_key =
+    }
+    local space = box.schema.space.create('test', space_opts)
+    -- FIXME
+    -- index_create_op(space)
+    -- index_create_op(space)
+    box.space.test:create_index('pk')
     log.info('FINISH SETUP')
     return space
 end
@@ -408,36 +417,12 @@ local function teardown(space)
    cleanup()
 end
 
-local dml_ops = {
-    DELETE_OP = delete_op,
-    INSERT_OP = insert_op,
-    SELECT_OP = select_op,
-    REPLACE_OP = replace_op,
-    UPDATE_OP = update_op,
-    UPSERT_OP = upsert_op,
-    BSIZE_OP = bsize_op,
-    LEN_OP = len_op,
-    TRUNCATE_OP = truncate_op,
-    FORMAT_OP = format_op,
-}
-
-generate_dml = function(space)
-    local op_name = random_elem(dict_keys(dml_ops))
-    log.info(op_name)
-    local fn = dml_ops[op_name]
-    assert(type(fn) == 'function')
-    local ok, err = pcall(fn, space)
-    if ok ~= true then
-        log.info('ERROR: ' .. err)
-    end
-end
-
 -- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/
 local function index_opts(space)
     assert(space ~= nil)
     -- TODO: generate random 'parts' by specified space format.
     local opts = {
-        unique = random_elem({true, false}),
+        unique = oneof({true, false}),
         if_not_exists = false,
         -- sequence,
         -- func,
@@ -448,22 +433,26 @@ local function index_opts(space)
     }
 
     -- TODO: RTREE, BITSET
-    opts.type = random_elem({'TREE', 'HASH'})
+    opts.type = oneof({'TREE', 'HASH'})
     if space.engine == 'memtx' then
-        opts.hint = random_elem({true, false})
+        opts.hint = oneof({true, false})
     end
 
     if space.engine == 'vinyl' then
         opts.bloom_fpr = math.random(50) / 100
     end
 
-    -- TODO: index_opts.parts
+    opts.parts = {}
+    local space_format = space:format()
+    local n_parts = math.random(table.getn(space_format))
+    for i = 1, n_parts do
+        local field_name = space_format[i].name
+        table.insert(opts.parts, { field_name })
+    end
 
     if opts.type == 'RTREE' then
-        -- TODO: dimension (RTREE only)
-    end
-    if opts.type == 'RTREE' then
-        -- TODO: distance (RTREE only)
+        opts.dimension = math.random(10)
+        opts.distance = oneof({'euclid', 'manhattan'})
     end
 
     return opts
@@ -486,13 +475,13 @@ end
 
 local function index_drop_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     if idx ~= nil then idx:drop() end
 end
 
 local function index_alter_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     local opts = index_opts(space)
     -- Option is not relevant.
     opts.if_not_exists = nil
@@ -501,38 +490,38 @@ end
 
 local function index_compact_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     if idx ~= nil then idx:compact() end
 end
 
 local function index_max_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     if idx ~= nil then idx:max() end
 end
 
 local function index_min_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     if idx ~= nil then idx:min() end
 end
 
 local function index_random_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     if idx ~= nil and idx.type ~= 'TREE' then idx:random() end
 end
 
 local function index_rename_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     -- FIXME: Use random string instead.
     if idx ~= nil then idx:rename('XXX') end
 end
 
 local function index_stat_op(space)
     if not space.enabled then return end
-    local idx = random_elem(space.index)
+    local idx = oneof(space.index)
     if idx ~= nil then idx:stat() end
 end
 
@@ -578,19 +567,8 @@ local ddl_ops = {
     INDEX_STAT_OP = index_stat_op,
 }
 
-generate_ddl = function(space)
-    local op_name = random_elem(dict_keys(ddl_ops))
-    log.info(op_name)
-    local fn = ddl_ops[op_name]
-    assert(type(fn) == 'function')
-    local ok, err = pcall(fn, space)
-    if ok ~= true then
-        log.info('ERROR: ' .. err)
-    end
-end
-
 local function set_err_injection()
-    local errinj_name = random_elem(dict_keys(errinj_set))
+    local errinj_name = oneof(dict_keys(errinj_set))
     local t = errinj_set[errinj_name]
 
     local errinj_val_enable = true
@@ -622,95 +600,90 @@ local function set_err_injection()
     end
 end
 
--- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_stat/vinyl/
-local function print_stat(space)
-    log.info("PRINT STATISTICS")
-    local stat = box.stat.vinyl()
-    log.info(string.format('STATISTICS: transactions: %d, tx memory: %d',
-                           stat.tx.transactions, stat.memory.tx))
-
-    stat = space.index.secondary:stat()
-    log.info(string.format('STATISTICS: memory rows %d bytes %d',
-                           stat.memory.rows, stat.memory.bytes))
+local function random_tuple(space_format)
+    local tuple = {}
+    for _, field in ipairs(space_format) do
+        local v
+        if field.type == 'number' or
+           field.type == 'integer' or
+           field.type == 'double' then
+            v = math.random(1000)
+        elseif field.type == 'boolean' then
+            v = oneof({true, false})
+        end
+        table.insert(tuple, v)
+    end
+    return tuple
 end
 
-local function main()
+-- TODO:
+-- - tx_op
+-- - ddl_ops
+-- - dml_ops
+-- - errinj_set
+-- - snapshots
+local function tarantool_ops_gen(space_format)
+    return fun.cycle(fun.iter({
+        { 'INSERT_OP', random_tuple(space_format) },
+        { 'SELECT_OP', math.random(1000) },
+        { 'REPLACE_OP', random_tuple(space_format) },
+        -- { 'UPSERT_OP', random_tuple(space_format) },
+        -- { 'UPDATE_OP', random_tuple(space_format) },
+        { 'DELETE_OP', math.random(1000) },
+        -- { 'BSIZE_OP' },
+        -- { 'LEN_OP' },
+        -- { 'FORMAT_OP' },
+    }))
+end
+
+local function apply_op(space, op)
+    log.info(op)
+    local op_name = op[1]
+    local func = dml_ops[op_name]
+    local args
+    if op_name == 'INSERT_OP' then
+        local tuple = op[2]
+        args = {func, space, tuple}
+    elseif op_name == 'SELECT_OP' then
+        local key = op[2]
+        args = {func, space, key}
+    elseif op_name == 'REPLACE_OP' then
+        local tuple = op[2]
+        args = {func, space, tuple}
+    elseif op_name == 'DELETE_OP' then
+        local tuple = op[2]
+        args = {func, space, tuple}
+    end
+    local ok, err = pcall(unpack(args))
+    if ok ~= true then
+        log.info('ERROR: ' .. err)
+    end
+end
+
+local function worker_func(space)
+    local start = os.clock()
+    for _, operation in tarantool_ops_gen(space:format()) do
+        if os.clock() - start >= test_duration then
+            break
+        end
+        apply_op(space, operation)
+        fiber.sleep(0.001)
+    end
+end
+
+local function run_test()
     local fibers = {}
 
     cleanup()
-    local space = setup()
-    fiber.sleep(1)
+    local space = setup('vinyl')
 
     local f
-    for i = 1, NUM_SP do
-        f = fiber.new(function()
-            log.info('START DML ' .. i)
-            local start = os.clock()
-            while os.clock() - start < TEST_DURATION do
-                generate_dml(space)
-                fiber.sleep(0.01)
-            end
-        end)
+    for i = 1, num_workers do
+        f = fiber.new(worker_func, space)
         f:set_joinable(true)
-        f:name('DML_' .. i)
+        f:name('WORKER #' .. i)
         table.insert(fibers, f)
     end
-
-    for i = 1, NUM_SP do
-        f = fiber.new(function()
-            log.info('START TX ' .. i)
-            local start = os.clock()
-            while os.clock() - start < TEST_DURATION do
-                local ok, err = pcall(generate_tx, space)
-                if ok ~= true then
-                    log.info('TX: ' .. err)
-                end
-                fiber.sleep(0.01)
-            end
-        end)
-        f:set_joinable(true)
-        f:name('TX_' .. i)
-        table.insert(fibers, f)
-    end
-
-    for i = 1, NUM_SP do
-        f = fiber.new(function()
-            log.info('START DDL ' .. i)
-            local start = os.clock()
-            while os.clock() - start < TEST_DURATION do
-                generate_ddl(space)
-                fiber.sleep(math.random(15, 30))
-            end
-        end)
-        f:set_joinable(true)
-        f:name('DDL_' .. i)
-        table.insert(fibers, f)
-    end
-
-    f = fiber.new(function()
-        local start = os.clock()
-        while os.clock() - start < TEST_DURATION do
-            local in_progress = box.info.gc().checkpoint_is_in_progress
-            if not in_progress then
-                box.snapshot()
-            end
-            fiber.sleep(math.random(30, 60))
-        end
-    end)
-    f:set_joinable(true)
-    f:name('SNAPSHOTS')
-    table.insert(fibers, f)
-
-    f = fiber.new(function()
-        local start = os.clock()
-        while os.clock() - start < TEST_DURATION do
-            set_err_injection()
-            fiber.sleep(math.random(10, 30))
-        end
-    end)
-    f:set_joinable(true)
-    f:name('ERRINJ')
-    table.insert(fibers, f)
 
     for _, fb in ipairs(fibers) do
         local ok, errmsg = fiber.join(fb)
@@ -722,6 +695,5 @@ local function main()
     teardown(space)
 end
 
-main()
-
-require('console').start()
+run_test()
+os.exit(0)

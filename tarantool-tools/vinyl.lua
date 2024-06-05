@@ -18,8 +18,11 @@ local fun = require('fun')
 local json = require('json')
 local log = require('log')
 local math = require('math')
+local uuid = require('uuid')
+local decimal = require('decimal')
 
 local params = require('internal.argparse').parse(arg, {
+    {'engine', 'string'},
     {'test_duration', 'number'},
     {'workers', 'number'},
     {'seed', 'number'},
@@ -48,6 +51,7 @@ if params.help or params.h then
 
    workers <number, 50>          - number of fibers to run simultaneously
    test_duration <number, 2*60>  - test duration time (sec)
+   engine <string, 'vinyl'>      - engine ('vinyl', 'memtx')
    seed                          - random seed
    help (same as -h)             - print this message
 ]])
@@ -55,27 +59,35 @@ if params.help or params.h then
 end
 
 -- Number of workers.
-local num_workers = params.workers or 50
+local arg_num_workers = params.workers or 50
 
 -- Test duration time.
-local test_duration = params.test_duration or 2*60
+local arg_test_duration = params.test_duration or 2*60
+
+-- Tarantool engine.
+local arg_engine = params.engine or 'vinyl'
 
 local seed = params.seed or os.time()
 math.randomseed(seed)
 log.info(string.format("Random seed: %d", seed))
 
-local function dict_keys(t)
+local function keys(t)
     assert(next(t) ~= nil)
-    local keys = {}
+    local table_keys = {}
     for k, _ in pairs(t) do
-        table.insert(keys, k)
+        table.insert(table_keys, k)
     end
-    return keys
+    return table_keys
 end
 
--- local function rand_char()
---     return string.char(math.random(97, 97 + 25))
--- end
+local function rand_char()
+    return string.char(math.random(97, 97 + 25))
+end
+
+local function rand_string(length)
+    length = length or 10
+    return string.rep(rand_char(), length)
+end
 
 local function oneof(t)
     assert(type(t) == 'table')
@@ -223,26 +235,24 @@ local errinj_set = {
 -- Forward declaration.
 local index_create_op
 
-local tx_op = {
-    ['TX_BEGIN'] = function() box.begin() end,
-    ['TX_COMMIT'] = function() box.rollback() end,
-    ['TX_ROLLBACK'] = function() box.commit() end,
-}
+local function random_int()
+    return math.floor(math.random() * 10^12)
+end
 
 local tarantool_type = {
     -- 'any',
     -- 'array',
-    'boolean',
-    -- 'decimal',
-    -- 'datetime',
-    'double',
-    'integer',
+    ['boolean'] = function() return oneof({true, false}) end,
+    ['decimal'] = function() return decimal.new(random_int()) end,
+    -- ['datetime'] = function() return end,
+    ['double'] = function() return math.random() * 10^12 end,
+    ['integer'] = random_int,
     -- 'map',
-    'number',
-    -- 'scalar',
-    -- 'string',
+    ['number'] = random_int,
+    -- ['scalar'] = function() return oneof(random_int, rand_string) end,
+    ['string'] = rand_string,
     -- 'unsigned',
-    -- 'uuid',
+    ['uuid'] = uuid.new,
 }
 
 -- The name value may be any string, provided that two fields
@@ -261,12 +271,13 @@ local tarantool_type = {
 -- for the field.
 local function random_space_format()
     local space_format = {}
+    local min_num_fields = 3
     local max_num_fields = 10
-    local num_fields = math.random(max_num_fields)
+    local num_fields = math.random(min_num_fields, max_num_fields)
     for i = 1, num_fields do
         table.insert(space_format, {
             name =('name_%d'):format(i),
-            type = oneof(tarantool_type),
+            type = oneof(keys(tarantool_type)),
         })
     end
     return space_format
@@ -347,23 +358,12 @@ local function format_op(space)
     space:format(space_format)
 end
 
-local dml_ops = {
-    DELETE_OP = delete_op,
-    INSERT_OP = insert_op,
-    SELECT_OP = select_op,
-    REPLACE_OP = replace_op,
-    UPDATE_OP = update_op,
-    UPSERT_OP = upsert_op,
-    BSIZE_OP = bsize_op,
-    LEN_OP = len_op,
-    FORMAT_OP = format_op,
-}
-
 local function setup(engine)
     log.info("SETUP")
     local engine_name = engine or oneof({'vinyl', 'memtx'})
     assert(engine_name == 'memtx' or engine_name == 'vinyl')
-    -- TODO: https://www.tarantool.io/en/doc/2.3/reference/configuration/
+    -- Configuration reference (box.cfg),
+    -- https://www.tarantool.io/en/doc/latest/reference/configuration/
     box.cfg{
         memtx_memory = 1024*1024,
         vinyl_cache = math.random(0, 10),
@@ -382,6 +382,19 @@ local function setup(engine)
         checkpoint_interval = math.random(60),
         checkpoint_count = math.random(5),
         checkpoint_wal_threshold = math.random(1024),
+        -- custom_proc_title = 'vinyl.lua',
+        -- listen = '127.0.0.1:3301',
+        -- worker_pool_threads = math.random(1, 10),
+        memtx_use_mvcc_engine = oneof({true, false}),
+        -- memtx_allocator = oneof({'system', 'small'}),
+        -- memtx_sort_threads = math.random(1, 256),
+        -- slab_alloc_factor = math.random(1, 2),
+        -- wal_dir_rescan_delay = math.random(1, 20),
+        -- wal_queue_max_size = 16777216,
+        -- wal_cleanup_delay = 14400,
+        -- readahead = 16320,
+        -- iproto_threads = math.random(1, 10),
+        -- log = ('tarantool-%d.log'):format(seed),
     }
     log.info('FINISH BOX.CFG')
 
@@ -392,16 +405,16 @@ local function setup(engine)
         if_not_exists = oneof({true, false}),
         field_count = 0,
         format = random_space_format(),
-        temporary = oneof({true, false}),
+        -- temporary = oneof({true, false}),
         -- is_sync = oneof({true, false}),
         -- TODO: constraint =
         -- TODO: foreign_key =
     }
-    local space = box.schema.space.create('test', space_opts)
-    -- FIXME
-    -- index_create_op(space)
-    -- index_create_op(space)
-    box.space.test:create_index('pk')
+    log.info(space_opts)
+    local space_name = ('test_%d'):format(math.random(100))
+    local space = box.schema.space.create(space_name, space_opts)
+    index_create_op(space)
+    index_create_op(space)
     log.info('FINISH SETUP')
     return space
 end
@@ -458,6 +471,11 @@ local function index_opts(space)
     return opts
 end
 
+-- local function counter()
+--     local i = 0
+--     return function() return i + 1 end
+-- end
+
 function index_create_op(space)
     local idx_name = 'idx_' .. math.random(100)
     if space.index[idx_name] ~= nil then
@@ -509,14 +527,17 @@ end
 local function index_random_op(space)
     if not space.enabled then return end
     local idx = oneof(space.index)
-    if idx ~= nil and idx.type ~= 'TREE' then idx:random() end
+    if idx ~= nil and
+       idx.type ~= 'TREE' then
+        idx:random()
+    end
 end
 
 local function index_rename_op(space)
     if not space.enabled then return end
     local idx = oneof(space.index)
-    -- FIXME: Use random string instead.
-    if idx ~= nil then idx:rename('XXX') end
+    local space_name = rand_string()
+    if idx ~= nil then idx:rename(space_name) end
 end
 
 local function index_stat_op(space)
@@ -525,50 +546,38 @@ local function index_stat_op(space)
     if idx ~= nil then idx:stat() end
 end
 
-local function index_get_op(space)
+local function index_get_op(space, key)
     if not space.enabled then return end
-    -- TODO
+    local idx = oneof(space.index)
+    if idx ~= nil then idx:get(key) end
 end
 
-local function index_select_op(space)
+local function index_select_op(space, key)
     if not space.enabled then return end
-    -- TODO
+    local idx = oneof(space.index)
+    if idx ~= nil then idx:select(key) end
 end
 
 local function index_count_op(space)
     if not space.enabled then return end
-    -- TODO
+    local idx = oneof(space.index)
+    if idx ~= nil then idx:count() end
 end
 
-local function index_update_op(space)
+local function index_update_op(space, key, spec)
     if not space.enabled then return end
-    -- TODO
+    local idx = oneof(space.index)
+    if idx ~= nil then idx:update(key, spec) end
 end
 
-local function index_delete_op(space)
+local function index_delete_op(space, tuple)
     if not space.enabled then return end
-    -- TODO
+    local idx = oneof(space.index)
+    if idx ~= nil then idx:delete(tuple) end
 end
-
-local ddl_ops = {
-    INDEX_ALTER_OP = index_alter_op,
-    INDEX_COMPACT_OP = index_compact_op,
-    INDEX_CREATE_OP = index_create_op,
-    INDEX_DROP_OP = index_drop_op,
-    INDEX_GET_OP = index_get_op,
-    INDEX_SELECT_OP = index_select_op,
-    INDEX_MIN_OP = index_min_op,
-    INDEX_MAX_OP = index_max_op,
-    INDEX_RANDOM_OP = index_random_op,
-    INDEX_COUNT_OP = index_count_op,
-    INDEX_UPDATE_OP = index_update_op,
-    INDEX_DELETE_OP = index_delete_op,
-    INDEX_RENAME_OP = index_rename_op,
-    INDEX_STAT_OP = index_stat_op,
-}
 
 local function set_err_injection()
-    local errinj_name = oneof(dict_keys(errinj_set))
+    local errinj_name = oneof(keys(errinj_set))
     local t = errinj_set[errinj_name]
 
     local errinj_val_enable = true
@@ -600,60 +609,115 @@ local function set_err_injection()
     end
 end
 
+-- TODO: support is_nullable.
 local function random_tuple(space_format)
     local tuple = {}
     for _, field in ipairs(space_format) do
-        local v
-        if field.type == 'number' or
-           field.type == 'integer' or
-           field.type == 'double' then
-            v = math.random(1000)
-        elseif field.type == 'boolean' then
-            v = oneof({true, false})
-        end
-        table.insert(tuple, v)
+        local type_gen = tarantool_type[field.type]
+        assert(type(type_gen) == 'function')
+        table.insert(tuple, type_gen())
     end
+
     return tuple
 end
 
+local function random_spec()
+    -- TODO
+end
+
+local function random_key(space)
+    local pk = space.index[0]
+    log.info(pk)
+    assert(pk)
+    local parts = pk.parts
+    local key = {}
+    for _, field in ipairs(parts) do
+        local type_gen = tarantool_type[field.type]
+        assert(type(type_gen) == 'function')
+        table.insert(key, type_gen())
+    end
+    return key
+end
+
+local ops = {
+    -- DML
+    DELETE_OP = delete_op,
+    INSERT_OP = insert_op,
+    SELECT_OP = select_op,
+    REPLACE_OP = replace_op,
+    UPDATE_OP = update_op,
+    UPSERT_OP = upsert_op,
+    BSIZE_OP = bsize_op,
+    LEN_OP = len_op,
+    FORMAT_OP = format_op,
+
+    -- DDL
+    INDEX_ALTER_OP = index_alter_op,
+    INDEX_COMPACT_OP = index_compact_op,
+    INDEX_CREATE_OP = index_create_op,
+    INDEX_DROP_OP = index_drop_op,
+    INDEX_GET_OP = index_get_op,
+    INDEX_SELECT_OP = index_select_op,
+    INDEX_MIN_OP = index_min_op,
+    INDEX_MAX_OP = index_max_op,
+    INDEX_RANDOM_OP = index_random_op,
+    INDEX_COUNT_OP = index_count_op,
+    INDEX_UPDATE_OP = index_update_op,
+    INDEX_DELETE_OP = index_delete_op,
+    INDEX_RENAME_OP = index_rename_op,
+    INDEX_STAT_OP = index_stat_op,
+
+    TX_BEGIN = function() box.begin() end,
+    TX_COMMIT = function() box.rollback() end,
+    TX_ROLLBACK = function() box.commit() end,
+
+    SNAPSHOT_OP = function() box.snapshot() end,
+}
+
 -- TODO:
--- - tx_op
--- - ddl_ops
--- - dml_ops
 -- - errinj_set
--- - snapshots
-local function tarantool_ops_gen(space_format)
+local function tarantool_ops_gen(space)
     return fun.cycle(fun.iter({
-        { 'INSERT_OP', random_tuple(space_format) },
-        { 'SELECT_OP', math.random(1000) },
-        { 'REPLACE_OP', random_tuple(space_format) },
-        -- { 'UPSERT_OP', random_tuple(space_format) },
-        -- { 'UPDATE_OP', random_tuple(space_format) },
-        { 'DELETE_OP', math.random(1000) },
-        -- { 'BSIZE_OP' },
-        -- { 'LEN_OP' },
-        -- { 'FORMAT_OP' },
+        -- DML.
+        { 'DELETE_OP',   { random_key(space) }},
+        { 'INSERT_OP',   { random_tuple(space:format()) }},
+        { 'REPLACE_OP',  { random_tuple(space:format()) }},
+        { 'SELECT_OP',   { random_key(space) }},
+        { 'UPDATE_OP',   { random_tuple(space:format()), random_spec() }},
+        { 'UPSERT_OP',   { random_tuple(space:format()), random_spec() }},
+
+        { 'BSIZE_OP',    { }},
+        { 'FORMAT_OP',   { }},
+        { 'LEN_OP',      { }},
+        { 'TX_BEGIN',    { }},
+        { 'TX_COMMIT',   { }},
+        { 'TX_ROLLBACK', { }},
+
+        -- DDL.
+        { 'INDEX_ALTER_OP', {}},
+        { 'INDEX_COMPACT_OP', {}},
+        { 'INDEX_COUNT_OP', {}},
+        { 'INDEX_CREATE_OP', {}},
+        -- { 'INDEX_DELETE_OP', {}},
+        { 'INDEX_DROP_OP', {}},
+        -- { 'INDEX_GET_OP', {}},
+        { 'INDEX_MAX_OP', {}},
+        { 'INDEX_MIN_OP', {}},
+        { 'INDEX_RANDOM_OP', {}},
+        { 'INDEX_RENAME_OP', {}},
+        -- { 'INDEX_SELECT_OP', {}},
+        { 'INDEX_STAT_OP', {}},
+        -- { 'INDEX_UPDATE_OP', {}},
+
+        -- { 'SNAPSHOT_OP', {}},
     }))
 end
 
 local function apply_op(space, op)
     log.info(op)
     local op_name = op[1]
-    local func = dml_ops[op_name]
-    local args
-    if op_name == 'INSERT_OP' then
-        local tuple = op[2]
-        args = {func, space, tuple}
-    elseif op_name == 'SELECT_OP' then
-        local key = op[2]
-        args = {func, space, key}
-    elseif op_name == 'REPLACE_OP' then
-        local tuple = op[2]
-        args = {func, space, tuple}
-    elseif op_name == 'DELETE_OP' then
-        local tuple = op[2]
-        args = {func, space, tuple}
-    end
+    local func = ops[op_name]
+    local args = {func, space, unpack(op[2])}
     local ok, err = pcall(unpack(args))
     if ok ~= true then
         log.info('ERROR: ' .. err)
@@ -662,12 +726,12 @@ end
 
 local function worker_func(space)
     local start = os.clock()
-    for _, operation in tarantool_ops_gen(space:format()) do
-        if os.clock() - start >= test_duration then
+    for _, operation in tarantool_ops_gen(space) do
+        if os.clock() - start >= arg_test_duration then
             break
         end
         apply_op(space, operation)
-        fiber.sleep(0.001)
+        fiber.yield()
     end
 end
 
@@ -675,10 +739,10 @@ local function run_test()
     local fibers = {}
 
     cleanup()
-    local space = setup('vinyl')
+    local space = setup(arg_engine)
 
     local f
-    for i = 1, num_workers do
+    for i = 1, arg_num_workers do
         f = fiber.new(worker_func, space)
         f:set_joinable(true)
         f:name('WORKER #' .. i)

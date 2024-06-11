@@ -93,6 +93,7 @@ local function keys(t)
 end
 
 local function rmtree(s)
+   log.info(("CLEANUP %s"):format(s))
     if (fio.path.is_file(s) or fio.path.is_link(s)) then
         fio.unlink(s)
         return
@@ -506,15 +507,9 @@ local function setup(engine, space_id_func, test_dir)
     return space
 end
 
-local function cleanup()
-   log.info("CLEANUP")
-   os.execute('rm -rf *.snap *.xlog *.vylog 51*')
-end
-
 local function teardown(space)
    log.info("TEARDOWN")
    space:drop()
-   cleanup()
 end
 
 -- local indexed_field_types = {
@@ -999,7 +994,6 @@ end
 local function run_test()
     local fibers = {}
 
-    cleanup()
     local space_id_func = counter()
     local test_dir = fio.tempdir()
     local space = setup(arg_engine, space_id_func, test_dir)

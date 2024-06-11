@@ -308,28 +308,145 @@ end
 local random_any
 local random_scalar
 
+-- '+' - Numeric.
+-- '-' - Numeric.
+-- '&' - Numeric.
+-- '|' - Numeric.
+-- '^' - Numeric.
+-- '#' - For deletion.
+-- '=' - For assignment.
+-- ':' - For string splice.
+-- '!' - For insertion of a new field.
+-- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/#indexes-tree
 local tarantool_type = {
-    ['any'] = random_any,
-    ['array'] = random_array,
-    ['boolean'] = function() return oneof({true, false}) end,
-    ['decimal'] = function() return decimal.new(random_int()) end,
-    ['datetime'] = function() return datetime.new({timestamp = os.time()}) end,
-    ['double'] = function() return math.random() * 10^12 end,
-    ['integer'] = random_int,
-    -- ['map'] = random_map,
-    ['number'] = random_int,
-    -- ['scalar'] = random_scalar,
-    ['string'] = rand_string,
-    ['unsigned'] = function() return math.abs(random_int()) end,
-    ['uuid'] = uuid.new,
+    -- ['any'] = {
+    --     generator = random_any,
+    --     operations = {'=', '!'},
+    -- },
+    ['array'] = {
+        generator = random_array,
+        operations = {'=', '!'},
+        indices = {
+            RTREE = true,
+        },
+    },
+    ['boolean'] = {
+        generator = function()
+            return oneof({true, false})
+        end,
+        operations = {'=', '!'},
+        indices = {
+            TREE = true,
+            HASH = true,
+        },
+    },
+    ['decimal'] = {
+        generator = function()
+            return decimal.new(random_int())
+        end,
+        operations = {'+', '-'},
+        indices = {
+            TREE = true,
+            HASH = true,
+        },
+    },
+    ['datetime'] = {
+        generator = function()
+            return datetime.new({timestamp = os.time()})
+        end,
+        operations = {'=', '!'},
+        indices = {
+            TREE = true,
+        },
+    },
+    ['double'] = {
+        generator = function()
+            return math.random() * 10^12
+        end,
+        operations = {'-'},
+        indices = {
+            TREE = true,
+            HASH = true,
+        },
+    },
+    ['integer'] = {
+        generator = random_int,
+        operations = {'+', '-'},
+        indices = {
+            TREE = true,
+            HASH = true,
+        },
+    },
+    -- ['map'] = {
+        -- generator = random_map,
+        -- operations = {'=', '!'},
+        -- indices = {
+        --     RTREE = true,
+        -- },
+    -- },
+    ['number'] = {
+        generator = random_int,
+        operations = {'+', '-'},
+        indices = {
+            TREE = true,
+            HASH = true,
+        },
+    },
+    -- ['scalar'] = {
+        -- generator = random_scalar,
+        -- TODO:
+        -- operations = {'=', '!'},
+        -- indices = {
+              -- TREE = true,
+              -- HASH = true,
+        -- },
+    -- },
+    ['string'] = {
+        generator = rand_string,
+        operations = {'=', '!'}, -- XXX: ':'
+        indices = {
+            TREE = true,
+            HASH = true,
+            BITSET = true,
+        },
+    },
+    ['unsigned'] = {
+        generator = function()
+            return math.abs(random_int())
+        end,
+        operations = {'#', '+', '-', '&', '|', '^'},
+        indices = {
+            TREE = true,
+            HASH = true,
+            BITSET = true,
+        },
+    },
+    ['uuid'] = {
+        generator = uuid.new,
+        operations = {'=', '!'},
+        indices = {
+            TREE = true,
+            HASH = true,
+        },
+    },
     -- TODO
     -- https://www.tarantool.io/en/doc/latest/how-to/app/cookbook/#ffi-varbinary-insert-lua
-    -- ['varbinary'] = function() return varbinary.new(rand_string()) end,
+    -- ['varbinary'] = {
+        -- generator = function()
+        --     return varbinary.new(rand_string())
+        -- end,
+        -- operations = {'=', '!'},
+        -- indices = {
+		    -- TREE = true,
+		    -- HASH = true,
+		    -- BITSET = true,
+        -- },
+    -- },
 }
 
 function random_any()
     local t = oneof(keys(tarantool_type))
-    return tarantool_type[t]
+    return tarantool_type[t].generator
 end
 
 -- See https://www.tarantool.io/en/doc/latest/concepts/data_model/value_store/#scalar.
@@ -347,7 +464,7 @@ function random_scalar()
         'unsigned',
     }
     local t = oneof(scalars)
-    return tarantool_type[t]
+    return tarantool_type[t].generator
 end
 
 -- The name value may be any string, provided that two fields
@@ -512,98 +629,6 @@ local function teardown(space)
    space:drop()
 end
 
--- local indexed_field_types = {
---     ['TREE'] = {
---         'datetime',
---         'decimal',
---         'double',
---         'integer',
---         'number',
---         'scalar',
---         'string',
---         'unsigned',
---         'uuid',
---         'varbinary',
---     },
---     ['HASH'] = {
---         'decimal',
---         'double',
---         'integer',
---         'number',
---         'scalar',
---         'string',
---         'unsigned',
---         'uuid',
---         'varbinary',
---     },
---     ['BITSET'] = {
---         'scalar',
---         'string',
---         'unsigned',
---         'varbinary',
---     },
---     ['RTREE'] = {
---         'array',
---         'map',
---     },
--- }
-
--- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/#indexes-tree
-local indexed_field_types = {
-    ['integer'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-    },
-    ['unsigned'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-        ['BITSET'] = true,
-    },
-    ['double'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-    },
-    ['number'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-    },
-    ['decimal'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-    },
-    ['string'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-        ['BITSET'] = true,
-    },
-    -- ['varbinary'] = {
-    --     ['TREE'] = true,
-    --     ['HASH'] = true,
-    --     ['BITSET'] = true,
-    -- },
-    ['uuid'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-    },
-    ['datetime'] = {
-        ['TREE'] = true,
-    },
-    ['array'] = {
-        ['RTREE'] = true,
-    },
-    -- ['scalar'] = {
-    --     ['TREE'] = true,
-    --     ['HASH'] = true,
-    -- },
-    ['boolean'] = {
-        ['TREE'] = true,
-        ['HASH'] = true,
-    },
-    -- ['map'] = {
-    --     ['RTREE'] = true,
-    -- },
-}
-
 -- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/
 local function index_opts(space)
     assert(space ~= nil)
@@ -637,7 +662,7 @@ local function index_opts(space)
         local field_id = id()
         local field = space_format[field_id]
         log.info(field.type)
-        local supported_indices = indexed_field_types[field.type]
+        local supported_indices = tarantool_type[field.type].indices
         -- Fix "Duplicate key exists in unique index...".
         if supported_indices[opts.type] then
             table.insert(opts.parts, { field.name })
@@ -804,7 +829,7 @@ local function set_err_injection()
 end
 
 local function random_field_value(field_type)
-    local type_gen = tarantool_type[field_type]
+    local type_gen = tarantool_type[field_type].generator
     assert(type(type_gen) == 'function')
     return type_gen()
 end
@@ -818,33 +843,6 @@ local function random_tuple(space_format)
 
     return tuple
 end
-
--- '+' - Numeric.
--- '-' - Numeric.
--- '&' - Numeric.
--- '|' - Numeric.
--- '^' - Numeric.
--- '#' - For deletion.
--- '=' - For assignment.
--- ':' - For string splice.
--- '!' - For insertion of a new field.
-local tuple_op = {
-    ['any']        = {'=', '!'},
-    ['array']      = {'=', '!'},
-    ['boolean']    = {'=', '!'},
-    ['decimal']    = {'+', '-'},
-    ['datetime']   = {'=', '!'},
-    ['double']     = {'-'},
-    ['integer']    = {'+', '-'},
-    -- ['map']        = {'=', '!'},
-    ['number']     = {'+', '-'},
-    -- TODO
-    -- ['scalar']     = {'=', '!'},
-    ['string']     = {'=', '!'}, -- XXX: ':'
-    ['unsigned']   = {'#', '+', '-', '&', '|', '^'},
-    ['uuid']       = {'=', '!'},
-    -- ['varbinary']  = {'=', '!'},
-}
 
 -- Example of tuple operations: {{'=', 3, 'a'}, {'=', 4, 'b'}}.
 --  - operator (string) – operation type represented in string.
@@ -860,7 +858,7 @@ local function random_tuple_operations(space)
         local field_id = id()
         local field_type = space_format[field_id].type
         log.info(field_type)
-        local operator = oneof(tuple_op[field_type])
+        local operator = oneof(tarantool_type[field_type].operations)
         local value = random_field_value(field_type)
         table.insert(tuple_ops, {operator, field_id, value})
     end
@@ -877,7 +875,7 @@ local function random_key(space)
     local parts = pk.parts
     local key = {}
     for _, field in ipairs(parts) do
-        local type_gen = tarantool_type[field.type]
+        local type_gen = tarantool_type[field.type].generator
         assert(type(type_gen) == 'function')
         table.insert(key, type_gen())
     end

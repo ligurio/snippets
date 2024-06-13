@@ -546,15 +546,13 @@ local function insert_op(space, tuple)
 end
 
 local function upsert_op(space, tuple, tuple_ops)
-    if next(tuple_ops) ~= nil then
-        space:upsert(tuple, tuple_ops)
-    end
+    assert(next(tuple_ops) ~= nil)
+    space:upsert(tuple, tuple_ops)
 end
 
 local function update_op(space, key, tuple_ops)
-    if next(tuple_ops) ~= nil then
-        space:update(key, tuple_ops)
-    end
+    assert(next(tuple_ops) ~= nil)
+    space:update(key, tuple_ops)
 end
 
 local function replace_op(space, tuple)
@@ -701,11 +699,7 @@ function index_create_op(space)
     if idx_id == 1 then
         opts.unique = true
     end
-    local ok, err = pcall(space.create_index, space, idx_name, opts)
-    if ok ~= true then
-        local msg = ('ERROR: %s (%s)'):format(err, json.encode(opts))
-        log.info(msg)
-    end
+    space:create_index(idx_name, opts)
 end
 
 local function index_drop_op(space)

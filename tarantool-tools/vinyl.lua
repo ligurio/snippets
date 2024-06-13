@@ -10,7 +10,11 @@ https://github.com/tarantool/tarantool/issues/4349
 Различие между движками memtx и vinyl,
 https://www.tarantool.io/ru/doc/latest/concepts/engines/memtx_vinyl_diff/
 
-Usage: taskset 0xef ./tarantool vinyl.lua
+Usage:
+
+taskset 0xef ./tarantool vinyl.lua
+
+ASAN=ON LSAN_OPTIONS=suppressions=${PWD}/asan/lsan.supp ASAN_OPTIONS=heap_profile=0:unmap_shadow_on_exit=1:detect_invalid_pointer_pairs=1:symbolize=1:detect_leaks=1:dump_instruction_bytes=1:print_suppressions=0 taskset 0xef ./build/src/tarantool vinyl.lua
 ]]
 
 local fiber = require('fiber')

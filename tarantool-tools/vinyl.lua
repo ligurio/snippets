@@ -123,16 +123,13 @@ local function rand_string(length)
     return res
 end
 
-local function oneof(t)
-    if type(t) ~= 'table' then
-        log.info(t)
-        error("t is not a table", 3)
-    end
-    assert(next(t) ~= nil)
+local function oneof(tbl)
+    assert(type(tbl) == 'table')
+    assert(next(tbl) ~= nil)
 
-    local n = table.getn(t)
+    local n = table.getn(tbl)
     local idx = math.random(1, n)
-    return t[idx]
+    return tbl[idx]
 end
 
 local function unique_ids(max_num_ids)

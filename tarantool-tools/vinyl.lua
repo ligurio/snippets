@@ -799,9 +799,10 @@ local function index_update_op(space, key, idx, tuple_ops)
     idx:update(key, tuple_ops)
 end
 
-local function index_delete_op(space, idx, tuple)
+local function index_delete_op(space, idx, key)
     assert(idx)
-    idx:delete(tuple)
+    assert(key)
+    idx:delete(key)
 end
 
 local function set_err_injection()
@@ -1029,7 +1030,8 @@ local ops = {
         func = index_delete_op,
         args = function(space)
             local idx_n = oneof(keys(space.index))
-            return space.index[idx_n], random_tuple(space)
+            local idx = space.index[idx_n]
+            return idx, random_key(space, idx)
         end,
     },
     INDEX_RENAME_OP = {

@@ -32,10 +32,11 @@ local varbinary = require('varbinary')
 
 local params = require('internal.argparse').parse(arg, {
     { 'engine', 'string' },
-    { 'test_duration', 'number' },
-    { 'workers', 'number' },
-    { 'seed', 'number' },
     { 'h', 'boolean' },
+    { 'seed', 'number' },
+    { 'test_duration', 'number' },
+    { 'verbose', 'boolean' },
+    { 'workers', 'number' },
 })
 
 local function trace(event, line) -- luacheck: no unused
@@ -68,7 +69,8 @@ if params.help or params.h then
    workers <number, 50>          - number of fibers to run simultaneously
    test_duration <number, 2*60>  - test duration time (sec)
    engine <string, 'vinyl'>      - engine ('vinyl', 'memtx')
-   seed                          - random seed
+   seed <number>                 - set a PRNG seed
+   verbose <boolean, false>      - enable verbose logging
    help (same as -h)             - print this message
 ]])
     os.exit(0)
@@ -82,6 +84,8 @@ local arg_test_duration = params.test_duration or 2*60
 
 -- Tarantool engine.
 local arg_engine = params.engine or 'vinyl'
+
+local verbose_mode = params.verbose or false
 
 local seed = params.seed or os.time()
 math.randomseed(seed)
@@ -592,13 +596,13 @@ local function format_op(space, space_format)
     space:format(space_format)
 end
 
-local function setup(engine, space_id_func, test_dir)
+local function setup(engine, space_id_func, test_dir, verbose)
     log.info("SETUP")
     local engine_name = engine or oneof({'vinyl', 'memtx'})
     assert(engine_name == 'memtx' or engine_name == 'vinyl')
     -- Configuration reference (box.cfg),
     -- https://www.tarantool.io/en/doc/latest/reference/configuration/
-    box.cfg{
+    local box_cfg_options = {
         memtx_memory = 1024 * 1024,
         vinyl_cache = math.random(0, 1000) * 1024 * 1024,
         vinyl_bloom_fpr = math.random(50) / 100,
@@ -628,9 +632,12 @@ local function setup(engine, space_id_func, test_dir)
         readahead = 16320,
         iproto_threads = math.random(1, 10),
         -- log = ('tarantool-%d.log'):format(seed),
-        log_level = 'verbose',
         work_dir = test_dir,
     }
+    if verbose then
+        box_cfg_options[log_level] = 'verbose'
+    end
+    box.cfg(box_cfg_options)
     log.info('FINISH BOX.CFG')
 
     log.info('CREATE A SPACE')
@@ -1094,7 +1101,7 @@ local function run_test()
 
     local space_id_func = counter()
     local test_dir = fio.tempdir()
-    local space = setup(arg_engine, space_id_func, test_dir)
+    local space = setup(arg_engine, space_id_func, test_dir, verbose_mode)
 
     local test_gen = fun.cycle(fun.iter(keys(ops)))
     local f

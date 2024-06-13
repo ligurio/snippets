@@ -498,24 +498,44 @@ local function random_space_format()
     return space_format
 end
 
--- Iterator types for TREE indexes.
--- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_index/pairs/#box-index-iterator-types
-local iter_type = {
-    'ALL',
-    'EQ',
-    'GE',
-    'GT',
-    'LE',
-    'LT',
-    'REQ',
+-- Iterator types for indexes.
+-- See https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_index/pairs/#box-index-iterator-types
+local iterator_type = {
+    HASH = {
+        'ALL',
+        'EQ',
+    },
+    BITSET = {
+        'ALL',
+        'BITS_ALL_NOT_SET',
+        'BITS_ALL_SET',
+        'BITS_ANY_SET',
+        'EQ',
+    },
+    TREE = {
+        'ALL',
+        'EQ',
+        'GE',
+        'GT',
+        'LE',
+        'LT',
+        'REQ',
+    },
+    RTREE = {
+        'ALL',
+        'EQ',
+        'GE',
+        'GT',
+        'LE',
+        'LT',
+        'NEIGHBOR',
+        'OVERLAPS',
+    },
 }
 
--- FIXME:
--- ERROR: SELECT_OP Index 'idx_1' (HASH) of space 'test_1' (memtx)
--- does not support reque sted iterator type.
-local function select_op(space, key)
+local function select_op(space, idx_type, key)
     local select_opts = {
-        iterator = oneof(iter_type),
+        iterator = oneof(iterator_type[idx_type]),
         -- The maximum number of tuples.
         limit = math.random(100, 500),
         -- The number of tuples to skip.
@@ -878,7 +898,10 @@ local ops = {
     },
     SELECT_OP = {
         func = select_op,
-        args = function(space) return random_key(space, space.index[0]) end,
+        args = function(space)
+            local idx = space.index[0]
+            return idx.type, random_key(space, idx)
+        end,
     },
     GET_OP = {
         func = get_op,

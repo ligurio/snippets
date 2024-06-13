@@ -137,9 +137,9 @@ local function unique_ids(max_num_ids)
         table.insert(ids, i)
     end
     return function()
-        -- assert(#ids == 0)
         local id = math.random(#ids)
         local v = ids[id]
+        assert(v)
         table.remove(ids, id)
         return v
     end
@@ -526,6 +526,14 @@ local function select_op(space, key)
     space:select(key, select_opts)
 end
 
+local function get_op(space, key)
+    space:get(key)
+end
+
+local function put_op(space, tuple)
+    space:put(tuple)
+end
+
 local function delete_op(space, tuple)
     space:delete(tuple)
 end
@@ -705,94 +713,71 @@ local function index_drop_op(space)
 end
 
 local function index_alter_op(_, idx, opts)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- local opts = index_opts(space)
-    -- -- Option is not relevant.
-    -- opts.if_not_exists = nil
-    -- if idx ~= nil then idx:alter(opts) end
+    assert(idx)
+    assert(opts)
     opts.if_not_exists = nil
     idx:alter(opts)
 end
 
 local function index_compact_op(_, idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- if idx ~= nil then idx:compact() end
+    assert(idx)
     idx:compact()
 end
 
 local function index_max_op(_, idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- if idx ~= nil then idx:max() end
+    assert(idx)
     idx:max()
 end
 
 local function index_min_op(_, idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- if idx ~= nil then idx:min() end
+    assert(idx)
     idx:min()
 end
 
 local function index_random_op(_, idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- if idx ~= nil and
-    --    idx.type ~= 'TREE' then
-    --     idx:random()
-    -- end
+    assert(idx)
     if idx.type ~= 'TREE' then
         idx:random()
     end
 end
 
-local function index_rename_op(_, idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    local idx_name = rand_string()
-    -- if idx ~= nil then idx:rename(space_name) end
+local function index_rename_op(_, idx, idx_name)
+    assert(idx)
     idx:rename(idx_name)
 end
 
 local function index_stat_op(_, idx)
     assert(idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- if idx ~= nil then idx:stat() end
     idx:stat()
 end
 
-local function index_get_op(space, key)
-    if not space.enabled then return end
-    local idx = oneof(space.index)
-    if idx ~= nil then idx:get(key) end
+local function index_get_op(space, idx, key)
+    assert(idx)
+    assert(key)
+    idx:get(key)
 end
 
-local function index_select_op(space, key)
-    if not space.enabled then return end
-    local idx = oneof(space.index)
-    if idx ~= nil then idx:select(key) end
+local function index_select_op(space, idx, key)
+    assert(idx)
+    assert(key)
+    idx:select(key)
 end
 
 local function index_count_op(_, idx)
-    -- if not space.enabled then return end
-    -- local idx = oneof(space.index)
-    -- if idx ~= nil then idx:count() end
+    assert(idx)
     idx:count()
 end
 
-local function index_update_op(space, key, tuple_ops)
-    if not space.enabled then return end
-    local idx = oneof(space.index)
-    if idx ~= nil then idx:update(key, tuple_ops) end
+local function index_update_op(space, key, idx, tuple_ops)
+    assert(idx)
+    assert(key)
+    assert(tuple_ops)
+    idx:update(key, tuple_ops)
 end
 
-local function index_delete_op(space, tuple)
-    if not space.enabled then return end
-    local idx = oneof(space.index)
-    if idx ~= nil then idx:delete(tuple) end
+local function index_delete_op(space, idx, tuple)
+    assert(idx)
+    idx:delete(tuple)
 end
 
 local function set_err_injection()
@@ -866,13 +851,9 @@ local function random_tuple_operations(space)
     return tuple_ops
 end
 
-local function random_key(space)
-    -- FIXME:
-    -- space:op() -- pk
-    -- index:op() -- not pk
-    local pk = space.index[0]
-    assert(pk, ('indices: %s'):format(json.encode(space.index)))
-    local parts = pk.parts
+local function random_key(space, idx)
+    assert(idx, ('indices: %s'):format(json.encode(space.index)))
+    local parts = idx.parts
     local key = {}
     for _, field in ipairs(parts) do
         local type_gen = tarantool_type[field.type].generator
@@ -882,92 +863,192 @@ local function random_key(space)
     return key
 end
 
-local ops = {
-    -- DML
-    DELETE_OP = delete_op,
-    INSERT_OP = insert_op,
-    SELECT_OP = select_op,
-    REPLACE_OP = replace_op,
-    UPDATE_OP = update_op,
-    UPSERT_OP = upsert_op,
-    BSIZE_OP = bsize_op,
-    LEN_OP = len_op,
-    FORMAT_OP = format_op,
-
-    -- DDL
-    INDEX_ALTER_OP = index_alter_op,
-    INDEX_COMPACT_OP = index_compact_op,
-    INDEX_CREATE_OP = index_create_op,
-    INDEX_DROP_OP = index_drop_op,
-    INDEX_GET_OP = index_get_op,
-    INDEX_SELECT_OP = index_select_op,
-    INDEX_MIN_OP = index_min_op,
-    INDEX_MAX_OP = index_max_op,
-    INDEX_RANDOM_OP = index_random_op,
-    INDEX_COUNT_OP = index_count_op,
-    INDEX_UPDATE_OP = index_update_op,
-    INDEX_DELETE_OP = index_delete_op,
-    INDEX_RENAME_OP = index_rename_op,
-    INDEX_STAT_OP = index_stat_op,
-
-    TX_BEGIN = function() if not box.is_in_txn() then box.begin() end end,
-    TX_COMMIT = function() if box.is_in_txn() then box.commit() end end,
-    TX_ROLLBACK = function() if box.is_in_txn() then box.rollback() end end,
-
-    SNAPSHOT_OP = function()
-        local in_progress = box.info.gc().checkpoint_is_in_progress
-        if not in_progress then
-            box.snapshot()
-        end
-    end,
-}
-
-local function tarantool_ops_gen(space)
-    return fun.cycle(fun.iter({
-        -- DML.
-        { 'DELETE_OP',   { random_key(space) }},
-        { 'INSERT_OP',   { random_tuple(space:format()) }},
-        { 'REPLACE_OP',  { random_tuple(space:format()) }},
-        { 'SELECT_OP',   { random_key(space) }},
-        { 'UPDATE_OP',   { random_key(space), random_tuple_operations(space) }},
-        { 'UPSERT_OP',   { random_tuple(space:format()), random_tuple_operations(space) }},
-
-        { 'BSIZE_OP',    { }},
-        -- { 'FORMAT_OP',   { random_space_format() }},
-        { 'LEN_OP',      { }},
-
-        { 'TX_BEGIN',    { }},
-        { 'TX_COMMIT',   { }},
-        { 'TX_ROLLBACK', { }},
-
-        -- DDL.
-        -- { 'INDEX_ALTER_OP', { oneof(space.index), index_opts(space) }},
-        -- { 'INDEX_COMPACT_OP', { oneof(space.index) }},
-        -- { 'INDEX_COUNT_OP', { oneof(space.index) }},
-        -- { 'INDEX_CREATE_OP', {}},
-        -- { 'INDEX_DELETE_OP', { random_tuple(space) }},
-        -- { 'INDEX_DROP_OP', {}},
-        -- { 'INDEX_GET_OP', { random_key(space) }},
-        -- { 'INDEX_MAX_OP', { oneof(space.index) }},
-        -- { 'INDEX_MIN_OP', { oneof(space.index) }},
-        -- { 'INDEX_RANDOM_OP', { oneof(space.index) }},
-        -- { 'INDEX_RENAME_OP', { oneof(space.index) }},
-        -- { 'INDEX_SELECT_OP', {}},
-        -- { 'INDEX_STAT_OP', { oneof(space.index) }},
-        -- { 'INDEX_UPDATE_OP', {}},
-
-        { 'SNAPSHOT_OP', {}},
-    }))
+local function box_snapshot()
+    local in_progress = box.info.gc().checkpoint_is_in_progress
+    if not in_progress then
+        box.snapshot()
+    end
 end
 
-local function apply_op(space, op)
-    log.info(op)
-    local op_name = op[1]
-    local func = ops[op_name]
-    local args = {func, space, unpack(op[2])}
-    local ok, err = pcall(unpack(args))
+local ops = {
+    -- DML.
+    DELETE_OP = {
+        func = delete_op,
+        args = function(space) return random_key(space, space.index[0]) end,
+    },
+    INSERT_OP = {
+        func = insert_op,
+        args = function(space) return random_tuple(space:format()) end,
+    },
+    SELECT_OP = {
+        func = select_op,
+        args = function(space) return random_key(space, space.index[0]) end,
+    },
+    GET_OP = {
+        func = get_op,
+        args = function(space) return random_key(space, space.index[0]) end,
+    },
+    PUT_OP = {
+        func = put_op,
+        args = function(space) return random_tuple(space:format()) end,
+    },
+    REPLACE_OP = {
+        func = replace_op,
+        args = function(space) return random_tuple(space:format()) end,
+    },
+    UPDATE_OP = {
+        func = update_op,
+        args = function(space)
+            return random_key(space, space.index[0]), random_tuple_operations(space)
+        end,
+    },
+    UPSERT_OP = {
+        func = upsert_op,
+        args = function(space)
+            return random_tuple(space:format()), random_tuple_operations(space)
+        end,
+    },
+    BSIZE_OP = {
+        func = bsize_op,
+        args = function(_) return end,
+    },
+    LEN_OP = {
+        func = len_op,
+        args = function(_) return end,
+    },
+    -- FORMAT_OP = {
+    --     func = format_op,
+    --     args = function(space) return { random_space_format() } end,
+    -- },
+
+    -- DDL.
+    INDEX_ALTER_OP = {
+        func = index_alter_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n], index_opts(space)
+        end,
+    },
+    -- INDEX_COMPACT_OP = {
+    --     func = index_compact_op,
+    --     args = function(space)
+    --         local idx_n = oneof(keys(space.index))
+    --         return space.index[idx_n]
+    --     end,
+    -- },
+    -- INDEX_CREATE_OP = {
+    --     func = index_create_op,
+    --     args = function(_) return end,
+    -- },
+    INDEX_DROP_OP = {
+        func = index_drop_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+    INDEX_GET_OP = {
+        func = index_get_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            local idx = space.index[idx_n]
+            return idx, random_key(space, idx)
+        end,
+    },
+    INDEX_SELECT_OP = {
+        func = index_select_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            local idx = space.index[idx_n]
+            return idx, random_key(space, idx)
+        end,
+    },
+    INDEX_MIN_OP = {
+        func = index_min_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+    INDEX_MAX_OP = {
+        func = index_max_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+    INDEX_RANDOM_OP = {
+        func = index_random_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+    INDEX_COUNT_OP = {
+        func = index_count_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+    INDEX_UPDATE_OP = {
+        func = index_update_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            local idx = space.index[idx_n]
+            return random_key(space, idx), idx, random_tuple_operations(space)
+        end,
+    },
+    INDEX_DELETE_OP = {
+        func = index_delete_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n], random_tuple(space)
+        end,
+    },
+    INDEX_RENAME_OP = {
+        func = index_rename_op,
+        args = function(space)
+            local idx_name = rand_string()
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n], idx_name
+        end,
+    },
+    INDEX_STAT_OP = {
+        func = index_stat_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+
+    TX_BEGIN = {
+        func = function() if not box.is_in_txn() then box.begin() end end,
+        args = function(_) return end,
+    },
+    TX_COMMIT = {
+        func = function() if box.is_in_txn() then box.commit() end end,
+        args = function(_) return end,
+    },
+    TX_ROLLBACK = {
+        func = function() if box.is_in_txn() then box.rollback() end end,
+        args = function(_) return end,
+    },
+
+    SNAPSHOT_OP = {
+        func = box_snapshot,
+        args = function(_) return end,
+    },
+}
+
+local function apply_op(space, op_name)
+    local func = ops[op_name].func
+    local args = { ops[op_name].args(space) }
+    log.info(('%s %s'):format(op_name, json.encode(args)))
+    local pcall_args = {func, space, unpack(args)}
+    local ok, err = pcall(unpack(pcall_args))
     if ok ~= true then
-        log.info('ERROR: ' .. err)
+        log.info(('ERROR: %s %s'):format(op_name, err))
     end
 end
 
@@ -978,13 +1059,13 @@ local function worker_func(space, test_gen, test_duration)
     local gen, param, state = test_gen:unwrap()
     shared_gen_state = state
     while os.clock() - start <= test_duration do
-        local operation
-        state, operation = gen(param, shared_gen_state)
+        local operation_name
+        state, operation_name = gen(param, shared_gen_state)
         if state == nil then
             break
         end
         shared_gen_state = state
-        apply_op(space, operation)
+        apply_op(space, operation_name)
         fiber.yield()
     end
 end
@@ -996,7 +1077,7 @@ local function run_test()
     local test_dir = fio.tempdir()
     local space = setup(arg_engine, space_id_func, test_dir)
 
-    local test_gen = tarantool_ops_gen(space)
+    local test_gen = fun.cycle(fun.iter(keys(ops)))
     local f
     for i = 1, arg_num_workers do
         f = fiber.new(worker_func, space, test_gen, arg_test_duration)

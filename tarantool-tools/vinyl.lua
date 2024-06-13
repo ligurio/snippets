@@ -93,7 +93,7 @@ local function keys(t)
 end
 
 local function rmtree(s)
-   log.info(("CLEANUP %s"):format(s))
+    log.info(("CLEANUP %s"):format(s))
     if (fio.path.is_file(s) or fio.path.is_link(s)) then
         fio.unlink(s)
         return
@@ -509,6 +509,9 @@ local iter_type = {
     'REQ',
 }
 
+-- FIXME:
+-- ERROR: SELECT_OP Index 'idx_1' (HASH) of space 'test_1' (memtx)
+-- does not support reque sted iterator type.
 local function select_op(space, key)
     local select_opts = {
         iterator = oneof(iter_type),
@@ -577,11 +580,11 @@ local function setup(engine, space_id_func, test_dir)
     -- Configuration reference (box.cfg),
     -- https://www.tarantool.io/en/doc/latest/reference/configuration/
     box.cfg{
-        memtx_memory = 1024*1024,
+        memtx_memory = 1024 * 1024,
         vinyl_cache = math.random(0, 1000) * 1024 * 1024,
         vinyl_bloom_fpr = math.random(50) / 100,
         vinyl_max_tuple_size = math.random(0, 100000),
-        vinyl_memory = 10*1024*1024,
+        vinyl_memory = 128 * 1024 * 1024,
         -- vinyl_page_size = math.random(1, 10),
         -- vinyl_range_size = math.random(1, 10),
         vinyl_run_size_ratio = math.random(2, 5),
@@ -669,7 +672,6 @@ local function index_opts(space)
     for i = 1, n_parts do
         local field_id = id()
         local field = space_format[field_id]
-        log.info(field.type)
         local supported_indices = tarantool_type[field.type].indices
         -- Fix "Duplicate key exists in unique index...".
         if supported_indices[opts.type] then
@@ -842,7 +844,6 @@ local function random_tuple_operations(space)
     for _ = 1, math.random(num_fields) do
         local field_id = id()
         local field_type = space_format[field_id].type
-        log.info(field_type)
         local operator = oneof(tarantool_type[field_type].operations)
         local value = random_field_value(field_type)
         table.insert(tuple_ops, {operator, field_id, value})

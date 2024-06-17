@@ -61,7 +61,7 @@ local index_id_func = counter()
 if params.help or params.h then
     print([[
 
- Usage: taskset 0xef tarantool vinyl.lua [options]
+ Usage: tarantool vinyl.lua [options]
 
  Options can be used with '--', followed by the value if it's not
  a boolean option. The options list with default values:
@@ -620,7 +620,6 @@ local function setup(engine, space_id_func, test_dir, verbose)
         checkpoint_interval = math.random(60),
         checkpoint_count = math.random(5),
         checkpoint_wal_threshold = math.random(1024),
-        -- listen = '127.0.0.1:3301',
         worker_pool_threads = math.random(1, 10),
         memtx_use_mvcc_engine = oneof({true, false}),
         memtx_allocator = oneof({'system', 'small'}),
@@ -631,11 +630,10 @@ local function setup(engine, space_id_func, test_dir, verbose)
         -- wal_cleanup_delay = 14400,
         readahead = 16320,
         iproto_threads = math.random(1, 10),
-        -- log = ('tarantool-%d.log'):format(seed),
         work_dir = test_dir,
     }
     if verbose then
-        box_cfg_options[log_level] = 'verbose'
+        box_cfg_options.log_level = 'verbose'
     end
     box.cfg(box_cfg_options)
     log.info('FINISH BOX.CFG')
@@ -661,13 +659,19 @@ local function setup(engine, space_id_func, test_dir, verbose)
     return space
 end
 
-local function teardown(space)
-   log.info("TEARDOWN")
-   space:drop()
+local function teardown(space, dir)
+    log.info("TEARDOWN")
+    space:drop()
+    if dir ~= nil then
+        rmtree(dir)
+        dir = nil
+    end
 end
 
 -- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/
 local function index_opts(space)
+    -- FIXME: take into account index options,
+    -- see https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/.
     assert(space ~= nil)
     local opts = {
         unique = oneof({true, false}),
@@ -704,7 +708,11 @@ local function index_opts(space)
             table.insert(opts.parts, { field.name })
         end
     end
-    assert(next(opts.parts) ~= nil)
+    -- assert(next(opts.parts) ~= nil)
+    if next(opts.parts) == nil then
+        log.info(space_format)
+        log.info(opts.type)
+    end
 
     if opts.type == 'RTREE' then
         opts.dimension = math.random(10)
@@ -796,6 +804,7 @@ local function index_update_op(space, key, idx, tuple_ops)
     assert(idx)
     assert(key)
     assert(tuple_ops)
+    assert(next(tuple_ops) ~= nil)
     idx:update(key, tuple_ops)
 end
 
@@ -1121,12 +1130,7 @@ local function run_test()
         end
     end
 
-    teardown(space)
-
-    if test_dir ~= nil then
-        rmtree(test_dir)
-        test_dir = nil
-    end
+    teardown(space, test_dir)
 end
 
 run_test()

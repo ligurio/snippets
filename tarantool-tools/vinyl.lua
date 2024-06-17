@@ -150,140 +150,6 @@ local function unique_ids(max_num_ids)
     end
 end
 
--- TODO: Obtain error injections dynamically:
--- box.error.injection.info()
--- box.error.injection.get('ERRINJ_SNAP_SKIP_ALL_ROWS')
--- box.error.injection.set('ERRINJ_SNAP_SKIP_ALL_ROWS', true)
--- Source: src/lib/core/errinj.h
-local errinj_set = {
-    ['ERRINJ_APPLIER_DESTROY_DELAY'] = 'boolean',
-    ['ERRINJ_APPLIER_READ_TX_ROW_DELAY'] = 'boolean',
-    ['ERRINJ_APPLIER_SLOW_ACK'] = 'boolean',
-    ['ERRINJ_APPLIER_STOP_DELAY'] = 'boolean',
-    ['ERRINJ_BUILD_INDEX'] = 'int',
-    ['ERRINJ_BUILD_INDEX_DELAY'] = 'boolean',
-    ['ERRINJ_BUILD_INDEX_ON_ROLLBACK_ALLOC'] = 'boolean',
-    ['ERRINJ_BUILD_INDEX_TIMEOUT'] = 'double',
-    ['ERRINJ_CHECK_FORMAT_DELAY'] = 'boolean',
-    ['ERRINJ_COIO_SENDFILE_CHUNK'] = 'int',
-    ['ERRINJ_COIO_WRITE_CHUNK'] = 'boolean',
-    ['ERRINJ_DYN_MODULE_COUNT'] = 'int',
-    ['ERRINJ_ENGINE_JOIN_DELAY'] = 'boolean',
-    ['ERRINJ_FIBER_MADVISE'] = 'boolean',
-    ['ERRINJ_FIBER_MPROTECT'] = 'int',
-    ['ERRINJ_FLIGHTREC_RECREATE_RENAME'] = 'boolean',
-    ['ERRINJ_FLIGHTREC_LOG_DELAY'] = 'double',
-    ['ERRINJ_HTTPC_EXECUTE'] = 'boolean',
-    ['ERRINJ_HTTP_RESPONSE_ADD_WAIT'] = 'boolean',
-    ['ERRINJ_INDEX_ALLOC'] = 'boolean',
-    ['ERRINJ_INDEX_RESERVE'] = 'boolean',
-    ['ERRINJ_INDEX_ITERATOR_NEW'] = 'boolean',
-    ['ERRINJ_HASH_INDEX_REPLACE'] = 'boolean',
-    ['ERRINJ_IPROTO_CFG_LISTEN'] = 'boolean',
-    ['ERRINJ_IPROTO_DISABLE_ID'] = 'boolean',
-    ['ERRINJ_IPROTO_DISABLE_WATCH'] = 'boolean',
-    ['ERRINJ_IPROTO_FLIP_FEATURE'] = 'int',
-    ['ERRINJ_IPROTO_SET_VERSION'] = 'int',
-    ['ERRINJ_IPROTO_TX_DELAY'] = 'boolean',
-    ['ERRINJ_IPROTO_WRITE_ERROR_DELAY'] = 'boolean',
-    ['ERRINJ_LOG_ROTATE'] = 'boolean',
-    ['ERRINJ_MEMTX_DELAY_GC'] = 'boolean',
-    ['ERRINJ_NETBOX_DISABLE_ID'] = 'boolean',
-    ['ERRINJ_NETBOX_FLIP_FEATURE'] = 'int',
-    ['ERRINJ_NETBOX_IO_DELAY'] = 'boolean',
-    ['ERRINJ_NETBOX_IO_ERROR'] = 'boolean',
-    ['ERRINJ_RAFT_WAIT_TERM_PERSISTED_DELAY'] = 'boolean',
-    ['ERRINJ_RELAY_BREAK_LSN'] = 'int',
-    ['ERRINJ_RELAY_EXIT_DELAY'] = 'double',
-    ['ERRINJ_RELAY_FASTER_THAN_TX'] = 'boolean',
-    ['ERRINJ_RELAY_FINAL_JOIN'] = 'boolean',
-    ['ERRINJ_RELAY_FINAL_SLEEP'] = 'boolean',
-    ['ERRINJ_RELAY_FROM_TX_DELAY'] = 'boolean',
-    ['ERRINJ_RELAY_REPORT_INTERVAL'] = 'double',
-    ['ERRINJ_RELAY_SEND_DELAY'] = 'boolean',
-    ['ERRINJ_RELAY_TIMEOUT'] = 'double',
-    ['ERRINJ_RELAY_WAL_START_DELAY'] = 'boolean',
-    ['ERRINJ_REPLICASET_VCLOCK'] = 'boolean',
-    ['ERRINJ_REPLICA_JOIN_DELAY'] = 'boolean',
-    ['ERRINJ_SIGILL_MAIN_THREAD'] = 'boolean',
-    ['ERRINJ_SIGILL_NONMAIN_THREAD'] = 'boolean',
-    ['ERRINJ_SIO_READ_MAX'] = 'int',
-    ['ERRINJ_SNAP_COMMIT_DELAY'] = 'boolean',
-    ['ERRINJ_SNAP_COMMIT_FAIL'] = 'boolean',
-    ['ERRINJ_SNAP_SKIP_ALL_ROWS'] = 'boolean',
-    ['ERRINJ_SNAP_SKIP_DDL_ROWS'] = 'boolean',
-    ['ERRINJ_SNAP_WRITE_DELAY'] = 'boolean',
-    ['ERRINJ_SNAP_WRITE_CORRUPTED_INSERT_ROW'] = 'boolean',
-    ['ERRINJ_SNAP_WRITE_INVALID_SYSTEM_ROW'] = 'boolean',
-    ['ERRINJ_SNAP_WRITE_MISSING_SPACE_ROW'] = 'boolean',
-    ['ERRINJ_SNAP_WRITE_TIMEOUT'] = 'double',
-    ['ERRINJ_SNAP_WRITE_UNKNOWN_ROW_TYPE'] = 'boolean',
-    ['ERRINJ_SPACE_UPGRADE_DELAY'] = 'boolean',
-    ['ERRINJ_SWIM_FD_ONLY'] = 'boolean',
-    ['ERRINJ_TESTING'] = 'boolean',
-    ['ERRINJ_TUPLE_ALLOC'] = 'boolean',
-    ['ERRINJ_TUPLE_FIELD'] = 'boolean',
-    -- https://github.com/tarantool/tarantool/issues/10033
-    -- ['ERRINJ_TUPLE_FIELD_COUNT_LIMIT'] = 'int',
-    ['ERRINJ_TUPLE_FORMAT_COUNT'] = 'int',
-    ['ERRINJ_TX_DELAY_PRIO_ENDPOINT'] = 'double',
-    ['ERRINJ_TXN_COMMIT_ASYNC'] = 'boolean',
-    ['ERRINJ_TXN_LIMBO_BEGIN_DELAY'] = 'boolean',
-    ['ERRINJ_VYRUN_DATA_READ'] = 'boolean',
-    ['ERRINJ_VY_COMPACTION_DELAY'] = 'boolean',
-    ['ERRINJ_VY_DELAY_PK_LOOKUP'] = 'boolean',
-    ['ERRINJ_VY_DUMP_DELAY'] = 'boolean',
-    ['ERRINJ_VY_GC'] = 'boolean',
-    ['ERRINJ_VY_INDEX_DUMP'] = 'int',
-    ['ERRINJ_VY_INDEX_FILE_RENAME'] = 'boolean',
-    ['ERRINJ_VY_LOG_FILE_RENAME'] = 'boolean',
-    ['ERRINJ_VY_LOG_FLUSH'] = 'boolean',
-    ['ERRINJ_VY_POINT_ITER_WAIT'] = 'boolean',
-    ['ERRINJ_VY_QUOTA_DELAY'] = 'boolean',
-    ['ERRINJ_VY_READ_PAGE'] = 'boolean',
-    ['ERRINJ_VY_READ_PAGE_DELAY'] = 'boolean',
-    ['ERRINJ_VY_READ_PAGE_TIMEOUT'] = 'double',
-    ['ERRINJ_VY_READ_VIEW_MERGE_FAIL'] = 'boolean',
-    ['ERRINJ_VY_RUN_DISCARD'] = 'boolean',
-    ['ERRINJ_VY_RUN_FILE_RENAME'] = 'boolean',
-    ['ERRINJ_VY_RUN_OPEN'] = 'int',
-    ['ERRINJ_VY_RUN_WRITE'] = 'boolean',
-    ['ERRINJ_VY_RUN_WRITE_DELAY'] = 'boolean',
-    ['ERRINJ_VY_RUN_WRITE_STMT_TIMEOUT'] = 'double',
-    ['ERRINJ_VY_SCHED_TIMEOUT'] = 'double',
-    ['ERRINJ_VY_SQUASH_TIMEOUT'] = 'double',
-    ['ERRINJ_VY_STMT_ALLOC'] = 'int',
-    ['ERRINJ_VY_TASK_COMPLETE'] = 'boolean',
-    ['ERRINJ_VY_WRITE_ITERATOR_START_FAIL'] = 'boolean',
-    ['ERRINJ_WAIT_QUORUM_COUNT'] = 'int',
-    ['ERRINJ_WAL_BREAK_LSN'] = 'int',
-    ['ERRINJ_WAL_DELAY'] = 'boolean',
-    ['ERRINJ_WAL_DELAY_COUNTDOWN'] = 'int',
-    ['ERRINJ_WAL_FALLOCATE'] = 'int',
-    ['ERRINJ_WAL_IO'] = 'boolean',
-    ['ERRINJ_WAL_IO_COUNTDOWN'] = 'int',
-    ['ERRINJ_WAL_ROTATE'] = 'boolean',
-    ['ERRINJ_WAL_SYNC'] = 'boolean',
-    ['ERRINJ_WAL_SYNC_DELAY'] = 'boolean',
-    ['ERRINJ_WAL_WRITE'] = 'boolean',
-    ['ERRINJ_WAL_WRITE_COUNT'] = 'int',
-    ['ERRINJ_WAL_WRITE_DISK'] = 'boolean',
-    ['ERRINJ_WAL_WRITE_EOF'] = 'boolean',
-    ['ERRINJ_WAL_WRITE_PARTIAL'] = 'int',
-    ['ERRINJ_XLOG_GARBAGE'] = 'boolean',
-    ['ERRINJ_XLOG_META'] = 'boolean',
-    ['ERRINJ_XLOG_READ'] = 'int',
-    ['ERRINJ_XLOG_RENAME_DELAY'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_CORRUPTED_BODY'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_CORRUPTED_HEADER'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_INVALID_BODY'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_INVALID_HEADER'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_INVALID_KEY'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_INVALID_VALUE'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_UNKNOWN_KEY'] = 'boolean',
-    ['ERRINJ_XLOG_WRITE_UNKNOWN_TYPE'] = 'boolean',
-}
-
 -- Forward declaration.
 local index_create_op
 
@@ -814,39 +680,6 @@ local function index_delete_op(space, idx, key)
     idx:delete(key)
 end
 
-local function set_err_injection()
-    local errinj_name = oneof(keys(errinj_set))
-    local t = errinj_set[errinj_name]
-
-    local errinj_val_enable = true
-    local errinj_val_disable = false
-    if t == 'double' then
-        errinj_val_enable = math.random(0, 50)
-        errinj_val_disable = 0
-    end
-    if t == 'int' then
-        errinj_val_enable = math.random(0, 50)
-        errinj_val_disable = -1
-    end
-
-    local pause_time = math.random(1, 10)
-
-    log.info(string.format("ENABLE RANDOM ERROR INJECTION: %s -> %s",
-                           errinj_name, tostring(errinj_val_enable)))
-    local ok, err
-    ok, err = pcall(box.error.injection.set, errinj_name, errinj_val_enable)
-    if ok ~= true then
-        log.info('ERROR: ' .. err)
-    end
-    fiber.sleep(pause_time)
-    log.info(string.format("DISABLE RANDOM ERROR INJECTION: %s -> %s",
-                           errinj_name, tostring(errinj_val_disable)))
-    ok, err = pcall(box.error.injection.set, errinj_name, errinj_val_disable)
-    if ok ~= true then
-        log.info('ERROR: ' .. err)
-    end
-end
-
 local function random_field_value(field_type)
     local type_gen = tarantool_type[field_type].generator
     assert(type(type_gen) == 'function')
@@ -1107,6 +940,43 @@ local function worker_func(space, test_gen, test_duration)
     end
 end
 
+local function toggle_box_errinj(errinj_name, errinj_set, max_enabled)
+    local enabled = fun.iter(errinj_set):filter(function(i, x) if x.enabled then return i end end):totable()
+    log.info(enabled)
+    local errinj_val = not errinj_set[errinj_name].enabled
+    if table.getn(enabled) >= max_enabled then
+        errinj_name = oneof(enabled)
+        errinj_val = false
+    end
+    errinj_set[errinj_name].enabled = errinj_val
+    log.info(string.format("TOGGLE RANDOM ERROR INJECTION: %s -> %s",
+                           errinj_name, tostring(errinj_val)))
+    local ok, err = pcall(box.error.injection.set, errinj_name, errinj_val)
+    if ok ~= true then
+        log.info('ERROR: ' .. err)
+    end
+end
+
+local function build_errinj_set()
+    local errinj_set = {}
+    local errinj = box.error.injection.info()
+    for errinj_name, errinj_opt in pairs(errinj) do
+        local t = type(errinj[errinj_name].state)
+        errinj_set[errinj_name] = {
+            enabled = false,
+        }
+        -- See https://github.com/tarantool/tarantool/issues/10033.
+        if errinj_name == 'ERRINJ_TUPLE_FIELD_COUNT_LIMIT' then
+            errinj_set[errinj_name] = nil
+        end
+        if t ~= 'boolean' then
+            errinj_set[errinj_name] = nil
+        end
+    end
+
+    return errinj_set
+end
+
 local function run_test()
     local fibers = {}
 
@@ -1122,6 +992,18 @@ local function run_test()
         f:name('WRK #' .. i)
         table.insert(fibers, f)
     end
+
+    local errinj_set = build_errinj_set()
+    f = fiber.new(function()
+        while true do
+            local errinj_name = oneof(keys(errinj_set))
+            toggle_box_errinj(errinj_name, errinj_set, 2)
+            fiber.sleep(0.5)
+        end
+    end)
+    f:set_joinable(true)
+    f:name('NEMESES')
+    table.insert(fibers, f)
 
     for _, fb in ipairs(fibers) do
         local ok, errmsg = fiber.join(fb)

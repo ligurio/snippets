@@ -998,7 +998,7 @@ local function run_test()
     f = fiber.new(function()
         while true do
             local errinj_name = oneof(keys(errinj_set))
-            toggle_box_errinj(errinj_name, errinj_set, 2)
+            toggle_box_errinj(errinj_name, errinj_set, 5)
             fiber.sleep(0.5)
         end
     end)

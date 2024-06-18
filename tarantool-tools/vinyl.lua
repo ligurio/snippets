@@ -28,7 +28,7 @@ local math = require('math')
 local datetime = require('datetime')
 local decimal = require('decimal')
 local uuid = require('uuid')
-local varbinary = require('varbinary')
+-- local varbinary = require('varbinary')
 
 local params = require('internal.argparse').parse(arg, {
     { 'engine', 'string' },
@@ -166,14 +166,14 @@ local function random_array()
     return t
 end
 
-local function random_map()
-    local n = math.random(1, 10)
-    local t = {}
-    for i = 1, n do
-        t[tostring(i)] = i
-    end
-    return t
-end
+-- local function random_map()
+--     local n = math.random(1, 10)
+--     local t = {}
+--     for i = 1, n do
+--         t[tostring(i)] = i
+--     end
+--     return t
+-- end
 
 -- luacheck: ignore
 local random_any

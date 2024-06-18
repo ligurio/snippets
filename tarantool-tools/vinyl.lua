@@ -941,35 +941,36 @@ local function worker_func(space, test_gen, test_duration)
 end
 
 local function toggle_box_errinj(errinj_name, errinj_set, max_enabled)
-    local enabled = fun.iter(errinj_set):filter(function(i, x) if x.enabled then return i end end):totable()
-    log.info(enabled)
-    local errinj_val = not errinj_set[errinj_name].enabled
+    local enabled = fun.iter(errinj_set):
+                    filter(function(i, x) if x.is_enabled then return i end end):
+                    totable()
+    log.info(('Enabled nemeses: %s'):format(json.encode(enabled)))
+    local errinj_val
     if table.getn(enabled) >= max_enabled then
         errinj_name = oneof(enabled)
-        errinj_val = false
+        errinj_val = errinj_set[errinj_name].disable_value
+        errinj_set[errinj_name].is_enabled = false
+    else
+        errinj_val = errinj_set[errinj_name].enable_value
+        errinj_set[errinj_name].is_enabled = true
     end
-    errinj_set[errinj_name].enabled = errinj_val
     log.info(string.format("TOGGLE RANDOM ERROR INJECTION: %s -> %s",
                            errinj_name, tostring(errinj_val)))
-    local ok, err = pcall(box.error.injection.set, errinj_name, errinj_val)
-    if ok ~= true then
-        log.info('ERROR: ' .. err)
-    end
+    box.error.injection.set(errinj_name, errinj_val)
 end
 
 local function build_errinj_set()
     local errinj_set = {}
     local errinj = box.error.injection.info()
     for errinj_name, errinj_opt in pairs(errinj) do
-        local t = type(errinj[errinj_name].state)
+        local default_value = errinj[errinj_name].state
         errinj_set[errinj_name] = {
-            enabled = false,
+            is_enabled = false,
+            enable_value = type(default_value) == 'boolean' and true or math.random(10),
+            disable_value = default_value,
         }
         -- See https://github.com/tarantool/tarantool/issues/10033.
         if errinj_name == 'ERRINJ_TUPLE_FIELD_COUNT_LIMIT' then
-            errinj_set[errinj_name] = nil
-        end
-        if t ~= 'boolean' then
             errinj_set[errinj_name] = nil
         end
     end

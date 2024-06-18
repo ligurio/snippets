@@ -359,12 +359,16 @@ local function random_space_format()
     local min_num_fields = 3
     local max_num_fields = 20
     local num_fields = math.random(min_num_fields, max_num_fields)
-    for i = 1, num_fields do
+    for i = 1, num_fields-1 do
         table.insert(space_format, {
             name =('name_%d'):format(i),
             type = oneof(keys(tarantool_type)),
         })
     end
+    table.insert(space_format, {
+        name =('name_%d'):format(num_fields),
+        type = 'integer',
+    })
     return space_format
 end
 

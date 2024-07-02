@@ -1,20 +1,28 @@
---[[ Тест для vinyl позволяет случайным образом выставлять error injections,
-генерировать операции с индексами, генерировать операции с данными, настройки
-vinyl в box.cfg. Все случайные операции и настройки зависят от seed, который
-генерируется в самом начале теста.
+--[[
 
-См. https://github.com/tarantool/tarantool/issues/5076
-https://github.com/mkostoevr/tarantool/commit/f3462f6bfb80f93ce2c155bb6444d12e478dd180
+Тест для Tarantool позволяет случайным образом генерировать
+операции с данными (DML) и операции с индексами (DDL),
+выставлять error injections. Все случайные операции и настройки
+зависят от seed, который генерируется в самом начале теста.
+
+https://github.com/tarantool/tarantool/issues/5076
 https://github.com/tarantool/tarantool/issues/4349
+TODO: https://github.com/mkostoevr/tarantool/commit/f3462f6bfb80f93ce2c155bb6444d12e478dd180
+TODO: https://github.com/mkokryashkin/tarantool/commit/92ed09de96fa1d851ba9c06d6a2d0cfe67e5480c
 
 Различие между движками memtx и vinyl,
 https://www.tarantool.io/ru/doc/latest/concepts/engines/memtx_vinyl_diff/
 
 Usage:
 
-taskset 0xef ./tarantool vinyl.lua
+$ taskset 0xef tarantool vinyl.lua
 
 ASAN=ON LSAN_OPTIONS=suppressions=${PWD}/asan/lsan.supp ASAN_OPTIONS=heap_profile=0:unmap_shadow_on_exit=1:detect_invalid_pointer_pairs=1:symbolize=1:detect_leaks=1:dump_instruction_bytes=1:print_suppressions=0 taskset 0xef ./build/src/tarantool vinyl.lua
+
+TODO:
+- ERROR: FORMAT_OP format[1]: name (string) is expected.
+- INDEX_ALTER_OP Can't create or modify index 'idx_1' in space 'test_1':
+  primary key must be unique.
 ]]
 
 local fiber = require('fiber')
@@ -53,7 +61,10 @@ end
 
 local function counter()
     local i = 0
-    return function() return i + 1 end
+    return function()
+        i = i + 1
+        return i
+    end
 end
 
 local index_id_func = counter()
@@ -158,7 +169,9 @@ local function random_int()
 end
 
 local function random_array()
-    local n = math.random(10)
+    -- RTree: Field must be an array with 8 (point) or
+    -- 16 (rectangle/box) numeric coordinates.
+    local n = oneof({8, 16})
     local t = {}
     for i = 1, n do
         table.insert(t, i)
@@ -166,14 +179,14 @@ local function random_array()
     return t
 end
 
--- local function random_map()
---     local n = math.random(1, 10)
---     local t = {}
---     for i = 1, n do
---         t[tostring(i)] = i
---     end
---     return t
--- end
+local function random_map()
+    local n = math.random(1, 10)
+    local t = {}
+    for i = 1, n do
+        t[tostring(i)] = i
+    end
+    return t
+end
 
 -- luacheck: ignore
 local random_any
@@ -923,6 +936,7 @@ local function apply_op(space, op_name)
     local ok, err = pcall(unpack(pcall_args))
     if ok ~= true then
         log.info(('ERROR: %s %s'):format(op_name, err))
+        log.info(args)
     end
 end
 
@@ -940,7 +954,6 @@ local function worker_func(space, test_gen, test_duration)
         end
         shared_gen_state = state
         apply_op(space, operation_name)
-        fiber.yield()
     end
 end
 
@@ -970,10 +983,12 @@ local function build_errinj_set()
         local default_value = errinj[errinj_name].state
         errinj_set[errinj_name] = {
             is_enabled = false,
-            enable_value = type(default_value) == 'boolean' and true or math.random(10),
+            enable_value = type(default_value) == 'boolean' and
+                           true or math.random(100),
             disable_value = default_value,
         }
-        -- See https://github.com/tarantool/tarantool/issues/10033.
+        -- Broken,
+        -- see https://github.com/tarantool/tarantool/issues/10033.
         if errinj_name == 'ERRINJ_TUPLE_FIELD_COUNT_LIMIT' then
             errinj_set[errinj_name] = nil
         end
@@ -1011,9 +1026,9 @@ local function run_test()
     table.insert(fibers, f)
 
     for _, fb in ipairs(fibers) do
-        local ok, errmsg = fiber.join(fb)
+        local ok, res = fiber.join(fb)
         if not ok then
-            log.info('ERROR: ' .. errmsg)
+            log.info('ERROR: ' .. res)
         end
     end
 

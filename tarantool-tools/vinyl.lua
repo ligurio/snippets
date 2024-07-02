@@ -1066,13 +1066,14 @@ local function run_test()
     end
 
     local errinj_set = build_errinj_set()
-    f = fiber.new(function()
-        while true do
+    f = fiber.new(function(test_duration)
+        local start = os.clock()
+        while os.clock() - start <= test_duration do
             local errinj_name = oneof(keys(errinj_set))
-            toggle_box_errinj(errinj_name, errinj_set, 5)
-            fiber.sleep(0.5)
+            toggle_box_errinj(errinj_name, errinj_set, 10)
+            fiber.sleep(1)
         end
-    end)
+    end, arg_test_duration)
     f:set_joinable(true)
     f:name('NEMESES')
     table.insert(fibers, f)

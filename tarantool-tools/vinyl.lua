@@ -36,7 +36,12 @@ local math = require('math')
 local datetime = require('datetime')
 local decimal = require('decimal')
 local uuid = require('uuid')
--- local varbinary = require('varbinary')
+
+local err_msg_whitelist = {
+    'Can not perform index build in a multi-statement transaction',
+    'the space is already being modified',
+    'Transaction has been aborted by conflict',
+}
 
 local params = require('internal.argparse').parse(arg, {
     { 'engine', 'string' },
@@ -203,153 +208,61 @@ local random_scalar
 -- '!' - For insertion of a new field.
 -- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/#indexes-tree
 local tarantool_type = {
-    -- ['any'] = {
-    --     generator = random_any,
-    --     operations = {'=', '!'},
-    -- },
     ['array'] = {
         generator = random_array,
         operations = {'=', '!'},
-        indices = {
-            RTREE = true,
-        },
     },
     ['boolean'] = {
         generator = function()
             return oneof({true, false})
         end,
         operations = {'=', '!'},
-        indices = {
-            TREE = true,
-            HASH = true,
-        },
     },
     ['decimal'] = {
         generator = function()
             return decimal.new(random_int())
         end,
         operations = {'+', '-'},
-        indices = {
-            TREE = true,
-            HASH = true,
-        },
     },
     ['datetime'] = {
         generator = function()
             return datetime.new({timestamp = os.time()})
         end,
         operations = {'=', '!'},
-        indices = {
-            TREE = true,
-        },
     },
     ['double'] = {
         generator = function()
             return math.random() * 10^12
         end,
         operations = {'-'},
-        indices = {
-            TREE = true,
-            HASH = true,
-        },
     },
     ['integer'] = {
         generator = random_int,
         operations = {'+', '-'},
-        indices = {
-            TREE = true,
-            HASH = true,
-        },
     },
-    -- ['map'] = {
-        -- generator = random_map,
-        -- operations = {'=', '!'},
-        -- indices = {
-        --     RTREE = true,
-        -- },
-    -- },
+    ['map'] = {
+        generator = random_map,
+        operations = {'=', '!'},
+    },
     ['number'] = {
         generator = random_int,
         operations = {'+', '-'},
-        indices = {
-            TREE = true,
-            HASH = true,
-        },
     },
-    -- ['scalar'] = {
-        -- generator = random_scalar,
-        -- TODO:
-        -- operations = {'=', '!'},
-        -- indices = {
-              -- TREE = true,
-              -- HASH = true,
-        -- },
-    -- },
     ['string'] = {
         generator = rand_string,
         operations = {'=', '!'}, -- XXX: ':'
-        indices = {
-            TREE = true,
-            HASH = true,
-            BITSET = true,
-        },
     },
     ['unsigned'] = {
         generator = function()
             return math.abs(random_int())
         end,
         operations = {'#', '+', '-', '&', '|', '^'},
-        indices = {
-            TREE = true,
-            HASH = true,
-            BITSET = true,
-        },
     },
     ['uuid'] = {
         generator = uuid.new,
         operations = {'=', '!'},
-        indices = {
-            TREE = true,
-            HASH = true,
-        },
     },
-    -- TODO
-    -- https://www.tarantool.io/en/doc/latest/how-to/app/cookbook/#ffi-varbinary-insert-lua
-    -- ['varbinary'] = {
-        -- generator = function()
-        --     return varbinary.new(rand_string())
-        -- end,
-        -- operations = {'=', '!'},
-        -- indices = {
-		    -- TREE = true,
-		    -- HASH = true,
-		    -- BITSET = true,
-        -- },
-    -- },
 }
-
-function random_any()
-    local t = oneof(keys(tarantool_type))
-    return tarantool_type[t].generator
-end
-
--- See https://www.tarantool.io/en/doc/latest/concepts/data_model/value_store/#scalar.
-function random_scalar()
-    local scalars = {
-        'boolean',
-        'double',
-        'integer',
-        'number',
-        'decimal',
-        'uuid',
-        -- TODO
-        -- 'varbinary',
-        'string',
-        'unsigned',
-    }
-    local t = oneof(scalars)
-    return tarantool_type[t].generator
-end
 
 -- The name value may be any string, provided that two fields
 -- do not have the same name.
@@ -369,60 +282,136 @@ end
 -- See https://www.tarantool.io/ru/doc/latest/reference/reference_lua/box_space/format/.
 local function random_space_format()
     local space_format = {}
-    local min_num_fields = 3
-    local max_num_fields = 20
+    local min_num_fields = table.getn(keys(tarantool_type))
+    local max_num_fields = min_num_fields + 10
     local num_fields = math.random(min_num_fields, max_num_fields)
-    for i = 1, num_fields-1 do
+    for i, datatype in ipairs(keys(tarantool_type)) do
         table.insert(space_format, {
-            name =('name_%d'):format(i),
+            name =('field_%d'):format(i),
+            type = datatype,
+        })
+    end
+    for i = min_num_fields - 1, num_fields - min_num_fields - 1 do
+        table.insert(space_format, {
+            name =('field_%d'):format(i),
             type = oneof(keys(tarantool_type)),
         })
     end
-    table.insert(space_format, {
-        name =('name_%d'):format(num_fields),
-        type = 'integer',
-    })
+
     return space_format
 end
 
 -- Iterator types for indexes.
 -- See https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_index/pairs/#box-index-iterator-types
-local iterator_type = {
+-- TODO: is_nullable
+-- TODO: multikey
+-- TODO: exclude_null
+-- TODO: pagination
+local tarantool_indices = {
     HASH = {
-        'ALL',
-        'EQ',
+        iterator_type = {
+            'ALL',
+            'EQ',
+        },
+        data_type = {
+            ['boolean'] = true,
+            ['decimal'] = true,
+            ['double'] = true,
+            ['integer'] = true,
+            ['number'] = true,
+            ['scalar'] = true,
+            ['string'] = true,
+            ['unsigned'] = true,
+            ['uuid'] = true,
+            ['varbinary'] = true,
+        },
+        is_multipart = true,
+        is_min_support = false,
+        is_max_support = false,
+        is_unique_support = true,
+        is_non_unique_support = false,
+        is_primary_key_support = true,
+        is_partial_search_support = false,
     },
     BITSET = {
-        'ALL',
-        'BITS_ALL_NOT_SET',
-        'BITS_ALL_SET',
-        'BITS_ANY_SET',
-        'EQ',
+        iterator_type = {
+            'ALL',
+            'BITS_ALL_NOT_SET',
+            'BITS_ALL_SET',
+            'BITS_ANY_SET',
+            'EQ',
+        },
+        data_type = {
+            ['string'] = true,
+            ['unsigned'] = true,
+            ['varbinary'] = true,
+        },
+        is_multipart = false,
+        is_min_support = false,
+        is_max_support = false,
+        is_unique_support = false,
+        is_non_unique_support = true,
+        is_primary_key_support = false,
+        is_partial_search_support = false,
     },
     TREE = {
-        'ALL',
-        'EQ',
-        'GE',
-        'GT',
-        'LE',
-        'LT',
-        'REQ',
+        iterator_type = {
+            'ALL',
+            'EQ',
+            'GE',
+            'GT',
+            'LE',
+            'LT',
+            'REQ',
+        },
+        data_type = {
+            ['boolean'] = true,
+            ['datetime'] = true,
+            ['decimal'] = true,
+            ['double'] = true,
+            ['integer'] = true,
+            ['number'] = true,
+            ['scalar'] = true,
+            ['string'] = true,
+            ['unsigned'] = true,
+            ['uuid'] = true,
+            ['varbinary'] = true,
+        },
+        is_multipart = true,
+        is_min_support = true,
+        is_max_support = true,
+        is_unique_support = true,
+        is_non_unique_support = true,
+        is_primary_key_support = true,
+        is_partial_search_support = true,
     },
     RTREE = {
-        'ALL',
-        'EQ',
-        'GE',
-        'GT',
-        'LE',
-        'LT',
-        'NEIGHBOR',
-        'OVERLAPS',
+        iterator_type = {
+            'ALL',
+            'EQ',
+            'GE',
+            'GT',
+            'LE',
+            'LT',
+            'NEIGHBOR',
+            'OVERLAPS',
+        },
+        data_type = {
+            ['array'] = true,
+        },
+        is_multipart = false,
+        is_min_support = true,
+        is_max_support = true,
+        is_unique_support = false,
+        is_non_unique_support = true,
+        is_primary_key_support = false,
+        is_partial_search_support = true,
     },
 }
 
 local function select_op(space, idx_type, key)
     local select_opts = {
-        iterator = oneof(iterator_type[idx_type]),
+        iterator = oneof(tarantool_indices[idx_type].iterator_type),
         -- The maximum number of tuples.
         limit = math.random(100, 500),
         -- The number of tuples to skip.
@@ -479,6 +468,13 @@ local function format_op(space, space_format)
     space:format(space_format)
 end
 
+-- On functional index drop it's functional keys are leaked,
+-- https://github.com/tarantool/tarantool/issues/10163
+local func_index_lua_code = [[
+function(tuple)
+    return {string.rep('a', 512 * 1024)}
+end]]
+
 local function setup(engine, space_id_func, test_dir, verbose)
     log.info("SETUP")
     local engine_name = engine or oneof({'vinyl', 'memtx'})
@@ -521,18 +517,28 @@ local function setup(engine, space_id_func, test_dir, verbose)
     box.cfg(box_cfg_options)
     log.info('FINISH BOX.CFG')
 
+    box.schema.func.create('func_index', {
+        language = 'LUA',
+        body = func_index_lua_code,
+        is_deterministic = true,
+        is_sandboxed = true,
+    })
+
     log.info('CREATE A SPACE')
+    local space_format = random_space_format()
     local space_opts = {
+        -- constraint = 'check_field',
         engine = engine_name,
-        is_local = oneof({true, false}),
+        field_count = oneof({0, table.getn(space_format)}),
+        format = space_format,
         if_not_exists = oneof({true, false}),
-        field_count = 0,
-        format = random_space_format(),
-        -- temporary = oneof({true, false}),
-        -- is_sync = oneof({true, false}),
-        -- TODO: constraint =
+        is_local = oneof({true, false}),
         -- TODO: foreign_key =
+        -- https://www.tarantool.io/en/doc/latest/concepts/data_model/value_store/#index-box-foreign-keys
     }
+    if space_opts.engine ~= 'vinyl' then
+        space_opts.temporary = oneof({true, false})
+    end
     log.info(space_opts)
     local space_name = ('test_%d'):format(space_id_func())
     local space = box.schema.space.create(space_name, space_opts)
@@ -551,55 +557,82 @@ local function teardown(space, dir)
     end
 end
 
+-- Indexes,
 -- https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/
-local function index_opts(space)
-    -- FIXME: take into account index options,
-    -- see https://www.tarantool.io/en/doc/latest/concepts/data_model/indexes/.
+-- space_object:create_index(),
+-- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_space/create_index/
+local function index_opts(space, is_primary)
     assert(space ~= nil)
     local opts = {
-        unique = oneof({true, false}),
         if_not_exists = false,
-        -- TODO:
-        -- sequence,
-        -- func,
-        -- page_size,
-        -- range_size,
-        -- run_count_per_level,
-        -- run_size_ratio,
+        -- TODO: sequence,
+        -- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_schema_sequence/create_index/#box-schema-sequence-create-index
+        -- TODO: func = function() end,
+        -- https://www.tarantool.io/en/doc/latest/reference/reference_lua/box_space/create_index/#box-space-index-func
     }
-
-    -- TODO: RTREE, BITSET
-    opts.type = oneof({'TREE', 'HASH'})
-    if space.engine == 'memtx' then
-        opts.hint = oneof({true, false})
-    end
 
     if space.engine == 'vinyl' then
         opts.bloom_fpr = math.random(50) / 100
+        opts.page_size = math.random(10) * 1024
+        opts.range_size = 1073741824
+    end
+
+    indices = fun.iter(keys(tarantool_indices)):filter(
+        function(x)
+            if tarantool_indices[x].is_primary_key_support == is_primary then
+                return x
+            end
+        end):totable()
+
+    if space.engine == 'vinyl' then
+        indices = {'TREE'}
+    end
+
+    local is_func_index = oneof({true, false})
+    if is_func_index and
+       not is_primary and
+       space.engine == 'memtx' then
+        func = 'func_index'
+    else
+        opts.type = oneof(indices)
+        -- Primary key must be unique.
+        opts.unique = is_primary and true or tarantool_indices[opts.type].is_unique_support
+    end
+
+    -- 'hint' is only reasonable with memtx tree index.
+    if space.engine == 'memtx' and
+       opts.type == 'TREE' then
+        opts.hint = true
+    end
+
+    if opts.type == 'RTREE' then
+        opts.distance = oneof({'euclid', 'manhattan'})
+        opts.dimension = math.random(10)
     end
 
     opts.parts = {}
     local space_format = space:format()
-    local n_parts = math.random(1, table.getn(space_format))
+    local idx = opts.type
+    local possible_fields = fun.iter(space_format):filter(
+        function(x)
+            if idx == nil then
+                -- For functional index any field is suitable.
+                return x
+            end
+            if tarantool_indices[idx].data_type[x.type] == true then
+                return x
+            end
+        end):totable()
+    local n_parts = math.random(1, table.getn(possible_fields))
     local id = unique_ids(n_parts)
     for i = 1, n_parts do
         local field_id = id()
-        local field = space_format[field_id]
-        local supported_indices = tarantool_type[field.type].indices
-        -- Fix "Duplicate key exists in unique index...".
-        if supported_indices[opts.type] then
-            table.insert(opts.parts, { field.name })
+        local field = possible_fields[field_id]
+        table.insert(opts.parts, { field.name })
+        if not tarantool_indices[opts.type].is_multipart and
+           i == 1 then
+            break
         end
-    end
-    -- assert(next(opts.parts) ~= nil)
-    if next(opts.parts) == nil then
-        log.info(space_format)
-        log.info(opts.type)
-    end
-
-    if opts.type == 'RTREE' then
-        opts.dimension = math.random(10)
-        opts.distance = oneof({'euclid', 'manhattan'})
     end
 
     return opts
@@ -608,16 +641,8 @@ end
 function index_create_op(space)
     local idx_id = index_id_func()
     local idx_name = 'idx_' .. idx_id
-    if space.index[idx_name] ~= nil then
-        space.index[idx_name]:drop()
-    end
-    local opts = index_opts(space)
-    -- FIXME
-    opts.type = 'TREE'
-    --  Primary key must be unique.
-    if idx_id == 1 then
-        opts.unique = true
-    end
+    local is_primary = idx_id == 1
+    local opts = index_opts(space, is_primary)
     space:create_index(idx_name, opts)
 end
 
@@ -641,17 +666,24 @@ end
 
 local function index_max_op(_, idx)
     assert(idx)
+    if not tarantool_indices[idx.type].is_max_support then
+        return
+    end
     idx:max()
 end
 
 local function index_min_op(_, idx)
     assert(idx)
+    if not tarantool_indices[idx.type].is_min_support then
+        return
+    end
     idx:min()
 end
 
 local function index_random_op(_, idx)
     assert(idx)
-    if idx.type ~= 'TREE' then
+    if idx.type ~= 'TREE' and
+       idx.type ~= 'BITSET' then
         idx:random()
     end
 end
@@ -669,6 +701,11 @@ end
 local function index_get_op(space, idx, key)
     assert(idx)
     assert(key)
+    local index_opts = tarantool_indices[idx.type]
+    if not index_opts.is_partial_search_support or
+       not index_opts.is_non_unique_support then
+        return
+    end
     idx:get(key)
 end
 
@@ -688,18 +725,28 @@ local function index_update_op(space, key, idx, tuple_ops)
     assert(key)
     assert(tuple_ops)
     assert(next(tuple_ops) ~= nil)
+    local index_opts = tarantool_indices[idx.type]
+    if not index_opts.is_partial_search_support or
+       not index_opts.is_non_unique_support then
+        return
+    end
     idx:update(key, tuple_ops)
 end
 
 local function index_delete_op(space, idx, key)
     assert(idx)
     assert(key)
+    local index_opts = tarantool_indices[idx.type]
+    if not index_opts.is_partial_search_support or
+       not index_opts.is_non_unique_support then
+        return
+    end
     idx:delete(key)
 end
 
 local function random_field_value(field_type)
     local type_gen = tarantool_type[field_type].generator
-    assert(type(type_gen) == 'function')
+    assert(type(type_gen) == 'function', field_type)
     return type_gen()
 end
 
@@ -785,7 +832,8 @@ local ops = {
     UPDATE_OP = {
         func = update_op,
         args = function(space)
-            return random_key(space, space.index[0]), random_tuple_operations(space)
+            local pk = space.index[0]
+            return random_key(space, pk), random_tuple_operations(space)
         end,
     },
     UPSERT_OP = {
@@ -812,24 +860,28 @@ local ops = {
         func = index_alter_op,
         args = function(space)
             local idx_n = oneof(keys(space.index))
-            return space.index[idx_n], index_opts(space)
+            local is_primary = idx_n == 0
+            return space.index[idx_n], index_opts(space, is_primary)
         end,
     },
-    -- INDEX_COMPACT_OP = {
-    --     func = index_compact_op,
-    --     args = function(space)
-    --         local idx_n = oneof(keys(space.index))
-    --         return space.index[idx_n]
-    --     end,
-    -- },
-    -- INDEX_CREATE_OP = {
-    --     func = index_create_op,
-    --     args = function(_) return end,
-    -- },
+    INDEX_COMPACT_OP = {
+        func = index_compact_op,
+        args = function(space)
+            local idx_n = oneof(keys(space.index))
+            return space.index[idx_n]
+        end,
+    },
+    INDEX_CREATE_OP = {
+        func = index_create_op,
+        args = function(_) return end,
+    },
     INDEX_DROP_OP = {
         func = index_drop_op,
         args = function(space)
-            local idx_n = oneof(keys(space.index))
+            local indices = keys(space.index)
+            -- Don't touch primary index.
+            table.remove(indices, 0)
+            local idx_n = oneof(indices)
             return space.index[idx_n]
         end,
     },

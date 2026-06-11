@@ -1,0 +1,4 @@
+```
+nix build .
+nix run .
+```

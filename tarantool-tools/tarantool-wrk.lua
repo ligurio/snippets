@@ -96,6 +96,27 @@ local function printf(fmt, ...)
     print(string.format(fmt, ...))
 end
 
+-- Report value formatters. Latency cells carry an "ms" suffix,
+-- Req/Sec cells use human units (k/M), and every column is
+-- right-aligned to a fixed width so the Thread Stats rows line up
+-- regardless of the magnitude of the values.
+local function fmt_ms(v)
+    return ('%9.2fms'):format(v)
+end
+
+local function fmt_human(v)
+    if v >= 1e6 then
+        return ('%.2fM'):format(v / 1e6)
+    elseif v >= 1e3 then
+        return ('%.2fk'):format(v / 1e3)
+    end
+    return ('%.2f'):format(v)
+end
+
+local function fmt_pct(v)
+    return ('%8.2f%%'):format(v)
+end
+
 local function usage()
     print([[
 Usage: tarantool tarantool-wrk.lua [options] <url>
@@ -502,17 +523,20 @@ local function main()
     printf('Running %0.1fs test @ %s', duration, url)
     printf('  %d worker fibers and %d connections',
            opts.threads or opts.connections, opts.connections)
-    printf('  Thread Stats   Avg      Stdev     Max   +/- Stdev')
-    printf('    Latency     %6.2fms  %6.2fms  %6.2fms  %6.2f%%',
-           lat.avg * 1000, lat.stdev * 1000, lat.max * 1000, lat.in_stdev * 100)
-    printf('    Req/Sec     %8.2f  %6.2f  %8d  %6.2f%%',
-           rate.avg, rate.stdev, rate.max, rate.in_stdev * 100)
+    printf('  Thread Stats %11s  %11s  %13s  %9s', 'Avg', 'Stdev', 'Max',
+           '+/- Stdev')
+    printf('    Latency    %11s  %11s  %13s  %9s',
+           fmt_ms(lat.avg * 1000), fmt_ms(lat.stdev * 1000),
+           fmt_ms(lat.max * 1000), fmt_pct(lat.in_stdev * 100))
+    printf('    Req/Sec    %11s  %11s  %13s  %9s',
+           fmt_human(rate.avg), fmt_human(rate.stdev),
+           fmt_human(rate.max), fmt_pct(rate.in_stdev * 100))
     if opts.latency then
         print('  Latency Distribution')
-        printf('     50%%    %0.2fms', lat.p50 * 1000)
-        printf('     75%%    %0.2fms', lat.p75 * 1000)
-        printf('     90%%    %0.2fms', lat.p90 * 1000)
-        printf('     99%%    %0.2fms', lat.p99 * 1000)
+        printf('     %3d%%  %7.2fms', 50, lat.p50 * 1000)
+        printf('     %3d%%  %7.2fms', 75, lat.p75 * 1000)
+        printf('     %3d%%  %7.2fms', 90, lat.p90 * 1000)
+        printf('     %3d%%  %7.2fms', 99, lat.p99 * 1000)
     end
     if stats.err > 0 then
         printf('  %d errors', stats.err)

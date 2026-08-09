@@ -1,4 +1,0 @@
-```
-nix build .
-nix run .
-```
